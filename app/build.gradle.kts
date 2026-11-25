@@ -9,6 +9,14 @@ plugins {
     id("org.cyclonedx.bom") version "2.3.1"
 }
 
+// رقم الـ commit يظهر في «حول» وفي أسماء الحزم (CI يمرره عبر GITHUB_SHA)
+val gitSha: String = (System.getenv("GITHUB_SHA")?.take(7) ?: runCatching {
+    providers.exec { commandLine("git", "rev-parse", "--short=7", "HEAD") }.standardOutput.asText.get().trim()
+}.getOrNull())?.ifBlank { null } ?: "local"
+val appVersionCode = 3
+val appVersionName = "1.0.0-rc2"
+base { archivesName.set("tadaffuq-$appVersionName-$appVersionCode-$gitSha") }
+
 android {
     namespace = "com.tadaffuq.app"
     compileSdk = 36
@@ -17,8 +25,9 @@ android {
         applicationId = "com.tadaffuq.app"
         minSdk = 28
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.0.0-rc1"
+        versionCode = appVersionCode
+        versionName = appVersionName
+        buildConfigField("String", "GIT_SHA", "\"$gitSha\"")
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
     // APK لكل معمارية + APK شامل؛ وحزمة AAB تقسّم تلقائياً في Play

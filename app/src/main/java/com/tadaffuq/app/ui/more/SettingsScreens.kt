@@ -388,6 +388,8 @@ fun AboutScreen(padding: PaddingValues, onBack: () -> Unit) {
         }
         item {
             Card(padding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+                InfoRow(stringResource(R.string.about_build), Fmt.iso("${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · ${BuildConfig.GIT_SHA}"))
+                Hairline()
                 InfoRow(stringResource(R.string.about_engine), stringResource(R.string.about_engine_value))
                 Hairline()
                 InfoRow(stringResource(R.string.privacy), stringResource(R.string.about_privacy_value))

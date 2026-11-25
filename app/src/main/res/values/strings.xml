@@ -623,6 +623,7 @@
     <string name="default_folder">التنزيلات/%1$s</string>
     <string name="err_hash_invalid">مرجع البصمة غير صالح (ليس SHA-256 أو SHA-1 أو MD5). إعادة المحاولة تكمل الملف دون تحقق.</string>
     <string name="err_checksum_kept">لم يُنشر الملف لأنه لا يطابق البصمة. إعادة المحاولة تنزّله من جديد.</string>
+    <string name="about_build">البناء</string>
     <plurals name="notif_running">
         <item quantity="zero">لا تنزيلات</item>
         <item quantity="one">يجري تنزيل ملف واحد</item>
