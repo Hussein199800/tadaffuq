@@ -262,6 +262,31 @@ class AuditManagerTest {
         assertTrue("overshoot ${t.downloadedBytes}", t.downloadedBytes < 600_000 + 400_000)
     }
 
+    /** rc3 P1: بيانات التورنت (تنزيل + رفع) تدخل حدود الجوال وتوقف الطابور. */
+    @Test fun rc3_torrentBytesCountTowardLimit() = runBlocking {
+        settings.update { it.copy(dailyLimitBytes = 500_000) }
+        val dm = manager(NetKind.CELLULAR)
+        delay(300)
+        assertEquals(null, dm.hold.value)
+        dm.recordExternalBytes(600_000)
+        withTimeout(5_000) { while (dm.hold.value == null) delay(50) }
+        assertEquals(com.tadaffuq.app.download.Hold.DAILY_LIMIT, dm.hold.value)
+    }
+
+    /** rc3 P1: التنظيف يحدد اليتيم بمعرّفات المهام، ولا يلمس جزئياً قابلاً للاستئناف ولا ملف المستخدم. */
+    @Test fun rc3_orphanCleanupIsSafe() = runBlocking {
+        val dir = tmp.newFolder("orph")
+        val dm = manager()
+        val id = db.tasks().insertAll(listOf(TaskEntity(url = "https://x/a.bin", fileName = "a.bin", dirPath = dir.path, status = TaskStatus.PAUSED))).single()
+        val live = StorageDirs.partFile(dir.path, id).apply { writeText("resumable") }
+        val orphan = StorageDirs.partFile(dir.path, 9999).apply { writeText("orphan") }
+        val user = File(dir, "notes.txt").apply { writeText("mine") }
+        val found = dm.orphanParts()
+        assertEquals(listOf(orphan.absolutePath), found.map { it.absolutePath })
+        assertEquals(1, dm.cleanOrphans(found))
+        assertTrue(live.exists()); assertTrue(user.exists()); assertFalse(orphan.exists())
+    }
+
     /** P0-10: الكوكيز لا تُرسل لمضيف آخر غير الذي التُقطت منه (روابط متعددة/مرايا). */
     @Test fun p0_10_cookiesAreScopedAndEncrypted() = runBlocking {
         val dir = tmp.newFolder("ck")

@@ -44,6 +44,8 @@ object StorageDirs {
         return if (publicOk) pub else fallback
     }
 
+    fun appRoot(): File? = appDir
+
     fun isInAppDir(dir: File): Boolean = appDir?.let { dir.absolutePath.startsWith(it.absolutePath) } == true
 
     /** المسار النسبي المقابل في «التنزيلات» العامة لمجلد داخل المجلد الاحتياطي. */

@@ -59,6 +59,12 @@ class TorrentManager @Inject constructor(
     fun start() {
         synchronized(this) { if (started) return; started = true }
         downloads.externalSpeed = { _live.value.values.sumOf { it.downBps.toLong() } }
+        downloads.externalLoad = {
+            val active = _live.value.values.filter { it.state == TorrentState.DOWNLOADING || it.state == TorrentState.METADATA || it.state == TorrentState.CHECKING }
+            ExternalLoad(active.size, _live.value.values.sumOf { it.downBps.toLong() }, active.sumOf { it.wantedDone }, active.sumOf { it.wanted })
+        }
+        downloads.externalPauseAll = { pauseAll() }
+        downloads.externalResumeAll = { resumeAll() }
         downloads.externalWork = { _live.value.values.any { it.state == TorrentState.DOWNLOADING || it.state == TorrentState.METADATA || it.state == TorrentState.SEEDING || it.state == TorrentState.CHECKING } }
         scope.launch { settingsRepo.settings.collect { settings = it; if (engine.running) engine.apply(torrentSettings(it)) } }
         scope.launch {
@@ -81,6 +87,20 @@ class TorrentManager @Inject constructor(
         }
     }
 
+    private val lastTotals = HashMap<String, Long>()
+
+    /** من «إيقاف الكل» أو انتهاء مهلة الخدمة: يُحفظ PAUSED فلا يعود التورنت للعمل إلا باستئناف صريح. */
+    suspend fun pauseAll() = withContext(Dispatchers.IO) {
+        dao.all().filter { it.state == TorrentRunState.ACTIVE || (it.state == TorrentRunState.COMPLETED && it.seedAfter) }.forEach { t ->
+            if (engine.running) engine.pause(t.infoHash)
+            if (t.state == TorrentRunState.ACTIVE) dao.setState(t.infoHash, TorrentRunState.PAUSED)
+        }
+    }
+
+    suspend fun resumeAll() = withContext(Dispatchers.IO) {
+        dao.all().filter { it.state == TorrentRunState.PAUSED }.forEach { resume(it.infoHash) }
+    }
+
     private suspend fun loop() {
         var tick = 0
         while (true) {
@@ -100,6 +120,12 @@ class TorrentManager @Inject constructor(
                     engine.pause(t.infoHash)
                     dao.upsert(t.copy(seedAfter = false))
                 }
+            }
+            // البيانات الفعلية (تنزيل + رفع) تدخل حدود البيانات اليومية والشهرية كالتنزيل العادي
+            snaps.forEach { (h, s) ->
+                val now = s.downloaded + s.uploaded
+                val prev = lastTotals.put(h, now)
+                if (prev != null) downloads.recordExternalBytes(if (now >= prev) now - prev else now)
             }
             if (tick++ % 10 == 0) all.forEach { t -> snaps[t.infoHash]?.let { dao.counters(t.infoHash, it.uploaded, it.downloaded) } }
             if (snaps.values.any { it.state == TorrentState.DOWNLOADING || it.state == TorrentState.SEEDING }) DownloadService.ensureRunning(ctx, downloads)

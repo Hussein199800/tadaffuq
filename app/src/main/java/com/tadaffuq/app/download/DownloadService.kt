@@ -35,7 +35,7 @@ class DownloadService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val n = notifier.summary(manager.live.value, manager.runningIds.value.size, manager.hold.value)
+        val n = notifier.summary(manager.live.value, manager.runningIds.value.size, manager.hold.value, manager.externalLoad())
         ServiceCompat.startForeground(this, Notifier.FG_ID, n, if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC else 0)
         if (wakeLock == null) {
             wakeLock = getSystemService(PowerManager::class.java)
@@ -46,7 +46,7 @@ class DownloadService : Service() {
             while (isActive) {
                 delay(1_000)
                 val nm = getSystemService(android.app.NotificationManager::class.java)
-                nm.notify(Notifier.FG_ID, notifier.summary(manager.live.value, manager.runningIds.value.size, manager.hold.value))
+                nm.notify(Notifier.FG_ID, notifier.summary(manager.live.value, manager.runningIds.value.size, manager.hold.value, manager.externalLoad()))
                 if (manager.notifyPerTask) notifier.postTasks(manager.runningTasks().map { it to manager.live.value[it.id] })
                 idleTicks = if (manager.hasWork()) 0 else idleTicks + 1
                 if (idleTicks >= 3) { stopSelfCleanly(); break }
@@ -61,7 +61,7 @@ class DownloadService : Service() {
         stopSelf()
     }
 
-    /** Android 15: حد زمني يومي لخدمات dataSync. نوقف بأمان (التقدم محفوظ) ونبلغ المستخدم. */
+    /** Android 15: حد زمني يومي لخدمات dataSync. نوقف بأمان كل العمل، والتورنت معه (التقدم محفوظ)، ونبلغ المستخدم. */
     override fun onTimeout(startId: Int, fgsType: Int) {
         scope.launch {
             manager.pauseAll()

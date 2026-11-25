@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
@@ -45,13 +46,13 @@ class UsageMeter(private val dao: UsageDao, private val conditions: Conditions, 
 
     val cellularToday: Long get() {
         val d = currentDay()
-        return (if (storedDay == d) storedToday else 0L) + pendingCellular { it == d }
+        return (if (storedDay == d) storedToday else 0L) + pendingCellular { it == d } + unconfirmed.get()
     }
 
     val cellularMonth: Long get() {
         val d = currentDay()
         val m = d.substring(0, 7)
-        return (if (storedDay.startsWith(m)) storedMonth else 0L) + pendingCellular { it.startsWith(m) }
+        return (if (storedDay.startsWith(m)) storedMonth else 0L) + pendingCellular { it.startsWith(m) } + unconfirmed.get()
     }
 
     fun add(bytes: Long) {
@@ -69,15 +70,30 @@ class UsageMeter(private val dao: UsageDao, private val conditions: Conditions, 
         }
     }
 
-    /** يكتب المعلّق؛ إن فشلت الكتابة يعود العدد إلى المعلّق ولا يضيع. */
-    suspend fun flush() {
+    /**
+     * يكتب المعلّق دون فجوة: العدد يبقى في المعلّق حتى يُقرأ المجموع الجديد من القاعدة، ثم يُطرح.
+     * في اللحظة بين الخطوتين يُحسب مرتين (تقدير زائد آمن)، لا ناقص أبداً فلا يتجاوز التنزيل الحد.
+     * إن فشلت الكتابة يبقى في المعلّق ولا يضيع.
+     */
+    private val flushLock = kotlinx.coroutines.sync.Mutex()
+
+    suspend fun flush() = flushLock.withLock { flushLocked() }
+
+    private suspend fun flushLocked() {
+        val written = ArrayList<Triple<AtomicLong, Long, Boolean>>()
         for ((key, counter) in pending) {
-            val n = counter.getAndSet(0)
+            val n = counter.get()
             if (n <= 0) continue
-            try { dao.add(key.day, key.net, n) } catch (e: Exception) { counter.addAndGet(n) }
+            try { dao.add(key.day, key.net, n); written += Triple(counter, n, key.net == NetKind.CELLULAR) } catch (e: Exception) { }
         }
-        runCatching { refresh() }
+        // يُطرح من المعلّق فقط بعد قراءة المجموع الجديد؛ إن فشلت القراءة يُعاد المحاولة لاحقاً
+        // (المكتوب يبقى في المعلّق مؤقتاً = تقدير زائد آمن، ويُصحَّح عند نجاح القراءة دون كتابة مكررة)
+        if (runCatching { refresh() }.isSuccess) written.forEach { (c, n, _) -> c.addAndGet(-n) }
+        else written.forEach { (c, n, cell) -> c.addAndGet(-n); if (cell) unconfirmed.addAndGet(n) }
     }
+
+    /** مكتوب لم يُقرأ مجموعه بعد (فشل refresh): يُحتسب حتى تنجح القراءة التالية. */
+    private val unconfirmed = AtomicLong()
 
     private suspend fun refresh() {
         val day = currentDay()
@@ -86,5 +102,6 @@ class UsageMeter(private val dao: UsageDao, private val conditions: Conditions, 
         storedToday = rows.filter { it.day == day && it.net == NetKind.CELLULAR }.sumOf { it.bytes }
         storedMonth = rows.filter { it.net == NetKind.CELLULAR }.sumOf { it.bytes }
         storedDay = day
+        unconfirmed.set(0)
     }
 }

@@ -8,6 +8,7 @@ import com.tadaffuq.app.download.Publisher
 import com.tadaffuq.data.AppDatabase
 import com.tadaffuq.data.TaskEntity
 import com.tadaffuq.data.TaskStatus
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
@@ -108,5 +109,32 @@ class PublisherTest {
         assertFalse(local.exists())
         assertArrayEquals(data, File(dead.filePath!!).readBytes())
         assertNull(db.tasks().get(t.id)!!.publishLocal)
+    }
+}
+
+/** rc3 P1: عداد الاستهلاك لا ينخفض عند نقل المعلّق إلى القاعدة ولا يضيع عند فشل الكتابة. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], application = android.app.Application::class)
+class UsageMeterTest {
+    private val ctx: Context = ApplicationProvider.getApplicationContext()
+
+    @Test fun countersNeverDropAcrossFlush() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
+        val cond = com.tadaffuq.app.download.Conditions(ctx).apply { set(com.tadaffuq.app.download.DeviceState(connected = true, net = com.tadaffuq.data.NetKind.CELLULAR, metered = true)) }
+        val m = com.tadaffuq.app.download.UsageMeter(db.usage(), cond)
+        m.add(1000)
+        assertEquals(1000, m.cellularToday)
+        // قراءات متكررة أثناء نقل المعلّق إلى القاعدة: لا تنخفض أبداً تحت 1000
+        val reader = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default).async {
+            var min = Long.MAX_VALUE
+            repeat(2000) { min = minOf(min, m.cellularToday) }
+            min
+        }
+        m.flush()
+        assertTrue(reader.await() >= 1000)
+        assertEquals(1000, m.cellularToday)
+        m.flush() // لا كتابة مكررة
+        assertEquals(1000, m.cellularToday)
+        db.close()
     }
 }

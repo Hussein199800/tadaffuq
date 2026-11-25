@@ -46,6 +46,9 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** حمل التورنت الحي للإشعار الموحد: العدد والسرعة والمنجز والإجمالي (أرقام libtorrent الحقيقية). */
+data class ExternalLoad(val count: Int = 0, val speed: Long = 0, val done: Long = 0, val total: Long = 0)
+
 /** طلب إضافة مهمة من الواجهة. */
 data class NewTask(
     val url: String,
@@ -277,9 +280,15 @@ class DownloadManager @Inject constructor(
     /** هل بقي عمل؟ تستعمله الخدمة وعامل الاستئناف ليتوقفا عند الفراغ. */
     fun hasWork(): Boolean = jobs.isNotEmpty() || (pendingCount > 0 && _hold.value == null) || externalWork()
 
-    /** يضيف التورنت سرعته وعمله دون اعتماد دائري بين المديرين. */
+    /** يضيف التورنت سرعته وعمله وتحكمه دون اعتماد دائري بين المديرين. */
     @Volatile var externalSpeed: () -> Long = { 0L }
     @Volatile var externalWork: () -> Boolean = { false }
+    @Volatile var externalLoad: () -> ExternalLoad = { ExternalLoad() }
+    @Volatile var externalPauseAll: suspend () -> Unit = {}
+    @Volatile var externalResumeAll: suspend () -> Unit = {}
+
+    /** بايتات التورنت (تنزيلاً ورفعاً) تدخل حدود البيانات نفسها. */
+    fun recordExternalBytes(n: Long) { if (n > 0) usage.add(n) }
 
     private fun stop(id: Long, status: TaskStatus) {
         val job = jobs[id] ?: return
@@ -508,6 +517,28 @@ class DownloadManager @Inject constructor(
         publisher.publish(t, f, SafTarget(ctx, tree))
     }
 
+    /**
+     * ملفات ‎.tdq اليتيمة: لا تخص أي مهمة غير مكتملة (بمعرّفها أو مساراتها القديمة). لا تُحذف جزئيات قابلة
+     * للاستئناف ولا ملفات المستخدم (ما لا ينتهي بـ ‎.tdq لا يُلمس). البحث في مجلدات التطبيق ومجلدات المهام فقط.
+     */
+    suspend fun orphanParts(): List<File> = withContext(Dispatchers.IO) {
+        val unfinished = dao.all().filter { it.status != TaskStatus.COMPLETED }
+        val keep = unfinished.flatMap { t ->
+            listOf(StorageDirs.partFile(t.dirPath, t.id), StorageDirs.rc3PartFile(t.dirPath, t.fileName, t.id), StorageDirs.legacyPartFile(t.dirPath, t.fileName))
+        }.map { it.absolutePath }.toSet()
+        val roots = (listOfNotNull(StorageDirs.publicRoot(), StorageDirs.appRoot()) + unfinished.map { File(it.dirPath) } + dao.all().map { File(it.dirPath) }).distinct()
+        roots.asSequence().filter { it.isDirectory }
+            .flatMap { it.walkTopDown().maxDepth(3).filter { f -> f.isFile && f.name.endsWith(StorageDirs.PART_SUFFIX) } }
+            .filter { it.absolutePath !in keep }
+            .distinctBy { it.absolutePath }.toList()
+    }
+
+    /** يحذف ما ما زال يتيماً لحظة الحذف (يُعاد الفحص)؛ يعيد عدد المحذوف. */
+    suspend fun cleanOrphans(files: List<File>): Int = withContext(Dispatchers.IO) {
+        val still = orphanParts().map { it.absolutePath }.toSet()
+        files.count { it.absolutePath in still && it.delete() }
+    }
+
     /** تغيير وجهة مهمة لم تكتمل (صراحة من تفاصيلها). */
     suspend fun setTree(id: Long, tree: String?) = dao.setTree(id, tree?.ifBlank { null })
 
@@ -622,8 +653,9 @@ class DownloadManager @Inject constructor(
         wake()
     }
 
-    suspend fun pauseAll() = pause(jobs.keys + dao.withStatus(listOf(TaskStatus.QUEUED, TaskStatus.WAITING_NETWORK)).map { it.id })
-    suspend fun resumeAll() = resume(dao.withStatus(listOf(TaskStatus.PAUSED, TaskStatus.WAITING_NETWORK)).map { it.id })
+    /** «إيقاف الكل» يشمل التورنت؛ ما أوقفه المستخدم لا يعود من تلقاء نفسه. */
+    suspend fun pauseAll() { pause(jobs.keys + dao.withStatus(listOf(TaskStatus.QUEUED, TaskStatus.WAITING_NETWORK)).map { it.id }); externalPauseAll() }
+    suspend fun resumeAll() { resume(dao.withStatus(listOf(TaskStatus.PAUSED, TaskStatus.WAITING_NETWORK)).map { it.id }); externalResumeAll() }
 
     /**
      * حذف مهام؛ withFiles يحذف الملف المكتمل أيضاً، والملف الجزئي يُحذف دائماً.

@@ -70,7 +70,7 @@ class ResumeWorker @AssistedInject constructor(
     override suspend fun getForegroundInfo(): ForegroundInfo = foregroundInfo()
 
     private fun foregroundInfo(): ForegroundInfo {
-        val n = notifier.summary(manager.live.value, manager.runningIds.value.size, manager.hold.value)
+        val n = notifier.summary(manager.live.value, manager.runningIds.value.size, manager.hold.value, manager.externalLoad())
         return if (Build.VERSION.SDK_INT >= 29) ForegroundInfo(Notifier.FG_ID + 10, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         else ForegroundInfo(Notifier.FG_ID + 10, n)
     }

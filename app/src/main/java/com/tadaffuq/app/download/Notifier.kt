@@ -136,10 +136,12 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
     private fun taskId(id: Long) = (TASK_BASE + id).toInt()
 
     /** إشعار موحد لكل المهام العاملة، بأرقام حقيقية فقط. */
-    fun summary(live: Map<Long, Snapshot>, running: Int, hold: Hold?): Notification {
-        val speed = live.values.sumOf { it.speedBps }
-        val done = live.values.sumOf { it.downloaded }
-        val total = live.values.takeIf { v -> v.isNotEmpty() && v.all { it.total > 0 } }?.sumOf { it.total } ?: -1
+    fun summary(live: Map<Long, Snapshot>, runningHttp: Int, hold: Hold?, ext: ExternalLoad = ExternalLoad()): Notification {
+        val running = runningHttp + ext.count
+        val speed = live.values.sumOf { it.speedBps } + ext.speed
+        val done = live.values.sumOf { it.downloaded } + ext.done
+        val known = (live.isNotEmpty() || ext.count > 0) && live.values.all { it.total > 0 } && (ext.count == 0 || ext.total > 0)
+        val total = if (known) live.values.sumOf { it.total } + ext.total else -1
         val title = if (running > 0) formatLatin(ctx.resources.getQuantityString(R.plurals.notif_running, running), arrayOf(running))
         else ctx.getString(R.string.notif_preparing)
         val text = buildString {
