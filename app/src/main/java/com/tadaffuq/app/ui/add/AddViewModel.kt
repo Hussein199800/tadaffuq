@@ -36,6 +36,9 @@ data class AddRequest(
     val userAgent: String? = null,
     val cookies: String? = null,
     val suggestedName: String? = null,
+    /** فُتحت من بلاطة النسخ. */
+    val fromClipboard: Boolean = false,
+    val clipboardEmpty: Boolean = false,
 )
 
 enum class DuplicatePolicy { RENAME, REPLACE, SKIP }
@@ -68,6 +71,8 @@ data class AddState(
     /** رابط Magnet في النص: يُفتح في نافذة التورنت. */
     val magnet: String? = null,
     val scheduledAt: Long? = null,
+    /** مجلد فرعي داخل التنزيلات/تدفق لهذه الإضافة (يتقدم على القواعد والتصنيف). */
+    val subfolder: String = "",
     val extract: Boolean = false,
     val packageName: String = "",
     val duplicatePolicy: DuplicatePolicy = DuplicatePolicy.RENAME,
@@ -201,7 +206,8 @@ class AddViewModel @Inject constructor(
                 val name = FileNames.sanitize(item.name.ifBlank { item.probe?.fileName ?: "download" })
                 // قواعد التنظيم: أول قاعدة مطابقة تحدد المجلد والأولوية والسرعة والفك
                 val rule = com.tadaffuq.data.Rule.firstMatch(settings.rules, name, item.url, item.probe?.totalBytes ?: -1)
-                val dir = rule?.folder?.let(com.tadaffuq.data.Rule::safeFolder)?.takeIf { it.isNotEmpty() }?.let { java.io.File(StorageDirs.root(), it).path }
+                val dir = com.tadaffuq.data.Rule.safeFolder(s.subfolder).takeIf { it.isNotEmpty() }?.let { java.io.File(StorageDirs.root(), it).path }
+                    ?: rule?.folder?.let(com.tadaffuq.data.Rule::safeFolder)?.takeIf { it.isNotEmpty() }?.let { java.io.File(StorageDirs.root(), it).path }
                     ?: StorageDirs.dirFor(FileNames.category(name), settings.sortByCategory).path
                 NewTask(
                     url = item.url,

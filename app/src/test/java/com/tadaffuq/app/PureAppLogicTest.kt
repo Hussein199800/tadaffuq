@@ -45,6 +45,14 @@ class PureAppLogicTest {
         assertNull(Policy.hold(Settings(minFreeMb = 500), wifi.copy(freeBytes = -1), 0, 0, hourNow = 12))
     }
 
+    @Test fun mobileProfileAppliesOnlyOnCellular() {
+        val s = Settings(maxConnections = 16, maxParallel = 4, globalLimitBps = 0, separateMobile = true, mobileMaxConnections = 2, mobileParallel = 1, mobileLimitBps = 100_000)
+        assertEquals(16, s.forNetwork(false).maxConnections)
+        val m = s.forNetwork(true)
+        assertEquals(2, m.maxConnections); assertEquals(1, m.maxParallel); assertEquals(100_000L, m.globalLimitBps)
+        assertEquals(16, s.copy(separateMobile = false).forNetwork(true).maxConnections)
+    }
+
     @Test fun thermalCapsConnections() {
         assertEquals(8, Policy.connectionCap(wifi, 8))
         assertEquals(2, Policy.connectionCap(wifi.copy(thermal = 2), 8))

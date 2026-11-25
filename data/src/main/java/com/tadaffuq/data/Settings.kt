@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.map
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class ListDensity { COMFORTABLE, COMPACT }
 enum class ProxyMode { NONE, HTTP, SOCKS5 }
+enum class Accent { MINT, BLUE, VIOLET, AMBER, ROSE }
 
 /** إعدادات التطبيق. القيم الافتراضية بسيطة، والمتقدم اختياري. */
 data class Settings(
@@ -72,7 +73,35 @@ data class Settings(
     val rpcEnabled: Boolean = false,
     val rpcAllowNetwork: Boolean = false,
     val rpcPort: Int = 6800,
+    /** ألوان Material You من خلفية الجهاز (Android 12+). */
+    val dynamicColor: Boolean = false,
+    val accent: Accent = Accent.MINT,
+    /** إشعار لكل ملف يعمل (تحت الإشعار الإجمالي). */
+    val notifyPerTask: Boolean = true,
+    val notifyOnFail: Boolean = true,
+    val notifySound: Boolean = true,
+    val notifyVibrate: Boolean = false,
+    /** الضبط الذكي لعدد الاتصالات حسب تحسن السرعة. */
+    val smartTuning: Boolean = true,
+    /** التقسيم الديناميكي لأكبر جزء متبقٍّ. */
+    val dynamicSplit: Boolean = true,
+    /** الاستئناف التلقائي بعد الانقطاع وإعادة التشغيل. */
+    val autoResume: Boolean = true,
+    /** محاولات إعادة الاتصال لكل جزء قبل الفشل، والانتظار الأولي (يتضاعف). */
+    val maxRetries: Int = 8,
+    val retryDelaySec: Int = 1,
+    /** إعدادات مستقلة لبيانات الهاتف. */
+    val separateMobile: Boolean = false,
+    val mobileMaxConnections: Int = 4,
+    val mobileParallel: Int = 1,
+    val mobileLimitBps: Long = 0,
+    /** طريقة عرض التنزيلات. */
+    val showSegmentsInList: Boolean = false,
 ) {
+    /** الإعدادات الفعلية حسب الشبكة الحالية: على بيانات الهاتف يُطبَّق ملفها المستقل إن فُعّل. */
+    fun forNetwork(onCellular: Boolean): Settings =
+        if (separateMobile && onCellular) copy(maxConnections = mobileMaxConnections, maxParallel = mobileParallel, globalLimitBps = mobileLimitBps) else this
+
     val rules: List<Rule> get() = Rule.listFrom(rulesJson)
 }
 
@@ -125,6 +154,22 @@ class SettingsRepository(private val context: Context) {
         val rpcOn = booleanPreferencesKey("rpcEnabled")
         val rpcNet = booleanPreferencesKey("rpcAllowNetwork")
         val rpcPort = intPreferencesKey("rpcPort")
+        val dynamic = booleanPreferencesKey("dynamicColor")
+        val accent = stringPreferencesKey("accent")
+        val nPer = booleanPreferencesKey("notifyPerTask")
+        val nFail = booleanPreferencesKey("notifyOnFail")
+        val nSound = booleanPreferencesKey("notifySound")
+        val nVib = booleanPreferencesKey("notifyVibrate")
+        val smart = booleanPreferencesKey("smartTuning")
+        val split = booleanPreferencesKey("dynamicSplit")
+        val autoResume = booleanPreferencesKey("autoResume")
+        val retries = intPreferencesKey("maxRetries")
+        val retryDelay = intPreferencesKey("retryDelaySec")
+        val sepMobile = booleanPreferencesKey("separateMobile")
+        val mConn = intPreferencesKey("mobileMaxConnections")
+        val mPar = intPreferencesKey("mobileParallel")
+        val mLimit = longPreferencesKey("mobileLimitBps")
+        val segList = booleanPreferencesKey("showSegmentsInList")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -181,6 +226,22 @@ class SettingsRepository(private val context: Context) {
             p[K.rpcOn] = s.rpcEnabled
             p[K.rpcNet] = s.rpcAllowNetwork
             p[K.rpcPort] = s.rpcPort.coerceIn(1024, 65535)
+            p[K.dynamic] = s.dynamicColor
+            p[K.accent] = s.accent.name
+            p[K.nPer] = s.notifyPerTask
+            p[K.nFail] = s.notifyOnFail
+            p[K.nSound] = s.notifySound
+            p[K.nVib] = s.notifyVibrate
+            p[K.smart] = s.smartTuning
+            p[K.split] = s.dynamicSplit
+            p[K.autoResume] = s.autoResume
+            p[K.retries] = s.maxRetries.coerceIn(0, 50)
+            p[K.retryDelay] = s.retryDelaySec.coerceIn(1, 60)
+            p[K.sepMobile] = s.separateMobile
+            p[K.mConn] = s.mobileMaxConnections.coerceIn(1, 32)
+            p[K.mPar] = s.mobileParallel.coerceIn(1, 10)
+            p[K.mLimit] = s.mobileLimitBps.coerceAtLeast(0)
+            p[K.segList] = s.showSegmentsInList
         }
     }
 
@@ -231,6 +292,22 @@ class SettingsRepository(private val context: Context) {
             rpcEnabled = p[K.rpcOn] ?: d.rpcEnabled,
             rpcAllowNetwork = p[K.rpcNet] ?: d.rpcAllowNetwork,
             rpcPort = p[K.rpcPort] ?: d.rpcPort,
+            dynamicColor = p[K.dynamic] ?: d.dynamicColor,
+            accent = p[K.accent]?.let { runCatching { Accent.valueOf(it) }.getOrNull() } ?: d.accent,
+            notifyPerTask = p[K.nPer] ?: d.notifyPerTask,
+            notifyOnFail = p[K.nFail] ?: d.notifyOnFail,
+            notifySound = p[K.nSound] ?: d.notifySound,
+            notifyVibrate = p[K.nVib] ?: d.notifyVibrate,
+            smartTuning = p[K.smart] ?: d.smartTuning,
+            dynamicSplit = p[K.split] ?: d.dynamicSplit,
+            autoResume = p[K.autoResume] ?: d.autoResume,
+            maxRetries = p[K.retries] ?: d.maxRetries,
+            retryDelaySec = p[K.retryDelay] ?: d.retryDelaySec,
+            separateMobile = p[K.sepMobile] ?: d.separateMobile,
+            mobileMaxConnections = p[K.mConn] ?: d.mobileMaxConnections,
+            mobileParallel = p[K.mPar] ?: d.mobileParallel,
+            mobileLimitBps = p[K.mLimit] ?: d.mobileLimitBps,
+            showSegmentsInList = p[K.segList] ?: d.showSegmentsInList,
         )
     }
 }

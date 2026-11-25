@@ -25,18 +25,31 @@ import javax.inject.Singleton
 class Notifier @Inject constructor(@ApplicationContext private val ctx: Context) {
     private val nm = ctx.getSystemService(NotificationManager::class.java)
 
-    fun ensureChannels() {
-        nm.createNotificationChannels(
-            listOf(
-                NotificationChannel(CH_ACTIVE, ctx.getString(R.string.channel_active), NotificationManager.IMPORTANCE_LOW).apply {
-                    description = ctx.getString(R.string.channel_active_desc); setShowBadge(false)
-                },
-                NotificationChannel(CH_DONE, ctx.getString(R.string.channel_done), NotificationManager.IMPORTANCE_DEFAULT).apply {
-                    description = ctx.getString(R.string.channel_done_desc)
-                },
-            ),
+    @Volatile private var doneChannel = CH_DONE
+
+    fun ensureChannels(sound: Boolean = true, vibrate: Boolean = false) {
+        // قنوات أندرويد لا تتغير أصواتها بعد إنشائها: قناة لكل تركيبة صوت/اهتزاز، وتُحذف القديمة
+        doneChannel = "done_${if (sound) "s" else "q"}${if (vibrate) "v" else "n"}"
+        nm.createNotificationChannel(
+            NotificationChannel(CH_ACTIVE, ctx.getString(R.string.channel_active), NotificationManager.IMPORTANCE_LOW).apply {
+                description = ctx.getString(R.string.channel_active_desc); setShowBadge(false)
+            },
         )
+        nm.createNotificationChannel(
+            NotificationChannel(doneChannel, ctx.getString(R.string.channel_done), if (sound) NotificationManager.IMPORTANCE_DEFAULT else NotificationManager.IMPORTANCE_LOW).apply {
+                description = ctx.getString(R.string.channel_done_desc)
+                if (!sound) setSound(null, null)
+                enableVibration(vibrate)
+                if (vibrate) vibrationPattern = longArrayOf(0, 180, 120, 180)
+            },
+        )
+        nm.notificationChannels.filter { it.id.startsWith("done") && it.id != doneChannel }.forEach { nm.deleteNotificationChannel(it.id) }
     }
+
+    /** يفتح إعدادات النظام لقناة الاكتمال (للتحكم الدقيق بالنغمة). */
+    fun channelSettingsIntent(): Intent = Intent(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+        .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.packageName)
+        .putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, doneChannel)
 
     private fun canPost() = android.os.Build.VERSION.SDK_INT < 33 ||
         ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -48,9 +61,69 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
-    private fun action(name: String) = PendingIntent.getBroadcast(
-        ctx, name.hashCode(), Intent(ctx, NotificationActionReceiver::class.java).setAction(name), PendingIntent.FLAG_IMMUTABLE,
+    private fun action(name: String, id: Long = -1) = PendingIntent.getBroadcast(
+        ctx, (name.hashCode() * 31 + id).toInt(),
+        Intent(ctx, NotificationActionReceiver::class.java).setAction(name).putExtra(NotificationActionReceiver.EXTRA_ID, id),
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
+
+    /**
+     * إشعار ملف واحد: الاسم والنسبة وشريط التقدم والسرعة اللحظية والمنجز من الإجمالي والوقت المتبقي،
+     * وأزرار إيقاف وإلغاء. يندرج تحت الإشعار الإجمالي.
+     */
+    fun task(t: TaskEntity, s: Snapshot?): Notification {
+        val done = s?.downloaded ?: t.downloadedBytes
+        val total = s?.total ?: t.totalBytes
+        val pct = if (total > 0) (done * 100 / total).toInt() else -1
+        val title = if (pct >= 0) "${t.fileName} · ${Fmt.iso("$pct%")}" else t.fileName
+        val line1 = s?.let { Fmt.speed(it.speedBps) } ?: ctx.getString(R.string.notif_preparing)
+        val line2 = buildString {
+            append(Fmt.bytes(done)).append(" / ").append(Fmt.bytes(total))
+            if (s != null && s.etaSeconds >= 0) append(" · ").append(ctx.getString(R.string.eta, Fmt.duration(s.etaSeconds)))
+        }
+        return NotificationCompat.Builder(ctx, CH_ACTIVE)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText("$line1 · $line2")
+            .setStyle(NotificationCompat.BigTextStyle().bigText("$line1\n$line2"))
+            .setProgress(100, pct.coerceAtLeast(0), pct < 0)
+            .setOnlyAlertOnce(true).setSilent(true).setOngoing(true)
+            .setGroup(GROUP_ACTIVE)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setContentIntent(openApp(requestCode = t.id.toInt()))
+            .addAction(0, ctx.getString(R.string.action_pause), action(NotificationActionReceiver.PAUSE, t.id))
+            .addAction(0, ctx.getString(R.string.cancel), action(NotificationActionReceiver.CANCEL, t.id))
+            .build()
+    }
+
+    /** بعد الإيقاف من الإشعار: إشعار قابل للإزالة باستئناف أو إلغاء. */
+    fun paused(t: TaskEntity) {
+        if (!canPost()) return
+        val pct = if (t.totalBytes > 0) (t.downloadedBytes * 100 / t.totalBytes).toInt() else 0
+        nm.notify(taskId(t.id), NotificationCompat.Builder(ctx, CH_ACTIVE)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(t.fileName)
+            .setContentText(ctx.getString(R.string.st_paused) + " · " + Fmt.bytes(t.downloadedBytes) + " / " + Fmt.bytes(t.totalBytes))
+            .setProgress(100, pct, false)
+            .setSilent(true)
+            .setContentIntent(openApp(requestCode = t.id.toInt()))
+            .addAction(0, ctx.getString(R.string.action_resume), action(NotificationActionReceiver.RESUME, t.id))
+            .addAction(0, ctx.getString(R.string.cancel), action(NotificationActionReceiver.CANCEL, t.id))
+            .build())
+    }
+
+    fun postTasks(list: List<Pair<TaskEntity, Snapshot?>>) {
+        if (!canPost()) return
+        val ids = list.map { taskId(it.first.id) }.toSet()
+        list.forEach { (t, s) -> nm.notify(taskId(t.id), task(t, s)) }
+        // إزالة إشعارات المهام التي توقفت عن العمل (عدا المتوقفة يدوياً من الإشعار)
+        nm.activeNotifications.filter { it.groupKey?.contains(GROUP_ACTIVE) == true && it.id !in ids && it.id != FG_ID && it.notification.actions?.size == 2 && it.isOngoing }
+            .forEach { nm.cancel(it.id) }
+    }
+
+    fun clearTask(id: Long) = nm.cancel(taskId(id))
+    fun clearAllTasks() = nm.activeNotifications.filter { it.id >= TASK_BASE && it.id < TASK_BASE + 1_000_000 }.forEach { nm.cancel(it.id) }
+    private fun taskId(id: Long) = (TASK_BASE + id).toInt()
 
     /** إشعار موحد لكل المهام العاملة، بأرقام حقيقية فقط. */
     fun summary(live: Map<Long, Snapshot>, running: Int, hold: Hold?): Notification {
@@ -73,6 +146,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
             .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setGroup(GROUP_ACTIVE).setGroupSummary(true)
             .setContentIntent(openApp())
             .apply {
                 if (total > 0) setProgress(1000, (done * 1000 / total).toInt(), false) else if (running > 0) setProgress(0, 0, true)
@@ -92,7 +166,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         val text = if (t.hashOk == false) ctx.getString(R.string.notif_hash_bad) else Fmt.bytes(t.totalBytes)
         nm.notify(
             (DONE_BASE + t.id).toInt(),
-            NotificationCompat.Builder(ctx, CH_DONE)
+            NotificationCompat.Builder(ctx, doneChannel)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(ctx.getString(R.string.notif_done, t.fileName))
                 .setContentText(text)
@@ -107,7 +181,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         if (!canPost()) return
         nm.notify(
             (DONE_BASE + 500_000 + name.hashCode() % 100_000).toInt(),
-            NotificationCompat.Builder(ctx, CH_DONE)
+            NotificationCompat.Builder(ctx, doneChannel)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(ctx.getString(R.string.notif_done, name))
                 .setContentText(ctx.getString(R.string.torrent_done_text))
@@ -121,7 +195,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         if (!canPost()) return
         nm.notify(
             (DONE_BASE + t.id).toInt(),
-            NotificationCompat.Builder(ctx, CH_DONE)
+            NotificationCompat.Builder(ctx, doneChannel)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(ctx.getString(R.string.notif_failed, t.fileName))
                 .setContentText(ctx.getString(R.string.notif_failed_text))
@@ -137,7 +211,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         if (!canPost()) return
         nm.notify(
             RESUME_ID,
-            NotificationCompat.Builder(ctx, CH_DONE)
+            NotificationCompat.Builder(ctx, doneChannel)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(ctx.getString(R.string.notif_tap_resume))
                 .setContentText(ctx.getString(R.string.notif_tap_resume_text))
@@ -151,7 +225,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         if (!canPost()) return
         nm.notify(
             RESUME_ID,
-            NotificationCompat.Builder(ctx, CH_DONE)
+            NotificationCompat.Builder(ctx, doneChannel)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(ctx.getString(R.string.notif_timeout))
                 .setContentText(ctx.getString(R.string.notif_tap_resume_text))
@@ -168,5 +242,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         const val RESUME_ID = 2
         const val DONE_BASE = 1000L
         const val GROUP_DONE = "done"
+        const val GROUP_ACTIVE = "active"
+        const val TASK_BASE = 100_000L
     }
 }

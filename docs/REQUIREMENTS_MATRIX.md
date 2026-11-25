@@ -35,3 +35,23 @@
 
 ## وظائف سقطت أو أُجّلت في المرحلة الأولى (تُعالج الآن)
 FTP/FTPS/SFTP · Proxy/SOCKS5 من الواجهة · المرايا · تراجع الاتصالات عند 429/503 · ملفات > 4GB (اختبار) · التورنت · الجدولة وملفات التعريف والقواعد · الإجراءات بعد الاكتمال · الأرشيفات · SAF/SD/USB · المجلد المشفّر · النسخ الاحتياطي · قسم المطورين · RPC والاقتران · Widget · إدارة الكوكيز · تقليل الحركة والشاشات الكبيرة · SBOM والتراخيص · حزم الإنتاج.
+
+## طلب التحسينات (الإشعارات، بلاطة النسخ، الإعدادات، لوحة التحكم، التخصيص)
+
+| المتطلب | التنفيذ | الدليل | الحالة |
+|---|---|---|---|
+| إشعار لكل ملف: الاسم والنسبة والشريط والسرعة والمنجز/الإجمالي والوقت المتبقي | `Notifier.task` | `NotifierTest.perTaskNotificationShowsRealProgressAndActions` | ✅ منطق · 🟡 على الهاتف |
+| إيقاف/استئناف/إلغاء من الإشعار | `NotificationActionReceiver` (PAUSE/RESUME/CANCEL) | بناء | 🟡 |
+| إشعار إجمالي للتنزيلات المتعددة | ملخص `setGroupSummary` | بناء | 🟡 |
+| الصوت والاهتزاز وإشعارات الاكتمال والفشل | قنوات `done_{s|q}{v|n}` + إعدادات | `NotifierTest.soundAndVibrationChannels` | ✅ |
+| بلاطة النسخ | `QuickTileService` ← `QuickAddActivity` شفاف يقرأ الحافظة عند التركيز (قيد Android 10+) | بناء | 🟡 يحتاج هاتفاً |
+| مجلد الحفظ | الافتراضي + مجلد SAF ينقل إليه بعد الاكتمال + مجلد فرعي عند الإضافة | بناء | 🟡 |
+| المتزامن/الاتصالات/السرعة | إعدادات + حدّ اتصالات حيّ في المحرك | `LiveSettingsTest.loweringConnectionsMidDownload…` | ✅ |
+| التحميل الذكي والتقسيم الديناميكي (قابلان للتعطيل) | `DownloadConfig.autoTune/dynamicSplit` | `LiveSettingsTest.dynamicSplitCanBeDisabled` | ✅ |
+| الاستئناف التلقائي | `autoResume` | `withoutAutoResumeAnInterruptedTaskStaysPaused` | ✅ |
+| المحاولات ومدة الانتظار | `maxRetries/retryDelaySec` → المحرك | تكامل المحرك | ✅ |
+| Wi-Fi وبيانات الهاتف مستقلان | `Settings.forNetwork` | `mobileProfileAppliesOnlyOnCellular` | ✅ |
+| Proxy وUser-Agent في المتقدمة | `AdvancedSettingsScreen` | لقطة | ✅ |
+| لوحة التحكم السريعة | `QuickPanel` في التنزيلات | لقطة | ✅ |
+| فاتح/داكن/تلقائي، Material You، لون التمييز، عرض مضغوط، خريطة الأجزاء في القائمة، تقليل الحركة | `TadaffuqTheme` + إعدادات | لقطات | ✅ |
+| صفحة «حول» بنمط سَيْل | `AboutScreen` | لقطة | ✅ |

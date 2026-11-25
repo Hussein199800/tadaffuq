@@ -57,6 +57,9 @@ import com.tadaffuq.app.ui.theme.T
 import com.tadaffuq.engine.SegmentState
 import kotlin.math.max
 
+/** تقليل الحركة: لا رسوم متحركة زخرفية (المشهد الحي، الشريط غير المحدد). */
+val LocalReduceMotion = androidx.compose.runtime.staticCompositionLocalOf { false }
+
 /** عنوان كبير بروح Apple مع سطر رمادي اختياري. */
 @Composable
 fun LargeTitle(title: String, subtitle: String? = null, trailing: @Composable RowScope.() -> Unit = {}) {
@@ -175,16 +178,19 @@ fun ProgressLine(fraction: Float?, color: Color, modifier: Modifier = Modifier) 
     val track = MaterialTheme.colorScheme.surfaceVariant
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val anim = rememberInfiniteTransition(label = "indeterminate")
+    val reduce = LocalReduceMotion.current
     val shift by anim.animateFloat(0f, 1f, infiniteRepeatable(tween(1200, easing = LinearEasing)), label = "shift")
     Canvas(modifier.fillMaxWidth().height(6.dp)) {
         val r = CornerRadius(size.height / 2)
         drawRoundRect(track, cornerRadius = r)
-        if (fraction == null) {
+        if (fraction == null && reduce) {
+            drawRoundRect(color.copy(alpha = 0.45f), cornerRadius = r)
+        } else if (fraction == null) {
             val w = size.width * 0.3f
             val x = (size.width + w) * shift - w
             drawRoundRect(color, topLeft = Offset(if (rtl) size.width - x - w else x, 0f), size = Size(w, size.height), cornerRadius = r)
         } else {
-            val w = size.width * fraction.coerceIn(0f, 1f)
+            val w = size.width * (fraction ?: 0f).coerceIn(0f, 1f)
             if (w > 0) drawRoundRect(color, topLeft = Offset(if (rtl) size.width - w else 0f, 0f), size = Size(w, size.height), cornerRadius = r)
         }
     }
@@ -248,7 +254,7 @@ fun SpeedChart(history: List<Long>, modifier: Modifier = Modifier, description: 
  */
 @Composable
 fun LiveScene(speedBps: Long, connections: Int, description: String, modifier: Modifier = Modifier) {
-    val active = speedBps > 0
+    val active = speedBps > 0 && !LocalReduceMotion.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     // من 2.5 ثانية للعبور (بطيء) إلى 0.6 ثانية (سريع جداً)، بمقياس لوغاريتمي
     val mbps = speedBps / 1_048_576.0

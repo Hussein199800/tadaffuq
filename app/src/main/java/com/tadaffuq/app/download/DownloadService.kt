@@ -47,6 +47,7 @@ class DownloadService : Service() {
                 delay(1_000)
                 val nm = getSystemService(android.app.NotificationManager::class.java)
                 nm.notify(Notifier.FG_ID, notifier.summary(manager.live.value, manager.runningIds.value.size, manager.hold.value))
+                if (manager.notifyPerTask) notifier.postTasks(manager.runningTasks().map { it to manager.live.value[it.id] })
                 idleTicks = if (manager.hasWork()) 0 else idleTicks + 1
                 if (idleTicks >= 3) { stopSelfCleanly(); break }
             }
@@ -55,6 +56,7 @@ class DownloadService : Service() {
     }
 
     private fun stopSelfCleanly() {
+        notifier.postTasks(emptyList())
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }

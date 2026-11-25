@@ -79,6 +79,8 @@ fun TaskCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onPrimary: () -> Unit,
+    compact: Boolean = false,
+    showSegments: Boolean = false,
 ) {
     val downloaded = live?.downloaded ?: task.downloadedBytes
     val total = live?.total ?: task.totalBytes
@@ -89,13 +91,13 @@ fun TaskCard(
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else T.extra.card,
     ) {
         Column(
-            Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick, role = Role.Button).padding(14.dp),
+            Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick, role = Role.Button).padding(if (compact) 10.dp else 14.dp),
         ) {
             Row(verticalAlignment = Alignment.Top) {
-                Box(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
+                if (!compact) Box(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
                     Icon(if (task.status == TaskStatus.COMPLETED) Icons.Rounded.CheckCircle else categoryIcon(task.fileName), null, tint = if (task.status == TaskStatus.COMPLETED) T.extra.success else MaterialTheme.colorScheme.onSecondaryContainer)
                 }
-                Spacer(Modifier.width(12.dp))
+                if (!compact) Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(task.fileName, style = MaterialTheme.typography.titleSmall)
                     Spacer(Modifier.height(2.dp))
@@ -106,7 +108,8 @@ fun TaskCard(
             if (task.status != TaskStatus.COMPLETED) {
                 Spacer(Modifier.height(10.dp))
                 val fraction = if (total > 0) downloaded.toFloat() / total else if (task.status == TaskStatus.RUNNING) null else 0f
-                ProgressLine(fraction, color)
+                if (showSegments && live != null && live.total > 0) com.tadaffuq.app.ui.components.SegmentMap(live.segments, live.total, color, stringResource(R.string.segments_a11y, live.segments.size))
+                else ProgressLine(fraction, color)
                 Spacer(Modifier.height(6.dp))
                 Row {
                     Text(statusText(task.status), style = MaterialTheme.typography.labelMedium, color = color, modifier = Modifier.weight(1f))

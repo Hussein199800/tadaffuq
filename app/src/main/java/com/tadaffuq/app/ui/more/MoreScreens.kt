@@ -119,175 +119,13 @@ fun SubTitle(title: String, subtitle: String? = null, onBack: () -> Unit) {
     LargeTitle(title, subtitle)
 }
 
-@Composable
-fun SettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit) {
-    val s by vm.settings.collectAsState()
-    fun set(f: (Settings) -> Settings) = vm.updateSettings(f)
-    var dialog by remember { mutableStateOf<String?>(null) }
-
-    LazyColumn(contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp)) {
-        item { SubTitle(stringResource(R.string.settings), onBack = onBack) }
-
-        item { SectionHeader(stringResource(R.string.sec_engine)) }
-        item {
-            Card(padding = PaddingValues(vertical = 4.dp)) {
-                SettingRow(stringResource(R.string.speed_mode), stringResource(R.string.speed_mode_desc), value = stringResource(modeLabel(s.mode)), onClick = { dialog = "mode" })
-                Hairline()
-                var conn by remember(s.maxConnections) { mutableFloatStateOf(s.maxConnections.toFloat()) }
-                SliderRow(stringResource(R.string.max_connections), stringResource(R.string.max_connections_desc), conn, 1f..32f, 30, Fmt.iso(conn.toInt().toString()), { conn = it }) { set { it.copy(maxConnections = conn.toInt()) } }
-                Hairline()
-                var par by remember(s.maxParallel) { mutableFloatStateOf(s.maxParallel.toFloat()) }
-                SliderRow(stringResource(R.string.max_parallel), stringResource(R.string.max_parallel_desc), par, 1f..10f, 8, Fmt.iso(par.toInt().toString()), { par = it }) { set { it.copy(maxParallel = par.toInt()) } }
-                Hairline()
-                SettingRow(stringResource(R.string.global_limit), stringResource(R.string.global_limit_desc),
-                    value = if (s.globalLimitBps > 0) Fmt.speed(s.globalLimitBps) else stringResource(R.string.unlimited), onClick = { dialog = "limit" })
-                Hairline()
-                SettingRow(stringResource(R.string.user_agent), stringResource(R.string.user_agent_desc), value = s.userAgent.ifBlank { stringResource(R.string.default_value) }, onClick = { dialog = "ua" })
-            }
-        }
-
-        item { SectionHeader(stringResource(R.string.sec_network)) }
-        item {
-            Card(padding = PaddingValues(vertical = 4.dp)) {
-                SettingRow(stringResource(R.string.proxy), stringResource(R.string.proxy_desc),
-                    value = when (s.proxyMode) { ProxyMode.NONE -> stringResource(R.string.proxy_none); else -> "${s.proxyMode.name} · ${Fmt.iso(s.proxyHost + ":" + s.proxyPort)}" },
-                    onClick = { dialog = "proxy" })
-            }
-        }
-
-        item { SectionHeader(stringResource(R.string.sec_conditions)) }
-        item {
-            Card(padding = PaddingValues(vertical = 4.dp)) {
-                ToggleRow(stringResource(R.string.wifi_only), stringResource(R.string.wifi_only_desc), s.wifiOnly) { v -> set { it.copy(wifiOnly = v) } }
-                Hairline()
-                ToggleRow(stringResource(R.string.only_charging), stringResource(R.string.only_charging_desc), s.onlyWhileCharging) { v -> set { it.copy(onlyWhileCharging = v) } }
-                Hairline()
-                var bat by remember(s.pauseOnLowBattery) { mutableFloatStateOf(s.pauseOnLowBattery.toFloat()) }
-                SliderRow(stringResource(R.string.low_battery), stringResource(R.string.low_battery_desc), bat, 0f..50f, 9,
-                    if (bat.toInt() == 0) stringResource(R.string.off) else Fmt.iso("${bat.toInt()}%"), { bat = it }) { set { it.copy(pauseOnLowBattery = bat.toInt()) } }
-                Hairline()
-                ToggleRow(stringResource(R.string.pause_hot), stringResource(R.string.pause_hot_desc), s.pauseWhenHot) { v -> set { it.copy(pauseWhenHot = v) } }
-                Hairline()
-                SettingRow(stringResource(R.string.data_limits), stringResource(R.string.data_limits_desc),
-                    value = "${stringResource(R.string.daily)}: ${if (s.dailyLimitBytes > 0) Fmt.bytes(s.dailyLimitBytes) else stringResource(R.string.unlimited)} · ${stringResource(R.string.monthly)}: ${if (s.monthlyLimitBytes > 0) Fmt.bytes(s.monthlyLimitBytes) else stringResource(R.string.unlimited)}",
-                    onClick = { dialog = "data" })
-            }
-        }
-
-        item { SectionHeader(stringResource(R.string.sec_automation)) }
-        item {
-            val ctx = LocalContext.current
-            val tree = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-                if (uri != null) {
-                    ctx.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                    set { it.copy(moveToTree = uri.toString()) }
-                }
-            }
-            Card(padding = PaddingValues(vertical = 4.dp)) {
-                ToggleRow(stringResource(R.string.window), sr(R.string.window_desc, s.windowStart, s.windowEnd), s.windowEnabled) { v -> set { it.copy(windowEnabled = v) } }
-                if (s.windowEnabled) {
-                    var ws by remember(s.windowStart) { mutableFloatStateOf(s.windowStart.toFloat()) }
-                    var we by remember(s.windowEnd) { mutableFloatStateOf(s.windowEnd.toFloat()) }
-                    SliderRow(stringResource(R.string.window_start), stringResource(R.string.window_hour_desc), ws, 0f..23f, 22, Fmt.iso("%02d:00".format(java.util.Locale.ROOT, ws.toInt())), { ws = it }) { set { it.copy(windowStart = ws.toInt()) } }
-                    SliderRow(stringResource(R.string.window_end), stringResource(R.string.window_hour_desc), we, 0f..23f, 22, Fmt.iso("%02d:00".format(java.util.Locale.ROOT, we.toInt())), { we = it }) { set { it.copy(windowEnd = we.toInt()) } }
-                }
-                Hairline()
-                var free by remember(s.minFreeMb) { mutableFloatStateOf((s.minFreeMb / 100).toFloat()) }
-                SliderRow(stringResource(R.string.min_free), stringResource(R.string.min_free_desc), free, 0f..50f, 49,
-                    if (free.toInt() == 0) stringResource(R.string.off) else Fmt.bytes(free.toLong() * 100 * 1024 * 1024), { free = it }) { set { it.copy(minFreeMb = free.toLong() * 100) } }
-                Hairline()
-                ToggleRow(stringResource(R.string.auto_extract), stringResource(R.string.auto_extract_desc), s.autoExtract) { v -> set { it.copy(autoExtract = v) } }
-                Hairline()
-                SettingRow(stringResource(R.string.move_tree), stringResource(R.string.move_tree_desc),
-                    value = if (s.moveToTree.isBlank()) stringResource(R.string.off) else com.tadaffuq.app.download.TaskFiles.treeName(ctx, s.moveToTree),
-                    onClick = { tree.launch(null) }) {
-                    if (s.moveToTree.isNotBlank()) TextButton(onClick = { set { it.copy(moveToTree = "") } }) { Text(stringResource(R.string.off)) }
-                }
-            }
-        }
-
-        item { SectionHeader(stringResource(R.string.sec_torrent)) }
-        item {
-            Card(padding = PaddingValues(vertical = 4.dp)) {
-                ToggleRow(stringResource(R.string.torrent_dht), stringResource(R.string.torrent_dht_desc), s.torrentDht) { v -> set { it.copy(torrentDht = v) } }
-                Hairline()
-                SettingRow(stringResource(R.string.torrent_up_limit), stringResource(R.string.torrent_up_limit_desc),
-                    value = if (s.torrentUpLimit > 0) Fmt.speed(s.torrentUpLimit.toLong()) else stringResource(R.string.unlimited), onClick = { dialog = "tup" })
-                Hairline()
-                SettingRow(stringResource(R.string.torrent_down_limit), stringResource(R.string.torrent_down_limit_desc),
-                    value = if (s.torrentDownLimit > 0) Fmt.speed(s.torrentDownLimit.toLong()) else stringResource(R.string.unlimited), onClick = { dialog = "tdown" })
-                Hairline()
-                ToggleRow(stringResource(R.string.torrent_seed_after), stringResource(R.string.torrent_seed_default_desc), s.torrentSeedDefault) { v -> set { it.copy(torrentSeedDefault = v) } }
-                Hairline()
-                var ratio by remember(s.torrentRatio) { mutableFloatStateOf(s.torrentRatio) }
-                SliderRow(stringResource(R.string.torrent_ratio), stringResource(R.string.torrent_ratio_desc), ratio, 0.5f..5f, 8,
-                    Fmt.iso(String.format(java.util.Locale.ROOT, "%.1f", ratio)), { ratio = it }) { set { it.copy(torrentRatio = ratio) } }
-            }
-        }
-
-        item { SectionHeader(stringResource(R.string.sec_files)) }
-        item {
-            Card(padding = PaddingValues(vertical = 4.dp)) {
-                ToggleRow(stringResource(R.string.by_category), sr(R.string.by_category_desc, StorageDirs.ROOT), s.sortByCategory) { v -> set { it.copy(sortByCategory = v) } }
-                Hairline()
-                ToggleRow(stringResource(R.string.warn_exe), stringResource(R.string.warn_exe_desc), s.warnExecutables) { v -> set { it.copy(warnExecutables = v) } }
-                Hairline()
-                ToggleRow(stringResource(R.string.notify_done), stringResource(R.string.notify_done_desc), s.notifyOnComplete) { v -> set { it.copy(notifyOnComplete = v) } }
-                Hairline()
-                ToggleRow(stringResource(R.string.clipboard), stringResource(R.string.clipboard_desc), s.suggestClipboard) { v -> set { it.copy(suggestClipboard = v) } }
-            }
-        }
-
-        item { SectionHeader(stringResource(R.string.sec_browser)) }
-        item {
-            Card(padding = PaddingValues(vertical = 4.dp)) {
-                ToggleRow(stringResource(R.string.block_popups), stringResource(R.string.block_popups_desc), s.blockPopups) { v -> set { it.copy(blockPopups = v) } }
-                Hairline()
-                ToggleRow(stringResource(R.string.block_trackers), stringResource(R.string.block_trackers_desc), s.blockTrackers) { v -> set { it.copy(blockTrackers = v) } }
-                Hairline()
-                ToggleRow(stringResource(R.string.desktop_mode), stringResource(R.string.desktop_mode_desc), s.desktopMode) { v -> set { it.copy(desktopMode = v) } }
-            }
-        }
-
-        item { SectionHeader(stringResource(R.string.sec_look)) }
-        item {
-            Card(padding = PaddingValues(vertical = 4.dp)) {
-                SettingRow(stringResource(R.string.theme), stringResource(R.string.theme_desc), value = stringResource(themeLabel(s.theme)), onClick = { dialog = "theme" })
-                Hairline()
-                SettingRow(stringResource(R.string.language), stringResource(R.string.language_desc), value = stringResource(langLabel(s.language)), onClick = { dialog = "lang" })
-                Hairline()
-                ToggleRow(stringResource(R.string.live_scene), stringResource(R.string.live_scene_desc), s.showLiveScene) { v -> set { it.copy(showLiveScene = v) } }
-            }
-        }
-    }
-
-    when (dialog) {
-        "mode" -> ChoiceDialog(stringResource(R.string.speed_mode), SpeedMode.entries.map { it to (stringResource(modeLabel(it)) + "\n" + stringResource(modeDesc(it))) }, s.mode, { dialog = null }) { m -> set { it.copy(mode = m) } }
-        "theme" -> ChoiceDialog(stringResource(R.string.theme), ThemeMode.entries.map { it to stringResource(themeLabel(it)) }, s.theme, { dialog = null }) { m -> set { it.copy(theme = m) } }
-        "lang" -> ChoiceDialog(stringResource(R.string.language), listOf("", "ar", "en").map { it to stringResource(langLabel(it)) }, s.language, { dialog = null }) { l ->
-            set { it.copy(language = l) }
-            AppCompatDelegate.setApplicationLocales(if (l.isBlank()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(l))
-        }
-        "limit" -> com.tadaffuq.app.ui.downloads.SpeedLimitDialog(s.globalLimitBps, { dialog = null }) { v -> set { it.copy(globalLimitBps = v) }; dialog = null }
-        "ua" -> TextDialog(stringResource(R.string.user_agent), s.userAgent, { dialog = null }) { v -> set { it.copy(userAgent = v.trim()) }; dialog = null }
-        "proxy" -> ProxyDialog(s, vm.secrets.has(com.tadaffuq.app.core.SecretStore.PROXY_PASSWORD), { dialog = null }) { mode, host, port, user, pass ->
-            set { it.copy(proxyMode = mode, proxyHost = host, proxyPort = port, proxyUser = user) }
-            if (pass != null) vm.secrets.put(com.tadaffuq.app.core.SecretStore.PROXY_PASSWORD, pass)
-            dialog = null
-        }
-        "tup" -> com.tadaffuq.app.ui.downloads.SpeedLimitDialog(s.torrentUpLimit.toLong(), { dialog = null }) { v -> set { it.copy(torrentUpLimit = v.toInt()) }; dialog = null }
-        "tdown" -> com.tadaffuq.app.ui.downloads.SpeedLimitDialog(s.torrentDownLimit.toLong(), { dialog = null }) { v -> set { it.copy(torrentDownLimit = v.toInt()) }; dialog = null }
-        "data" -> DataLimitDialog(s, { dialog = null }) { d, m -> set { it.copy(dailyLimitBytes = d, monthlyLimitBytes = m) }; dialog = null }
-    }
-}
-
-private fun modeLabel(m: SpeedMode) = when (m) { SpeedMode.NORMAL -> R.string.mode_normal; SpeedMode.MAX -> R.string.mode_max; SpeedMode.WEAK_NETWORK -> R.string.mode_weak; SpeedMode.SAVER -> R.string.mode_saver }
-private fun modeDesc(m: SpeedMode) = when (m) { SpeedMode.NORMAL -> R.string.mode_normal_desc; SpeedMode.MAX -> R.string.mode_max_desc; SpeedMode.WEAK_NETWORK -> R.string.mode_weak_desc; SpeedMode.SAVER -> R.string.mode_saver_desc }
-private fun themeLabel(t: ThemeMode) = when (t) { ThemeMode.SYSTEM -> R.string.theme_system; ThemeMode.LIGHT -> R.string.theme_light; ThemeMode.DARK -> R.string.theme_dark }
-private fun langLabel(l: String) = when (l) { "ar" -> R.string.lang_ar; "en" -> R.string.lang_en; else -> R.string.lang_system }
+internal fun modeLabel(m: SpeedMode) = when (m) { SpeedMode.NORMAL -> R.string.mode_normal; SpeedMode.MAX -> R.string.mode_max; SpeedMode.WEAK_NETWORK -> R.string.mode_weak; SpeedMode.SAVER -> R.string.mode_saver }
+internal fun modeDesc(m: SpeedMode) = when (m) { SpeedMode.NORMAL -> R.string.mode_normal_desc; SpeedMode.MAX -> R.string.mode_max_desc; SpeedMode.WEAK_NETWORK -> R.string.mode_weak_desc; SpeedMode.SAVER -> R.string.mode_saver_desc }
+internal fun themeLabel(t: ThemeMode) = when (t) { ThemeMode.SYSTEM -> R.string.theme_system; ThemeMode.LIGHT -> R.string.theme_light; ThemeMode.DARK -> R.string.theme_dark }
+internal fun langLabel(l: String) = when (l) { "ar" -> R.string.lang_ar; "en" -> R.string.lang_en; else -> R.string.lang_system }
 
 @Composable
-private fun <T> ChoiceDialog(title: String, options: List<Pair<T, String>>, current: T, onDismiss: () -> Unit, onPick: (T) -> Unit) {
+internal fun <T> ChoiceDialog(title: String, options: List<Pair<T, String>>, current: T, onDismiss: () -> Unit, onPick: (T) -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -306,7 +144,7 @@ private fun <T> ChoiceDialog(title: String, options: List<Pair<T, String>>, curr
 }
 
 @Composable
-private fun TextDialog(title: String, value: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+internal fun TextDialog(title: String, value: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
     var text by remember { mutableStateOf(value) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(title) },
         text = { OutlinedTextField(text, { text = it }, maxLines = 4, supportingText = { Text(stringResource(R.string.empty_default)) }) },
@@ -315,7 +153,7 @@ private fun TextDialog(title: String, value: String, onDismiss: () -> Unit, onSa
 }
 
 @Composable
-private fun DataLimitDialog(s: Settings, onDismiss: () -> Unit, onSave: (Long, Long) -> Unit) {
+internal fun DataLimitDialog(s: Settings, onDismiss: () -> Unit, onSave: (Long, Long) -> Unit) {
     val mb = 1024L * 1024
     var daily by remember { mutableStateOf(if (s.dailyLimitBytes > 0) (s.dailyLimitBytes / mb).toString() else "") }
     var monthly by remember { mutableStateOf(if (s.monthlyLimitBytes > 0) (s.monthlyLimitBytes / mb).toString() else "") }
@@ -332,7 +170,7 @@ private fun DataLimitDialog(s: Settings, onDismiss: () -> Unit, onSave: (Long, L
 }
 
 @Composable
-private fun ProxyDialog(s: Settings, hasPassword: Boolean, onDismiss: () -> Unit, onSave: (ProxyMode, String, Int, String, String?) -> Unit) {
+internal fun ProxyDialog(s: Settings, hasPassword: Boolean, onDismiss: () -> Unit, onSave: (ProxyMode, String, Int, String, String?) -> Unit) {
     var mode by remember { mutableStateOf(s.proxyMode) }
     var host by remember { mutableStateOf(s.proxyHost) }
     var port by remember { mutableStateOf(if (s.proxyPort > 0) s.proxyPort.toString() else "") }
@@ -545,27 +383,3 @@ fun TrashScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit) {
     }
 }
 
-// ===== عن التطبيق =====
-
-@Composable
-fun AboutScreen(padding: PaddingValues, onBack: () -> Unit) {
-    val ctx = LocalContext.current
-    LazyColumn(contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp)) {
-        item { SubTitle(stringResource(R.string.app_name), sr(R.string.version_x, BuildConfig.VERSION_NAME), onBack) }
-        item {
-            Card {
-                Text(stringResource(R.string.about_text), style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(10.dp))
-                Text(stringResource(R.string.developer), style = MaterialTheme.typography.labelMedium, color = T.extra.secondaryText)
-                Text(stringResource(R.string.developer_name), style = MaterialTheme.typography.titleSmall)
-                TextButton(onClick = {
-                    runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://github.com/Hussein199800")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                }) { Text("GitHub · Hussein199800") }
-            }
-        }
-        item { SectionHeader(stringResource(R.string.privacy)) }
-        item { Card { Text(stringResource(R.string.privacy_text), style = MaterialTheme.typography.bodyMedium) } }
-        item { SectionHeader(stringResource(R.string.licenses)) }
-        item { Card { Text(stringResource(R.string.licenses_text), style = MaterialTheme.typography.bodySmall) } }
-    }
-}

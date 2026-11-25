@@ -69,10 +69,28 @@ private fun typography(scale: Float): Typography {
     )
 }
 
+/** لون التمييز: نسخة زاهية للداكن، وأغمق للفاتح لتبلغ تباين 4.5:1 مع الأبيض. */
+fun accentPair(a: com.tadaffuq.data.Accent): Pair<Color, Color> = when (a) {
+    com.tadaffuq.data.Accent.MINT -> Mint to Color(0xFF0B7F63)
+    com.tadaffuq.data.Accent.BLUE -> Color(0xFF6CB2FF) to Color(0xFF1E5FB8)
+    com.tadaffuq.data.Accent.VIOLET -> Color(0xFFB39DFF) to Color(0xFF5B3FC4)
+    com.tadaffuq.data.Accent.AMBER -> Color(0xFFFFC266) to Color(0xFF9A5B00)
+    com.tadaffuq.data.Accent.ROSE -> Color(0xFFFF8FB1) to Color(0xFFB3265A)
+}
+
 @Composable
-fun TadaffuqTheme(mode: ThemeMode = ThemeMode.SYSTEM, fontScale: Float = 1f, content: @Composable () -> Unit) {
+fun TadaffuqTheme(
+    mode: ThemeMode = ThemeMode.SYSTEM,
+    fontScale: Float = 1f,
+    dynamic: Boolean = false,
+    accent: com.tadaffuq.data.Accent = com.tadaffuq.data.Accent.MINT,
+    content: @Composable () -> Unit,
+) {
     val dark = when (mode) { ThemeMode.SYSTEM -> isSystemInDarkTheme(); ThemeMode.DARK -> true; ThemeMode.LIGHT -> false }
-    val scheme = if (dark) darkColorScheme(
+    val (bright, deep) = accentPair(accent)
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val useDynamic = dynamic && android.os.Build.VERSION.SDK_INT >= 31
+    val base = if (dark) darkColorScheme(
         primary = Mint, onPrimary = Color(0xFF04261D),
         primaryContainer = Color(0xFF12352E), onPrimaryContainer = Color(0xFFB8F5E3),
         secondary = Color(0xFF8DB4E8), onSecondary = Color(0xFF0B1F38),
@@ -97,15 +115,23 @@ fun TadaffuqTheme(mode: ThemeMode = ThemeMode.SYSTEM, fontScale: Float = 1f, con
         outline = Color(0xFF8A94A3), outlineVariant = Color(0xFFE5E9EF),
         error = Color(0xFFC92A2F), onError = Color.White,
     )
+    val scheme = when {
+        useDynamic && dark -> androidx.compose.material3.dynamicDarkColorScheme(ctx).copy(background = DarkBg, surface = DarkBg)
+        useDynamic -> androidx.compose.material3.dynamicLightColorScheme(ctx).copy(background = LightBg, surface = LightBg)
+        dark -> base.copy(primary = bright, secondary = bright.copy(alpha = 1f))
+        else -> base.copy(secondary = deep)
+    }
+    val accentDark = if (useDynamic) scheme.primary else bright
+    val accentLight = if (useDynamic) scheme.primary else deep
     val extra = if (dark) Extra(
         secondaryText = Color(0xFF9AA4AF), hairline = Color(0xFF262C34), success = Mint, warning = Color(0xFFF2B35B),
         danger = Color(0xFFFF7B72), paused = Color(0xFF8B949E), card = Color(0xFF161B22),
-        chartLine = Mint, chartFill = Mint.copy(alpha = 0.18f),
+        chartLine = accentDark, chartFill = accentDark.copy(alpha = 0.18f),
     ) else Extra(
         // أخضر النص أغمق من النعناعي ليبلغ تباين 4.5:1 على الأبيض
         secondaryText = Color(0xFF5B6573), hairline = Color(0xFFE5E9EF), success = Color(0xFF0B7F63), warning = Color(0xFF9A5B00),
         danger = Color(0xFFC92A2F), paused = Color(0xFF6B7280), card = Color.White,
-        chartLine = Color(0xFF0E9C7A), chartFill = Mint.copy(alpha = 0.22f),
+        chartLine = accentLight, chartFill = accentLight.copy(alpha = 0.2f),
     )
     CompositionLocalProvider(LocalExtra provides extra) {
         MaterialTheme(

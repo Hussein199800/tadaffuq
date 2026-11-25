@@ -1,5 +1,6 @@
 package com.tadaffuq.engine
 
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -131,5 +132,47 @@ class MirrorTest {
             assertTrue(ranked.first { it.url == slow.url() }.matches)
             assertTrue("different content must not match", !ranked.first { it.url == wrong.url() }.matches)
         } finally { slow.close(); fast.close(); wrong.close() }
+    }
+}
+
+class LiveSettingsTest {
+    @get:Rule val tmp = TemporaryFolder()
+    private val client = HttpClients.create(readTimeoutSec = 10)
+
+    @Test fun loweringConnectionsMidDownloadTakesEffectAndKeepsIntegrity() = runBlocking {
+        val data = Random(21).nextBytes(10 * 1024 * 1024)
+        val server = RangeServer(data).apply { throttleMsPer64k = 250 }
+        try {
+            val cap = java.util.concurrent.atomic.AtomicInteger(8)
+            val seen = java.util.Collections.synchronizedList(mutableListOf<Int>())
+            val f = tmp.newFile("live.part")
+            val job = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).async {
+                HttpDownloader(client, RequestSpec(server.url()), f, DownloadConfig(connections = 8, minSplitBytes = 64 * 1024),
+                    listener = object : DownloadListener { override fun onProgress(snapshot: Snapshot) { seen += snapshot.connections } },
+                    liveMaxConnections = { cap.get() }).run()
+            }
+            kotlinx.coroutines.withTimeout(20_000) { while (seen.none { it > 2 }) kotlinx.coroutines.delay(100) }
+            cap.set(2)
+            val mark = seen.size
+            job.await()
+            val after = seen.drop(mark + 2) // مهلة ثانيتين للتطبيق
+            assertTrue("reduced to ≤2 after change: $after", after.isNotEmpty() && after.all { it <= 2 })
+            assertArrayEquals(data, f.readBytes())
+        } finally { server.close() }
+    }
+
+    @Test fun dynamicSplitCanBeDisabled() = runBlocking {
+        val data = Random(22).nextBytes(2 * 1024 * 1024)
+        val server = RangeServer(data)
+        try {
+            val probe = Prober(client).probe(RequestSpec(server.url()))
+            var last: ResumeState? = null
+            val f = tmp.newFile("nosplit.part")
+            HttpDownloader(client, RequestSpec(server.url()), f, DownloadConfig(connections = 4, minSplitBytes = 64 * 1024, dynamicSplit = false),
+                ResumeState(probe, listOf(SegmentState(0, 0, data.size - 1L, 0))),
+                listener = object : DownloadListener { override suspend fun persist(state: ResumeState) { last = state } }).run()
+            assertEquals(1, last!!.segments.size)
+            assertArrayEquals(data, f.readBytes())
+        } finally { server.close() }
     }
 }

@@ -88,9 +88,15 @@ class MainActivity : AppCompatActivity() {
         }
         setContent {
             val settings by vm.settings.collectAsState()
-            TadaffuqTheme(settings.theme) { App() }
+            TadaffuqTheme(settings.theme, dynamic = settings.dynamicColor, accent = settings.accent) {
+                androidx.compose.runtime.CompositionLocalProvider(com.tadaffuq.app.ui.components.LocalReduceMotion provides (settings.reduceMotion || systemReducedMotion())) { App() }
+            }
         }
     }
+
+    /** «إزالة الرسوم المتحركة» في إعدادات إمكانية الوصول تُحترم تلقائياً. */
+    private fun systemReducedMotion(): Boolean =
+        android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
@@ -152,7 +158,7 @@ class MainActivity : AppCompatActivity() {
         )
         val entry by nav.currentBackStackEntryAsState()
         val route = entry?.destination?.route
-        val tabRoute = when (route) { "settings", "reports", "links", "trash", "about", "rules", "vault", "backup", "dev", "rpc" -> "more"; else -> route }
+        val tabRoute = when (route) { "settings", "advanced", "reports", "links", "trash", "about", "rules", "vault", "backup", "dev", "rpc" -> "more"; else -> route }
         fun go(r: String) = nav.navigate(r) {
             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
@@ -196,7 +202,8 @@ class MainActivity : AppCompatActivity() {
                 composable("downloads") { DownloadsScreen(vm, { add(AddRequest("")) }, padding) }
                 composable("files") { FilesScreen(vm, padding) }
                 composable("more") { MoreScreen(padding) { nav.navigate(it) } }
-                composable("settings") { SettingsScreen(vm, padding) { nav.popBackStack() } }
+                composable("settings") { SettingsScreen(vm, padding, { nav.popBackStack() }) { nav.navigate("advanced") } }
+                composable("advanced") { com.tadaffuq.app.ui.more.AdvancedSettingsScreen(vm, padding) { nav.popBackStack() } }
                 composable("reports") { ReportsScreen(vm, padding) { nav.popBackStack() } }
                 composable("links") { LinksScreen(vm, padding, { nav.popBackStack() }) { add(it) } }
                 composable("trash") { TrashScreen(vm, padding) { nav.popBackStack() } }

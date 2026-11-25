@@ -123,8 +123,14 @@ class ScreenshotTest {
     @Test fun downloads_en_dark() = shoot("downloads_en_dark", false, true) { DownloadsScreen(vm, {}, pad, tvm) }
     @Test fun files_ar_light() = shoot("files_ar_light", true, false) { FilesScreen(vm, pad) }
     @Test fun more_ar_light() = shoot("more_ar_light", true, false) { MoreScreen(pad) {} }
-    @Test fun settings_ar_light() = shoot("settings_ar_light", true, false) { SettingsScreen(vm, pad) {} }
-    @Test fun settings_en_dark() = shoot("settings_en_dark", false, true) { SettingsScreen(vm, pad) {} }
+    @Test fun settings_ar_light() = shoot("settings_ar_light", true, false) { SettingsScreen(vm, pad, {}) {} }
+    @Test fun settings_en_dark() = shoot("settings_en_dark", false, true) { SettingsScreen(vm, pad, {}) {} }
+    @Test fun advanced_ar_light() = shoot("advanced_ar_light", true, false) { com.tadaffuq.app.ui.more.AdvancedSettingsScreen(vm, pad) {} }
+    @Test fun about_ar_light() = shoot("about_ar_light", true, false) { com.tadaffuq.app.ui.more.AboutScreen(pad) {} }
+    @Test fun about_ar_dark() = shoot("about_ar_dark", true, true) { com.tadaffuq.app.ui.more.AboutScreen(pad) {} }
+    @Test fun quickpanel_ar_light() = shoot("quickpanel_ar_light", true, false) {
+        androidx.compose.foundation.layout.Column { com.tadaffuq.app.ui.downloads.QuickPanel(com.tadaffuq.data.Settings(globalLimitBps = 1024L * 1024, maxConnections = 12, wifiOnly = true), 3_400_000, initiallyOpen = true) {} }
+    }
     @Test fun reports_ar_dark() = shoot("reports_ar_dark", true, true) { ReportsScreen(vm, pad) {} }
 
     @Test fun detail_ar_light() = shoot("detail_ar_light", true, false) {

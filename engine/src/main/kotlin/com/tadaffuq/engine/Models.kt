@@ -72,6 +72,8 @@ data class DownloadConfig(
     val bufferBytes: Int = 64 * 1024,
     /** يضيف اتصالات تدريجياً ما دامت السرعة تتحسن بنسبة معقولة. */
     val autoTune: Boolean = true,
+    /** تقسيم أكبر جزء متبقٍّ كلما فرغ اتصال. معطّل = الأجزاء الأولى فقط. */
+    val dynamicSplit: Boolean = true,
 ) {
     init {
         require(connections in 0..MAX_CONNECTIONS) { "connections out of range" }

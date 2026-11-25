@@ -89,6 +89,8 @@ fun DownloadsScreen(vm: MainViewModel, onAdd: () -> Unit, padding: PaddingValues
                     onDelete = { confirmDelete = true },
                 )
             }
+            val settings by vm.settings.collectAsState()
+            QuickPanel(settings, live.values.sumOf { it.speedBps }) { f -> vm.updateSettings(f) }
             hold?.let {
                 Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                     Text(holdText(it), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(12.dp))
@@ -113,7 +115,9 @@ fun DownloadsScreen(vm: MainViewModel, onAdd: () -> Unit, padding: PaddingValues
             )
         }
         items(shown, key = { it.id }) { t ->
+            val st by vm.settings.collectAsState()
             TaskCard(
+                compact = st.density == com.tadaffuq.data.ListDensity.COMPACT, showSegments = st.showSegmentsInList,
                 task = t, live = live[t.id], selected = t.id in selection, selectionMode = selection.isNotEmpty(),
                 onClick = { if (selection.isNotEmpty()) selection = selection.toggle(t.id) else detail = t.id },
                 onLongClick = { selection = selection.toggle(t.id) },

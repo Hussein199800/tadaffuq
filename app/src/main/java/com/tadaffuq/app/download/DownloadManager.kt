@@ -117,14 +117,17 @@ class DownloadManager @Inject constructor(
         notifier.ensureChannels()
         scope.launch {
             // ما كان يعمل عند توقف العملية (إغلاق أو إعادة تشغيل) يعود للطابور ويُستأنف من آخر حفظ.
-            dao.moveStatus(listOf(TaskStatus.RUNNING, TaskStatus.VERIFYING), TaskStatus.QUEUED)
+            // بدون الاستئناف التلقائي تبقى متوقفة حتى يستأنفها المستخدم (التقدم محفوظ في الحالتين)
+            dao.moveStatus(listOf(TaskStatus.RUNNING, TaskStatus.VERIFYING), if (settingsRepo.current().autoResume) TaskStatus.QUEUED else TaskStatus.PAUSED)
             settingsRepo.settings.collect {
+                val notifChanged = it.notifySound != settings.notifySound || it.notifyVibrate != settings.notifyVibrate
                 settings = it
-                globalLimiter.bytesPerSecond = it.globalLimitBps
+                if (notifChanged) notifier.ensureChannels(it.notifySound, it.notifyVibrate)
+                applyLimiter()
                 wake()
             }
         }
-        scope.launch { conditions.state.collect { wake() } }
+        scope.launch { conditions.state.collect { applyLimiter(); wake() } }
         scope.launch { for (w in wake) scheduleLock.withLock { schedule() } }
         scope.launch {
             while (true) {
@@ -148,8 +151,21 @@ class DownloadManager @Inject constructor(
     fun kill() { killed = true; scope.coroutineContext[Job]?.cancel() }
     @Volatile private var killed = false
 
+    private fun onCellular(d: DeviceState = conditions.state.value) = d.net == com.tadaffuq.data.NetKind.CELLULAR || (d.net == com.tadaffuq.data.NetKind.OTHER && d.metered)
+
+    /** الإعدادات الفعلية الآن (ملف بيانات الهاتف المستقل إن فُعّل). */
+    private val effective: Settings get() = settings.forNetwork(onCellular())
+
+    private fun applyLimiter() { globalLimiter.bytesPerSecond = effective.globalLimitBps }
+
+    /** حد الاتصالات الحي: يتغير أثناء التنزيل مع الإعدادات والشبكة والحرارة. */
+    private fun liveCap(): Int {
+        val s = effective
+        return Policy.connectionCap(conditions.state.value, DownloadConfig.forMode(s.mode, s.maxConnections).maxConnections)
+    }
+
     private suspend fun schedule() {
-        val s = settings
+        val s = effective
         val d = conditions.state.value
         val hold = Policy.hold(s, d, usage.cellularToday, usage.cellularMonth)
         _hold.value = hold
@@ -159,8 +175,9 @@ class DownloadManager @Inject constructor(
         future.minOfOrNull { it.scheduledAt!! }?.let { ScheduleWorker.at(ctx, it) }
         pendingCount = waiting.size
         if (hold != null) {
-            jobs.keys.toList().forEach { stop(it, TaskStatus.WAITING_NETWORK) }
-            if (waiting.isNotEmpty() || jobs.isNotEmpty()) scheduleResumeWhenConnected()
+            val auto = settings.autoResume
+            jobs.keys.toList().forEach { stop(it, if (auto) TaskStatus.WAITING_NETWORK else TaskStatus.PAUSED) }
+            if (auto && (waiting.isNotEmpty() || jobs.isNotEmpty())) scheduleResumeWhenConnected()
             updateService()
             return
         }
@@ -221,9 +238,16 @@ class DownloadManager @Inject constructor(
             segs.map { SegmentState(it.idx, it.start, it.endInclusive, it.downloaded) },
         ) else null
         val s = settings
-        val base = DownloadConfig.forMode(s.mode, s.maxConnections)
-        val cap = Policy.connectionCap(conditions.state.value, base.maxConnections)
-        val cfg = base.copy(connections = t.connections.coerceAtMost(cap), maxConnections = cap)
+        val eff = effective
+        val base = DownloadConfig.forMode(eff.mode, eff.maxConnections)
+        val cap = liveCap()
+        val cfg = base.copy(
+            connections = t.connections.coerceAtMost(cap), maxConnections = cap,
+            autoTune = base.autoTune && eff.smartTuning, dynamicSplit = eff.dynamicSplit,
+            // وضع الإنترنت الضعيف يرفع المحاولات؛ وإلا فإعداد المستخدم
+            maxRetries = maxOf(eff.maxRetries, if (eff.mode == com.tadaffuq.engine.SpeedMode.WEAK_NETWORK) base.maxRetries else 0),
+            baseRetryDelayMs = maxOf(eff.retryDelaySec * 1000L, if (eff.mode == com.tadaffuq.engine.SpeedMode.WEAK_NETWORK) base.baseRetryDelayMs else 0),
+        )
         val limiter = limiters.getOrPut(t.id) { RateLimiter(t.speedLimitBps) }
         val counters = IntArray(3).also { it[0] = t.retries; it[1] = t.networkRetries; it[2] = t.serverRetries }
         var last: Snapshot? = null
@@ -310,7 +334,7 @@ class DownloadManager @Inject constructor(
         } catch (e: DownloadException) {
             com.tadaffuq.app.core.TechLog.log("fail #${t.id} ${e.error}")
             withContext(NonCancellable) {
-                val offline = e.error is DownloadError.Network && !conditions.state.value.connected
+                val offline = e.error is DownloadError.Network && !conditions.state.value.connected && settings.autoResume
                 dao.get(t.id)?.let {
                     val failed = it.copy(
                         status = if (offline) TaskStatus.WAITING_NETWORK else TaskStatus.FAILED,
@@ -319,7 +343,7 @@ class DownloadManager @Inject constructor(
                         retries = counters[0], networkRetries = counters[1], serverRetries = counters[2],
                     )
                     dao.update(failed)
-                    if (!offline) notifier.failed(failed)
+                    if (!offline && settings.notifyOnFail) notifier.failed(failed)
                 }
             }
         } catch (e: Exception) {
@@ -369,14 +393,15 @@ class DownloadManager @Inject constructor(
     private suspend fun runWithMirrors(t: TaskEntity, spec: RequestSpec, part: File, cfg: DownloadConfig, saved: ResumeState?, limiter: RateLimiter, listener: DownloadListener): ProbeResult {
         val mirrors = t.mirrors?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() && it != t.url }.orEmpty()
         if (mirrors.isEmpty() || com.tadaffuq.engine.Protocols.isRemote(spec.url))
-            return com.tadaffuq.engine.Protocols.downloader(client, spec, part, cfg, saved, limiter, globalLimiter, listener, credentials).run()
+            return if (com.tadaffuq.engine.Protocols.isRemote(spec.url)) com.tadaffuq.engine.Protocols.downloader(client, spec, part, cfg, saved, limiter, globalLimiter, listener, credentials).run()
+            else HttpDownloader(client, spec, part, cfg, saved, limiter, globalLimiter, listener, liveMaxConnections = ::liveCap).run()
         val ranked = com.tadaffuq.engine.MirrorSelector(client).rank(spec, mirrors).filter { it.matches }.map { it.url }
         val order = ranked.ifEmpty { listOf(t.url) }
         var last: DownloadException? = null
         var state = saved
         for (u in order) {
             try {
-                return HttpDownloader(client, spec.copy(url = u), part, cfg, state, limiter, globalLimiter, listener).run()
+                return HttpDownloader(client, spec.copy(url = u), part, cfg, state, limiter, globalLimiter, listener, liveMaxConnections = ::liveCap).run()
             } catch (e: DownloadException) {
                 last = e
                 val switchable = e.error is DownloadError.LinkExpired || e.error == DownloadError.NotFound || e.error is DownloadError.Network || e.error is DownloadError.Http
@@ -458,6 +483,15 @@ class DownloadManager @Inject constructor(
         }
         dao.delete(ids.toList())
     }
+
+    val notifyPerTask: Boolean get() = settings.notifyPerTask
+
+    fun notificationSettingsIntent(): android.content.Intent = notifier.channelSettingsIntent()
+
+    /** المهام العاملة الآن (لإشعارات كل ملف). */
+    suspend fun runningTasks(): List<TaskEntity> = jobs.keys.toList().mapNotNull { dao.get(it) }
+
+    suspend fun task(id: Long): TaskEntity? = dao.get(id)
 
     suspend fun setPriority(id: Long, priority: Int) { dao.setPriority(id, priority); wake() }
 

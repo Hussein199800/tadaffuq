@@ -50,6 +50,8 @@ class HttpDownloader(
     private val globalLimiter: RateLimiter = RateLimiter(),
     private val listener: DownloadListener = object : DownloadListener {},
     private val usableSpace: (File) -> Long = { (it.parentFile ?: it).usableSpace },
+    /** الحد الأعلى للاتصالات قابلاً للتغيير أثناء التنزيل (من لوحة التحكم السريعة). */
+    private val liveMaxConnections: () -> Int = { config.maxConnections },
 ) {
     private val segments = mutableListOf<Segment>()
     private val sessionBytes = AtomicLong()
@@ -154,7 +156,7 @@ class HttpDownloader(
             if (jobs.isEmpty() || probe.resumable) {
                 while (jobs.size < target) {
                     val idle = segments.firstOrNull { !it.done && !it.active }
-                    val next = idle ?: if (probe.resumable) SegmentPlanner.splitLargest(segments, config.minSplitBytes) else null
+                    val next = idle ?: if (probe.resumable) (if (config.dynamicSplit) SegmentPlanner.splitLargest(segments, config.minSplitBytes) else null) else null
                     next ?: break
                     launchFor(next)
                 }
@@ -170,6 +172,12 @@ class HttpDownloader(
                 ema = if (ema == 0.0) speed.toDouble() else ema * 0.7 + speed * 0.3
                 maxBps = maxOf(maxBps, speed)
                 target = tune.next(target, speed, now, jobs.size)
+                // تغيير الحد أثناء التنزيل: الخفض فوري (تتخلى الاتصالات الزائدة عن أجزائها)،
+                // والرفع يعيد تشغيل الضبط التلقائي ليجرّب اتصالات أكثر إن أفادت
+                val cap = liveMaxConnections().coerceIn(1, DownloadConfig.MAX_CONNECTIONS)
+                if (cap != tune.cap) { if (cap > tune.cap) tune.reopen(); tune.cap = cap }
+                if (target > cap) target = cap
+                toYield.set((jobs.size - target).coerceAtLeast(0))
                 val downloaded = segments.sumOf { it.downloaded }
                 val remaining = probe.totalBytes - downloaded
                 listener.onProgress(
@@ -193,6 +201,10 @@ class HttpDownloader(
         }
     }
 
+    /** عدد الاتصالات التي عليها التخلي عن أجزائها بعد خفض الحد (يحدده المشرف). */
+    private val toYield = java.util.concurrent.atomic.AtomicInteger()
+    private fun shouldYield(): Boolean = toYield.getAndUpdate { if (it > 0) it - 1 else it } > 0
+
     private suspend fun runSegment(seg: Segment, probe: ProbeResult, channel: FileChannel) {
         var failures = 0
         while (!seg.done) {
@@ -201,6 +213,8 @@ class HttpDownloader(
                 fetch(seg, probe, channel)
                 if (seg.end < 0) { seg.markStreamEnded(); break } // حجم مجهول وانتهى البث طبيعياً
                 if (!seg.done) throw IOException("stream ended early")
+            } catch (e: Yield) {
+                return // الجزء يبقى غير مكتمل ويلتقطه اتصال آخر
             } catch (e: DownloadException) {
                 if (!e.error.retryable) throw e
                 failures = if (seg.downloaded > before) 1 else failures + 1
@@ -257,6 +271,7 @@ class HttpDownloader(
             while (true) {
                 currentCoroutineContext().ensureActive()
                 if (seg.done) return
+                if (shouldYield()) throw Yield()
                 val n = source.read(buf)
                 if (n < 0) return
                 taskLimiter.acquire(n)
@@ -286,12 +301,15 @@ class HttpDownloader(
     }
 
     private class RetryAfter(val ms: Long) : Exception()
+    private class Yield : Exception()
 
     /**
      * ضبط تلقائي لعدد الاتصالات: عند استقرار السرعة يضيف اتصالين، وبعد ٥ ثوانٍ يقارن
      * نسبة زيادة السرعة بنسبة زيادة الاتصالات؛ إن كانت أقل من ٨٠٪ منها يعود للعدد السابق ويتوقف.
      */
     internal class AutoTune(private val config: DownloadConfig, private val enabled: Boolean) {
+        var cap = config.maxConnections
+        fun reopen() { if (enabled) { finished = false; checkpoint = null; history.clear() } }
         private val history = ArrayDeque<Long>()
         private var checkpoint: Triple<Int, Double, Long>? = null
         var finished = !enabled
@@ -309,9 +327,9 @@ class HttpDownloader(
             if (history.maxOf { abs(it - avg) / avg } > 0.15) return target
             val cp = checkpoint
             if (cp == null) {
-                if (target >= config.maxConnections || running < target) { finished = target >= config.maxConnections; return target }
+                if (target >= cap || running < target) { finished = target >= cap; return target }
                 checkpoint = Triple(target, avg, nowNs)
-                return (target + 2).coerceAtMost(config.maxConnections)
+                return (target + 2).coerceAtMost(cap)
             }
             if (nowNs - cp.third < 5_000_000_000L) return target
             val workerRatio = (target - cp.first).toDouble() / cp.first

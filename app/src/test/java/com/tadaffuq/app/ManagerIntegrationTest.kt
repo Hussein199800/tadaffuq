@@ -147,6 +147,25 @@ class ManagerIntegrationTest {
         assertEquals("CHECKSUM", t.errorCode)
     }
 
+    @Test fun withoutAutoResumeAnInterruptedTaskStaysPaused() = runBlocking {
+        settings.update { it.copy(autoResume = false) }
+        val dir = tmp.newFolder("out6")
+        val conditions = Conditions(ctx)
+        val m = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), com.tadaffuq.app.download.AppCredentials(ctx, com.tadaffuq.app.core.SecretStore(ctx)), conditions, Notifier(ctx))
+        m.start()
+        conditions.set(DeviceState(connected = true, net = NetKind.WIFI))
+        throttle = 400
+        val id = m.enqueue(listOf(NewTask(server.url("/f/g.bin").toString(), "g.bin", dir.path))).single()
+        waitFor(id, TaskStatus.RUNNING)
+        conditions.set(DeviceState(connected = false))
+        waitFor(id, TaskStatus.PAUSED)
+        conditions.set(DeviceState(connected = true, net = NetKind.WIFI))
+        delay(1500)
+        assertEquals("not resumed automatically", TaskStatus.PAUSED, db.tasks().get(id)!!.status)
+        settings.update { it.copy(autoResume = true) }
+        m.kill()
+    }
+
     @Test fun offlineHoldsQueueAndResumesWhenBack() = runBlocking {
         val dir = tmp.newFolder("out5")
         val conditions = Conditions(ctx)

@@ -67,6 +67,17 @@
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 
+        <!-- نافذة الإضافة السريعة من البلاطة: شفافة، خارج قائمة التطبيقات الأخيرة، ومهمة منفصلة عن الواجهة الرئيسية -->
+        <activity
+            android:name=".QuickAddActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity="com.tadaffuq.app.quickadd"
+            android:launchMode="singleInstance"
+            android:noHistory="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Tadaffuq.Translucent" />
+
         <service
             android:name=".download.DownloadService"
             android:exported="false"

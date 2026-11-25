@@ -105,15 +105,20 @@ class BootReceiver : BroadcastReceiver() {
 @AndroidEntryPoint
 class NotificationActionReceiver : BroadcastReceiver() {
     @Inject lateinit var manager: DownloadManager
+    @Inject lateinit var notifier: Notifier
 
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
                 manager.start()
+                val id = intent.getLongExtra(EXTRA_ID, -1)
                 when (intent.action) {
                     PAUSE_ALL -> manager.pauseAll()
                     RESUME_ALL -> manager.resumeAll()
+                    PAUSE -> { manager.pause(listOf(id)); notifier.clearTask(id); kotlinx.coroutines.delay(400); manager.task(id)?.let(notifier::paused) }
+                    RESUME -> { notifier.clearTask(id); manager.resume(listOf(id)) }
+                    CANCEL -> { notifier.clearTask(id); manager.delete(listOf(id), withFiles = false) }
                 }
             } finally { pending.finish() }
         }
@@ -122,34 +127,43 @@ class NotificationActionReceiver : BroadcastReceiver() {
     companion object {
         const val PAUSE_ALL = "com.tadaffuq.app.PAUSE_ALL"
         const val RESUME_ALL = "com.tadaffuq.app.RESUME_ALL"
+        const val PAUSE = "com.tadaffuq.app.PAUSE"
+        const val RESUME = "com.tadaffuq.app.RESUME"
+        const val CANCEL = "com.tadaffuq.app.CANCEL"
+        const val EXTRA_ID = "id"
     }
 }
 
-/** بلاطة الإعدادات السريعة: إيقاف أو استئناف كل التنزيلات. */
+/**
+ * بلاطة «تدفّق»: انسخ رابطاً من أي تطبيق، اسحب الإعدادات السريعة واضغط البلاطة، فتظهر نافذة الإضافة
+ * فوق التطبيق الحالي مع الرابط المنسوخ. البلاطة لا تستطيع قراءة الحافظة (Android 10+ يقصرها على
+ * النافذة المركّزة)، فتفتح نشاطاً شفافاً صغيراً يقرأها لحظة حصوله على التركيز، دون الواجهة الرئيسية.
+ */
 @AndroidEntryPoint
 class QuickTileService : TileService() {
     @Inject lateinit var manager: DownloadManager
-    @Inject lateinit var db: AppDatabase
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    override fun onStartListening() { refresh() }
-
-    private fun refresh() {
+    override fun onStartListening() {
         val tile = qsTile ?: return
-        val active = manager.runningIds.value.isNotEmpty()
-        tile.state = if (active) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
+        val active = manager.runningIds.value.size
+        tile.state = Tile.STATE_ACTIVE
         tile.label = getString(R.string.tile_label)
-        if (Build.VERSION.SDK_INT >= 29) tile.subtitle = getString(if (active) R.string.tile_active else R.string.tile_idle)
+        if (Build.VERSION.SDK_INT >= 29) tile.subtitle = if (active > 0) getString(R.string.tile_active_n, active) else getString(R.string.tile_add_copied)
         tile.updateTile()
     }
 
     override fun onClick() {
-        scope.launch {
-            manager.start()
-            if (manager.runningIds.value.isNotEmpty()) manager.pauseAll() else manager.resumeAll()
-            delay(400)
-            refresh()
+        val intent = Intent(this, com.tadaffuq.app.QuickAddActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        // فتح النشاط من شاشة القفل يتطلب فتح القفل أولاً (الحافظة والملفات خاصة)
+        val launch = {
+            if (Build.VERSION.SDK_INT >= 34) {
+                startActivityAndCollapse(android.app.PendingIntent.getActivity(this, 0, intent, android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT))
+            } else {
+                @Suppress("DEPRECATION", "StartActivityAndCollapseDeprecated") startActivityAndCollapse(intent)
+            }
         }
+        if (isLocked) unlockAndRun(launch) else launch()
     }
 }
 

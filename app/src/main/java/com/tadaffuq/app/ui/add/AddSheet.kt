@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tadaffuq.app.R
 import com.tadaffuq.app.core.Fmt
+import com.tadaffuq.app.download.StorageDirs
 import com.tadaffuq.app.ui.components.Hairline
 import com.tadaffuq.app.ui.components.SliderRow
 import com.tadaffuq.app.ui.errorText
@@ -81,6 +82,9 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
                         Text(stringResource(R.string.torrent_open_magnet))
                     }
                 }
+            }
+            if (request.clipboardEmpty && s.input.isBlank()) item {
+                Text(stringResource(R.string.clip_empty), style = MaterialTheme.typography.bodyMedium, color = T.extra.warning, modifier = Modifier.padding(horizontal = 20.dp))
             }
             if (s.items.isEmpty() && s.input.isNotBlank() && s.magnet == null) item {
                 Text(stringResource(R.string.add_no_links), color = T.extra.secondaryText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 20.dp))
@@ -156,6 +160,10 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
                         label = { Text(stringResource(R.string.add_hash)) },
                         supportingText = { Text(stringResource(if (s.hashValid) R.string.add_hash_desc else R.string.add_hash_invalid)) },
                         isError = !s.hashValid, modifier = Modifier.fillMaxWidth(), maxLines = 3,
+                    )
+                    OutlinedTextField(
+                        s.subfolder, { v -> vm.update { it.copy(subfolder = v) } }, label = { Text(stringResource(R.string.subfolder)) },
+                        supportingText = { Text(com.tadaffuq.app.core.sr(R.string.subfolder_desc, StorageDirs.ROOT)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                     )
                     if (s.single) OutlinedTextField(
                         s.mirrors, { v -> vm.update { it.copy(mirrors = v) } }, label = { Text(stringResource(R.string.mirrors)) },
