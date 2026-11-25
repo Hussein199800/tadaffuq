@@ -91,44 +91,51 @@ class HttpDownloader(
         val remaining = if (probe.totalBytes > 0) probe.totalBytes - segments.sumOf { it.downloaded } else 0
         val ticket = SpaceLedger.reserve(dir, remaining)
         reservation = ticket
-        if (probe.totalBytes > 0) {
-            val available = usableSpace(dir)
-            if (available >= 0) {
-                // ما حجزته تنزيلات أخرى جارية على وحدة التخزين نفسها ولم تكتبه بعد
-                val others = SpaceLedger.reservedByOthers(dir, ticket)
-                if (available - others < remaining) {
-                    SpaceLedger.release(ticket); reservation = null
-                    throw DownloadException(DownloadError.InsufficientSpace(remaining + others, available, dir.path))
-                }
-            } // تعذّر الاستعلام (‎-1): نتابع، ونعالج ENOSPC أثناء الكتابة
-        }
-        spacePath = dir.path
-
-        val raf = try {
-            RandomAccessFile(file, "rw").apply {
-                if (reuse == null) {
-                    setLength(0)
-                    if (probe.totalBytes > 0) setLength(probe.totalBytes)
-                }
-            }
-        } catch (e: IOException) {
-            throw DownloadException(DownloadError.Storage(e.message ?: "io"), e)
-        }
-
+        // دورة الحجز والفتح والتثبيت والإغلاق كلها في نطاق واحد: أي فشل (فتح، setLength، persist، close) يحرر الحجز
+        var raf: RandomAccessFile? = null
         try {
-            supervise(probe, raf.channel)
-            if (probe.totalBytes <= 0) raf.setLength(segments.single().position)
-            if (probe.totalBytes > 0 && raf.length() != probe.totalBytes) {
-                throw DownloadException(DownloadError.Storage("size mismatch"))
+            if (probe.totalBytes > 0) {
+                val available = usableSpace(dir)
+                if (available >= 0) {
+                    // ما حجزته تنزيلات أخرى جارية على وحدة التخزين نفسها ولم تكتبه بعد
+                    val others = SpaceLedger.reservedByOthers(dir, ticket)
+                    if (available - others < remaining)
+                        throw DownloadException(DownloadError.InsufficientSpace(remaining + others, available, dir.path))
+                } // تعذّر الاستعلام (‎-1): نتابع، ونعالج ENOSPC أثناء الكتابة
+            }
+            spacePath = dir.path
+            raf = try {
+                RandomAccessFile(file, "rw").also { f ->
+                    try {
+                        if (reuse == null) {
+                            f.setLength(0)
+                            if (probe.totalBytes > 0) f.setLength(probe.totalBytes)
+                        }
+                    } catch (e: IOException) { runCatching { f.close() }; throw e }
+                }
+            } catch (e: IOException) {
+                throw DownloadException(DownloadError.Storage(e.message ?: "io"), e)
+            }
+            val opened = raf
+            try {
+                supervise(probe, opened.channel)
+                if (probe.totalBytes <= 0) opened.setLength(segments.single().position)
+                if (probe.totalBytes > 0 && opened.length() != probe.totalBytes) {
+                    throw DownloadException(DownloadError.Storage("size mismatch"))
+                }
+            } finally {
+                withContext(NonCancellable) {
+                    // لقطة ثابتة أولاً ثم تثبيت القرص، ولا يُحفظ تقدم لم يتأكد تثبيته (P0-04)
+                    val snapshot = segments.map { it.state() }
+                    val synced = runCatching { opened.channel.force(false) }.isSuccess
+                    if (synced) listener.persist(ResumeState(probe, snapshot))
+                }
             }
         } finally {
             withContext(NonCancellable) {
-                // لقطة ثابتة أولاً ثم تثبيت القرص، ولا يُحفظ تقدم لم يتأكد تثبيته (P0-04)
-                val snapshot = segments.map { it.state() }
-                val synced = runCatching { raf.channel.force(false) }.isSuccess
-                if (synced) listener.persist(ResumeState(probe, snapshot))
-                runCatching { raf.close() }
-                reservation?.let(SpaceLedger::release)
+                raf?.let { f -> runCatching { f.close() } }
+                SpaceLedger.release(ticket)
+                reservation = null
             }
         }
         probe

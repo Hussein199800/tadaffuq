@@ -19,6 +19,8 @@ object SpaceLedger {
     fun reserve(dir: File, bytes: Long): Ticket = Ticket(volumeOf(dir), AtomicLong(bytes.coerceAtLeast(0))).also { tickets += it }
     fun update(t: Ticket, remaining: Long) = t.bytes.set(remaining.coerceAtLeast(0))
     fun release(t: Ticket) { tickets -= t }
+    /** للاختبارات والتشخيص: مجموع المحجوز على وحدة تخزين. */
+    fun reservedOn(dir: File): Long { val v = volumeOf(dir); return tickets.filter { it.volume == v }.sumOf { it.bytes.get() } }
     fun reservedByOthers(dir: File, mine: Ticket): Long {
         val v = volumeOf(dir)
         return tickets.filter { it !== mine && it.volume == v }.sumOf { it.bytes.get() }
