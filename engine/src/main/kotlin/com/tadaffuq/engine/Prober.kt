@@ -16,7 +16,7 @@ class Prober(private val client: OkHttpClient) {
         val response = try {
             client.executeCancellable(request)
         } catch (e: IOException) {
-            throw DownloadException(DownloadError.Network(e.javaClass.simpleName), e)
+            throw DownloadException(DownloadError.Network(NetFail.of(e)), e)
         }
         response.use { r ->
             when (r.code) {
@@ -50,14 +50,17 @@ class Prober(private val client: OkHttpClient) {
 
     companion object {
         /**
-         * هل الملف على الخادم هو نفسه المحفوظ؟ يُرفض الاستئناف إن تغيّر الحجم أو أي معرّف
-         * أعلنه الخادم في المرتين. غياب المعرّفين معاً مع تطابق الحجم يُقبل (لا دليل على التغيّر).
+         * هل يجوز دمج أجزاء من جلسة سابقة مع جلسة جديدة؟ يلزم تطابق الحجم ودليل موثوق على أن
+         * المحتوى نفسه: ETag قوي متطابق، أو Last-Modified متطابق دون ETag متعارض.
+         * عند غياب أي دليل يُعاد التنزيل بأمان بدل المخاطرة بخلط نسختين.
          */
         fun sameContent(saved: ProbeResult, now: ProbeResult): Boolean {
             if (saved.totalBytes != now.totalBytes) return false
+            val strongSaved = saved.etag?.takeUnless { it.startsWith("W/") }
+            val strongNow = now.etag?.takeUnless { it.startsWith("W/") }
+            if (strongSaved != null && strongNow != null) return strongSaved == strongNow
             if (saved.etag != null && now.etag != null && saved.etag != now.etag) return false
-            if (saved.lastModified != null && now.lastModified != null && saved.lastModified != now.lastModified) return false
-            return true
+            return saved.lastModified != null && saved.lastModified == now.lastModified
         }
     }
 }

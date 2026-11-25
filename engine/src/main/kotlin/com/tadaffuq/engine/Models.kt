@@ -107,7 +107,8 @@ data class Snapshot(
 )
 
 sealed class DownloadError(val retryable: Boolean) {
-    data class Network(val detail: String) : DownloadError(true)
+    /** kind: DNS أو TLS أو TIMEOUT أو REFUSED أو RESET؛ يفرّق بينها طبيب التحميل. */
+    data class Network(val kind: NetFail) : DownloadError(kind != NetFail.TLS)
     data class Http(val code: Int) : DownloadError(code >= 500 || code == 408 || code == 429)
     /** 401/403/410 بعد بدء التنزيل غالباً = رابط منتهي الصلاحية. */
     data class LinkExpired(val code: Int) : DownloadError(false)
@@ -118,6 +119,21 @@ sealed class DownloadError(val retryable: Boolean) {
     data class InsufficientSpace(val needed: Long, val available: Long) : DownloadError(false)
     data class Storage(val detail: String) : DownloadError(false)
     data class ChecksumMismatch(val expected: String, val actual: String) : DownloadError(false)
+}
+
+enum class NetFail {
+    DNS, TLS, TIMEOUT, REFUSED, RESET;
+
+    companion object {
+        fun of(e: Throwable): NetFail = when (e) {
+            is java.net.UnknownHostException -> DNS
+            is javax.net.ssl.SSLException -> TLS
+            is java.net.SocketTimeoutException -> TIMEOUT
+            is java.net.ConnectException -> REFUSED
+            is java.io.InterruptedIOException -> TIMEOUT
+            else -> RESET
+        }
+    }
 }
 
 class DownloadException(val error: DownloadError, cause: Throwable? = null) :

@@ -82,8 +82,8 @@ class ScreenshotTest {
             db.usage().add(today, NetKind.CELLULAR, 80_000_000)
         }
         val settings = SettingsRepository(ctx)
-        val manager = DownloadManager(ctx, db, settings, HttpClients.create(), Conditions(ctx), Notifier(ctx))
-        vm = MainViewModel(ctx, db, settings, manager)
+        val manager = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), Conditions(ctx), Notifier(ctx))
+        vm = MainViewModel(ctx, db, settings, manager, com.tadaffuq.app.core.SecretStore(ctx))
     }
 
     private fun shoot(name: String, ar: Boolean, dark: Boolean, popup: Boolean = false, content: @Composable () -> Unit) {

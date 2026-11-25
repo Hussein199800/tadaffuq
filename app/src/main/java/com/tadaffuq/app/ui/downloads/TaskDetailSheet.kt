@@ -67,6 +67,7 @@ import com.tadaffuq.engine.Doctor
 import com.tadaffuq.engine.ProbeResult
 import com.tadaffuq.engine.Snapshot
 import java.io.File
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -80,6 +81,7 @@ fun TaskDetailSheet(t: TaskEntity, live: Snapshot?, vm: MainViewModel, onDismiss
     when (dialog) {
         "limit" -> SpeedLimitDialog(t.speedLimitBps, { dialog = null }) { vm.setSpeedLimit(t.id, it); dialog = null }
         "url" -> UrlDialog(t.url, { dialog = null }) { vm.updateUrl(t.id, it); dialog = null }
+        "mirrors" -> MirrorsDialog(t, vm) { dialog = null }
         "delete" -> DeleteDialog(1, t.status == TaskStatus.COMPLETED, { dialog = null }) { withFiles -> vm.delete(listOf(t.id), withFiles); dialog = null; onDismiss() }
     }
 }
@@ -137,7 +139,8 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
             val findings = Doctor.diagnose(
                 Doctor.Input(
                     probe = probe.takeIf { t.finalUrl != null },
-                    error = ErrorCodes.toError(t.errorCode),
+                    error = ErrorCodes.toError(t.errorCode, t.errorDetail),
+                    backgroundRestricted = android.os.Build.VERSION.SDK_INT >= 28 && ctx.getSystemService(android.app.ActivityManager::class.java).isBackgroundRestricted,
                     retries = t.retries, networkRetries = t.networkRetries, serverRetries = t.serverRetries,
                     averageBps = live?.averageBps ?: t.averageBps, connections = live?.connections ?: 0,
                     freeBytes = runCatching { File(t.dirPath).let { if (it.exists()) it else it.parentFile }?.usableSpace ?: -1 }.getOrDefault(-1),
@@ -180,6 +183,7 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
                     Action(Icons.Rounded.ArrowDownward, stringResource(R.string.priority_down)) { vm.setPriority(t.id, t.priority - 1) }
                     Action(Icons.Rounded.Speed, stringResource(R.string.speed_limit)) { openDialog("limit") }
                     Action(Icons.Rounded.Link, stringResource(R.string.refresh_link)) { openDialog("url") }
+                    Action(Icons.Rounded.Link, stringResource(R.string.mirrors)) { openDialog("mirrors") }
                     Action(Icons.Rounded.RestartAlt, stringResource(R.string.action_restart)) { vm.restart(t.id) }
                 }
                 Action(Icons.Rounded.ContentCopy, stringResource(R.string.copy_link)) {
@@ -227,6 +231,41 @@ private fun UrlDialog(current: String, onDismiss: () -> Unit, onSet: (String) ->
             }
         },
         confirmButton = { TextButton(onClick = { onSet(text) }, enabled = com.tadaffuq.engine.LinkTools.isSupported(text)) { Text(stringResource(R.string.save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+@Composable
+private fun MirrorsDialog(t: TaskEntity, vm: MainViewModel, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf(t.mirrors.orEmpty()) }
+    var results by remember { mutableStateOf<List<com.tadaffuq.engine.MirrorResult>?>(null) }
+    var testing by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.mirrors)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(stringResource(R.string.mirrors_desc), style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(text, { text = it; results = null }, minLines = 3, maxLines = 8, modifier = Modifier.fillMaxWidth())
+                TextButton(enabled = !testing && text.isNotBlank(), onClick = {
+                    testing = true
+                    scope.launch {
+                        vm.manager.setMirrors(t.id, text)
+                        results = runCatching { vm.manager.testMirrors(t.copy(mirrors = text)) }.getOrDefault(emptyList())
+                        testing = false
+                    }
+                }) { Text(stringResource(if (testing) R.string.add_probing else R.string.mirrors_test)) }
+                results?.forEach { r ->
+                    Text(r.url, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        if (r.matches) Fmt.speed(r.bps) + " · " + stringResource(R.string.mirror_ok) else stringResource(R.string.mirror_bad),
+                        style = MaterialTheme.typography.labelMedium, color = if (r.matches) T.extra.success else T.extra.danger,
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { scope.launch { vm.manager.setMirrors(t.id, text); onDismiss() } }) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

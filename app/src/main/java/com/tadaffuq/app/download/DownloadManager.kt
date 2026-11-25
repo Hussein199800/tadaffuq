@@ -63,6 +63,7 @@ data class NewTask(
     val speedLimitBps: Long = 0,
     /** يبدأ متوقفاً (للحفظ في الطابور دون بدء). */
     val startPaused: Boolean = false,
+    val mirrors: String? = null,
 )
 
 /**
@@ -74,7 +75,7 @@ class DownloadManager @Inject constructor(
     @ApplicationContext private val ctx: Context,
     db: AppDatabase,
     private val settingsRepo: SettingsRepository,
-    private val client: OkHttpClient,
+    private val clients: ClientProvider,
     val conditions: Conditions,
     private val notifier: Notifier,
 ) {
@@ -243,7 +244,7 @@ class DownloadManager @Inject constructor(
             }
         }
         try {
-            val probe = HttpDownloader(client, spec, part, cfg, saved, limiter, globalLimiter, listener).run()
+            val probe = runWithMirrors(t, spec, part, cfg, saved, limiter, listener)
             val dir = File(t.dirPath)
             val finalName = FileNames.uniqueIn(dir, t.fileName)
             val dest = File(dir, finalName)
@@ -307,6 +308,45 @@ class DownloadManager @Inject constructor(
 
     // ===== واجهة الاستخدام =====
 
+    private val client: OkHttpClient get() = clients.get(settings)
+
+    /**
+     * مع المرايا: تُرتَّب حسب سرعة عيّنة حقيقية بعد التحقق من تطابق المحتوى، وعند فشل مصدر
+     * (رابط منتهٍ أو غير موجود أو شبكة) يُجرَّب التالي. التبديل بين مصدرين لا يدمج أجزاءهما إلا
+     * بدليل موثوق (ETag قوي أو Last-Modified)، وإلا يبدأ من جديد بأمان.
+     */
+    private suspend fun runWithMirrors(t: TaskEntity, spec: RequestSpec, part: File, cfg: DownloadConfig, saved: ResumeState?, limiter: RateLimiter, listener: DownloadListener): ProbeResult {
+        val mirrors = t.mirrors?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() && it != t.url }.orEmpty()
+        if (mirrors.isEmpty()) return HttpDownloader(client, spec, part, cfg, saved, limiter, globalLimiter, listener).run()
+        val ranked = com.tadaffuq.engine.MirrorSelector(client).rank(spec, mirrors).filter { it.matches }.map { it.url }
+        val order = ranked.ifEmpty { listOf(t.url) }
+        var last: DownloadException? = null
+        var state = saved
+        for (u in order) {
+            try {
+                return HttpDownloader(client, spec.copy(url = u), part, cfg, state, limiter, globalLimiter, listener).run()
+            } catch (e: DownloadException) {
+                last = e
+                val switchable = e.error is DownloadError.LinkExpired || e.error == DownloadError.NotFound || e.error is DownloadError.Network || e.error is DownloadError.Http
+                if (!switchable) throw e
+                val segs = dao.segments(t.id)
+                val cur = dao.get(t.id)
+                state = if (segs.isNotEmpty() && cur != null && cur.totalBytes > 0) ResumeState(
+                    ProbeResult(cur.finalUrl ?: u, cur.totalBytes, cur.acceptRanges, cur.etag, cur.lastModified, cur.fileName, cur.mimeType),
+                    segs.map { SegmentState(it.idx, it.start, it.endInclusive, it.downloaded) },
+                ) else null
+            }
+        }
+        throw last ?: DownloadException(DownloadError.NotFound)
+    }
+
+    suspend fun testMirrors(t: TaskEntity): List<com.tadaffuq.engine.MirrorResult> {
+        val mirrors = t.mirrors?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+        return com.tadaffuq.engine.MirrorSelector(client).rank(RequestSpec(t.url, userAgent = t.userAgent ?: DEFAULT_UA, referer = t.referer, cookies = t.cookies), mirrors)
+    }
+
+    suspend fun setMirrors(id: Long, mirrors: String?) { dao.get(id)?.let { dao.update(it.copy(mirrors = mirrors?.trim()?.ifBlank { null })) } }
+
     suspend fun probe(spec: RequestSpec): ProbeResult = Prober(client).probe(spec.copy(userAgent = spec.userAgent ?: settings.userAgent.ifBlank { null } ?: DEFAULT_UA))
 
     suspend fun enqueue(tasks: List<NewTask>): List<Long> {
@@ -319,7 +359,7 @@ class DownloadManager @Inject constructor(
                 finalUrl = n.probe?.finalUrl, connections = n.connections.coerceIn(0, DownloadConfig.MAX_CONNECTIONS),
                 expectedHash = n.expectedHash?.trim()?.ifBlank { null }, userAgent = n.userAgent, referer = n.referer,
                 cookies = n.cookies, priority = n.priority, packageId = n.packageId, wifiOnly = n.wifiOnly,
-                speedLimitBps = n.speedLimitBps,
+                speedLimitBps = n.speedLimitBps, mirrors = n.mirrors?.trim()?.ifBlank { null },
             )
         })
         wake()
@@ -393,7 +433,7 @@ class DownloadManager @Inject constructor(
 /** رموز الأخطاء المحفوظة في قاعدة البيانات، وتحويلها للطبيب والواجهة. */
 object ErrorCodes {
     fun of(e: DownloadError): String = when (e) {
-        is DownloadError.Network -> "NETWORK"
+        is DownloadError.Network -> "NET_${e.kind}"
         is DownloadError.Http -> "HTTP_${e.code}"
         is DownloadError.LinkExpired -> "EXPIRED_${e.code}"
         DownloadError.NotFound -> "NOT_FOUND"
@@ -404,16 +444,17 @@ object ErrorCodes {
         is DownloadError.ChecksumMismatch -> "CHECKSUM"
     }
 
-    fun toError(code: String?): DownloadError? = when {
+    fun toError(code: String?, detail: String? = null): DownloadError? = when {
         code == null -> null
-        code == "NETWORK" -> DownloadError.Network("")
+        code == "NETWORK" -> DownloadError.Network(com.tadaffuq.engine.NetFail.RESET)
+        code.startsWith("NET_") -> DownloadError.Network(runCatching { com.tadaffuq.engine.NetFail.valueOf(code.removePrefix("NET_")) }.getOrDefault(com.tadaffuq.engine.NetFail.RESET))
         code.startsWith("HTTP_") -> DownloadError.Http(code.removePrefix("HTTP_").toIntOrNull() ?: 0)
         code.startsWith("EXPIRED_") -> DownloadError.LinkExpired(code.removePrefix("EXPIRED_").toIntOrNull() ?: 403)
         code == "NOT_FOUND" -> DownloadError.NotFound
         code == "CHANGED" -> DownloadError.ChangedOnServer
         code == "NO_RANGE" -> DownloadError.RangeNotSupported
         code == "SPACE" -> DownloadError.InsufficientSpace(0, 0)
-        code == "STORAGE" || code == "INTERNAL" -> DownloadError.Storage(code)
+        code == "STORAGE" || code == "INTERNAL" -> DownloadError.Storage(detail ?: code)
         code == "CHECKSUM" -> DownloadError.ChecksumMismatch("", "")
         else -> null
     }

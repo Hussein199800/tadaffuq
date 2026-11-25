@@ -37,6 +37,14 @@ object HttpClients {
         .apply {
             if (proxy != null) {
                 proxy(Proxy(proxy.type, InetSocketAddress.createUnresolved(proxy.host, proxy.port)))
+                if (proxy.user != null && proxy.type == Proxy.Type.SOCKS) {
+                    // مصادقة SOCKS5 في Java تمر عبر Authenticator العام؛ نقصرها على مضيف الوكيل فقط.
+                    val host = proxy.host; val port = proxy.port; val u = proxy.user; val pw = proxy.password.orEmpty().toCharArray()
+                    java.net.Authenticator.setDefault(object : java.net.Authenticator() {
+                        override fun getPasswordAuthentication(): java.net.PasswordAuthentication? =
+                            if (requestingHost == host && requestingPort == port) java.net.PasswordAuthentication(u, pw) else null
+                    })
+                }
                 if (proxy.user != null && proxy.type == Proxy.Type.HTTP) {
                     val cred = Credentials.basic(proxy.user, proxy.password.orEmpty())
                     proxyAuthenticator(Authenticator { _, response ->

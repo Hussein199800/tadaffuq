@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.map
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class ListDensity { COMFORTABLE, COMPACT }
+enum class ProxyMode { NONE, HTTP, SOCKS5 }
 
 /** إعدادات التطبيق. القيم الافتراضية بسيطة، والمتقدم اختياري. */
 data class Settings(
@@ -44,6 +45,11 @@ data class Settings(
     val userAgent: String = "",
     val warnExecutables: Boolean = true,
     val onboarded: Boolean = false,
+    val proxyMode: ProxyMode = ProxyMode.NONE,
+    val proxyHost: String = "",
+    val proxyPort: Int = 0,
+    val proxyUser: String = "",
+    val reduceMotion: Boolean = false,
 )
 
 private val Context.store: DataStore<Preferences> by preferencesDataStore("settings")
@@ -74,6 +80,11 @@ class SettingsRepository(private val context: Context) {
         val ua = stringPreferencesKey("userAgent")
         val warnExe = booleanPreferencesKey("warnExecutables")
         val onboarded = booleanPreferencesKey("onboarded")
+        val proxyMode = stringPreferencesKey("proxyMode")
+        val proxyHost = stringPreferencesKey("proxyHost")
+        val proxyPort = intPreferencesKey("proxyPort")
+        val proxyUser = stringPreferencesKey("proxyUser")
+        val reduceMotion = booleanPreferencesKey("reduceMotion")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -110,6 +121,11 @@ class SettingsRepository(private val context: Context) {
             p[K.ua] = s.userAgent
             p[K.warnExe] = s.warnExecutables
             p[K.onboarded] = s.onboarded
+            p[K.proxyMode] = s.proxyMode.name
+            p[K.proxyHost] = s.proxyHost
+            p[K.proxyPort] = s.proxyPort
+            p[K.proxyUser] = s.proxyUser
+            p[K.reduceMotion] = s.reduceMotion
         }
     }
 
@@ -140,6 +156,11 @@ class SettingsRepository(private val context: Context) {
             userAgent = p[K.ua] ?: d.userAgent,
             warnExecutables = p[K.warnExe] ?: d.warnExecutables,
             onboarded = p[K.onboarded] ?: d.onboarded,
+            proxyMode = p[K.proxyMode]?.let { runCatching { ProxyMode.valueOf(it) }.getOrNull() } ?: d.proxyMode,
+            proxyHost = p[K.proxyHost] ?: d.proxyHost,
+            proxyPort = p[K.proxyPort] ?: d.proxyPort,
+            proxyUser = p[K.proxyUser] ?: d.proxyUser,
+            reduceMotion = p[K.reduceMotion] ?: d.reduceMotion,
         )
     }
 }

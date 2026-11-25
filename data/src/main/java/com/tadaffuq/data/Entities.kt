@@ -59,6 +59,8 @@ data class TaskEntity(
     val filePath: String? = null,
     /** في سلة المحذوفات (للملفات التي يديرها التطبيق). */
     val trashedAt: Long? = null,
+    /** روابط بديلة للملف نفسه، سطر لكل رابط. */
+    @androidx.room.ColumnInfo(defaultValue = "NULL") val mirrors: String? = null,
 )
 
 @Entity(

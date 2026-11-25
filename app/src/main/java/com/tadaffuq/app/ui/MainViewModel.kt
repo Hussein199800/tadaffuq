@@ -35,6 +35,7 @@ class MainViewModel @Inject constructor(
     private val db: AppDatabase,
     private val settingsRepo: SettingsRepository,
     val manager: DownloadManager,
+    val secrets: com.tadaffuq.app.core.SecretStore,
 ) : ViewModel() {
     private fun <T> StateFlowOf(flow: kotlinx.coroutines.flow.Flow<T>, initial: T): StateFlow<T> =
         flow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initial)

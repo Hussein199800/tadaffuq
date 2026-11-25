@@ -53,6 +53,10 @@ class HttpDownloader(
 ) {
     private val segments = mutableListOf<Segment>()
     private val sessionBytes = AtomicLong()
+    /** عدد ردود 429/503: الخادم يطلب تخفيف الضغط. */
+    private val pushbacks = java.util.concurrent.atomic.AtomicInteger()
+    private val runningWorkers = java.util.concurrent.atomic.AtomicInteger()
+    @Volatile private var sharedTarget = 1
 
     suspend fun run(): ProbeResult = withContext(Dispatchers.IO) {
         val probe = Prober(client).probe(spec)
@@ -120,8 +124,12 @@ class HttpDownloader(
 
         fun launchFor(seg: Segment) {
             seg.active = true
-            jobs[seg] = launch(Dispatchers.IO) { runSegment(seg, probe, channel) }
+            runningWorkers.incrementAndGet()
+            jobs[seg] = launch(Dispatchers.IO) {
+                try { runSegment(seg, probe, channel) } finally { runningWorkers.decrementAndGet() }
+            }
         }
+        var seenPushbacks = 0
 
         val startNs = System.nanoTime()
         var lastTickNs = startNs
@@ -134,6 +142,14 @@ class HttpDownloader(
         while (true) {
             jobs.entries.removeAll { (seg, job) -> (job.isCompleted).also { if (it) seg.active = false } }
             if (segments.all { it.done }) break
+            // تراجع تلقائي: كل دفعة 429/503 جديدة تنصّف الاتصالات وتوقف الضبط التلقائي
+            val pb = pushbacks.get()
+            if (pb > seenPushbacks) {
+                seenPushbacks = pb
+                target = maxOf(1, minOf(target, jobs.size) / 2)
+                tune.stop()
+            }
+            sharedTarget = target
 
             if (jobs.isEmpty() || probe.resumable) {
                 while (jobs.size < target) {
@@ -188,11 +204,16 @@ class HttpDownloader(
             } catch (e: DownloadException) {
                 if (!e.error.retryable) throw e
                 failures = if (seg.downloaded > before) 1 else failures + 1
+                val err = e.error
+                val busy = err is DownloadError.Http && (err.code == 429 || err.code == 503)
+                if (busy) pushbacks.incrementAndGet()
                 backoff(seg, failures, e.error, (e.cause as? RetryAfter)?.ms)
+                // الخادم مزدحم والاتصالات أكثر من المستهدف: نترك الجزء لاتصال آخر لاحقاً
+                if (busy && runningWorkers.get() > sharedTarget) return
             } catch (e: IOException) {
                 currentCoroutineContext().ensureActive()
                 failures = if (seg.downloaded > before) 1 else failures + 1
-                backoff(seg, failures, DownloadError.Network(e.javaClass.simpleName), null)
+                backoff(seg, failures, DownloadError.Network(NetFail.of(e)), null)
             }
         }
     }
@@ -275,6 +296,8 @@ class HttpDownloader(
         private var checkpoint: Triple<Int, Double, Long>? = null
         var finished = !enabled
             private set
+
+        fun stop() { finished = true }
 
         fun next(target: Int, speed: Long, nowNs: Long, running: Int): Int {
             if (finished) return target

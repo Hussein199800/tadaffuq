@@ -11,7 +11,11 @@ import com.tadaffuq.engine.Doctor
 @Composable
 fun errorText(code: String?): String = when {
     code == null -> stringResource(R.string.err_unknown)
-    code == "NETWORK" -> stringResource(R.string.err_network)
+    code == "NETWORK" || code == "NET_RESET" -> stringResource(R.string.err_network)
+    code == "NET_DNS" -> stringResource(R.string.err_dns)
+    code == "NET_TLS" -> stringResource(R.string.err_tls)
+    code == "NET_TIMEOUT" -> stringResource(R.string.err_timeout)
+    code == "NET_REFUSED" -> stringResource(R.string.err_refused)
     code.startsWith("HTTP_") -> sr(R.string.err_http, code.removePrefix("HTTP_"))
     code.startsWith("EXPIRED_") -> stringResource(R.string.err_expired)
     code == "NOT_FOUND" -> stringResource(R.string.err_not_found)
@@ -64,5 +68,12 @@ fun doctorText(f: Doctor.Finding): Pair<String, String> = when (f) {
     Doctor.Finding.LOW_SPACE -> stringResource(R.string.dr_space) to stringResource(R.string.dr_space_fix)
     Doctor.Finding.STORAGE_ERROR -> stringResource(R.string.dr_storage) to stringResource(R.string.dr_storage_fix)
     Doctor.Finding.CHECKSUM_MISMATCH -> stringResource(R.string.dr_checksum) to stringResource(R.string.dr_checksum_fix)
+    Doctor.Finding.DNS_FAILURE -> stringResource(R.string.dr_dns) to stringResource(R.string.dr_dns_fix)
+    Doctor.Finding.TLS_FAILURE -> stringResource(R.string.dr_tls) to stringResource(R.string.dr_tls_fix)
+    Doctor.Finding.TIMEOUT -> stringResource(R.string.dr_timeout) to stringResource(R.string.dr_timeout_fix)
+    Doctor.Finding.CONNECTION_REFUSED -> stringResource(R.string.dr_refused) to stringResource(R.string.dr_refused_fix)
+    Doctor.Finding.SERVER_BUSY -> stringResource(R.string.dr_busy) to stringResource(R.string.dr_busy_fix)
+    Doctor.Finding.PERMISSION -> stringResource(R.string.dr_permission) to stringResource(R.string.dr_permission_fix)
+    Doctor.Finding.BACKGROUND_RESTRICTED -> stringResource(R.string.dr_bg) to stringResource(R.string.dr_bg_fix)
     Doctor.Finding.HEALTHY -> stringResource(R.string.dr_healthy) to stringResource(R.string.dr_healthy_fix)
 }

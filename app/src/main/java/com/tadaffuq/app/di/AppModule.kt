@@ -4,13 +4,11 @@ import android.content.Context
 import com.tadaffuq.app.download.Conditions
 import com.tadaffuq.data.AppDatabase
 import com.tadaffuq.data.SettingsRepository
-import com.tadaffuq.engine.HttpClients
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import okhttp3.OkHttpClient
 import javax.inject.Singleton
 
 @Module
@@ -18,6 +16,7 @@ import javax.inject.Singleton
 object AppModule {
     @Provides @Singleton fun db(@ApplicationContext c: Context): AppDatabase = AppDatabase.build(c)
     @Provides @Singleton fun settings(@ApplicationContext c: Context) = SettingsRepository(c)
-    @Provides @Singleton fun client(): OkHttpClient = HttpClients.create()
+    @Provides @Singleton fun secrets(@ApplicationContext c: Context) = com.tadaffuq.app.core.SecretStore(c)
+    @Provides @Singleton fun clients(secrets: com.tadaffuq.app.core.SecretStore) = com.tadaffuq.app.download.ClientProvider(secrets)
     @Provides @Singleton fun conditions(@ApplicationContext c: Context) = Conditions(c)
 }

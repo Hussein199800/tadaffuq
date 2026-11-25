@@ -99,6 +99,12 @@ class PureLogicTest {
         assertFalse(Prober.sameContent(p, p.copy(etag = "\"b\"")))
         assertTrue(Prober.sameContent(p, p.copy(etag = null)))
         assertEquals("d1", p.copy(etag = "W/\"x\"").ifRangeValidator)
+        // بلا أي معرّف: لا دليل على أن المحتوى نفسه، فلا استئناف عبر الجلسات
+        val bare = p.copy(etag = null, lastModified = null)
+        assertFalse(Prober.sameContent(bare, bare))
+        // ETag ضعيف وحده لا يكفي
+        val weak = p.copy(etag = "W/\"a\"", lastModified = null)
+        assertFalse(Prober.sameContent(weak, weak))
     }
 
     @Test fun autoTuneBacksOffWhenNoGain() {

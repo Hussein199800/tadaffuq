@@ -137,6 +137,10 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, vm: AddViewModel = hilt
                         supportingText = { Text(stringResource(if (s.hashValid) R.string.add_hash_desc else R.string.add_hash_invalid)) },
                         isError = !s.hashValid, modifier = Modifier.fillMaxWidth(), maxLines = 3,
                     )
+                    if (s.single) OutlinedTextField(
+                        s.mirrors, { v -> vm.update { it.copy(mirrors = v) } }, label = { Text(stringResource(R.string.mirrors)) },
+                        supportingText = { Text(stringResource(R.string.mirrors_desc)) }, modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 6,
+                    )
                     OutlinedTextField(s.referer, { v -> vm.update { it.copy(referer = v.trim()) } }, label = { Text("Referer") }, modifier = Modifier.fillMaxWidth(), maxLines = 3)
                     OutlinedTextField(s.userAgent, { v -> vm.update { it.copy(userAgent = v) } }, label = { Text("User-Agent") }, modifier = Modifier.fillMaxWidth(), maxLines = 3)
                     OutlinedTextField(

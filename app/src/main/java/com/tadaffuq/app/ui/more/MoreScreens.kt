@@ -66,6 +66,7 @@ import com.tadaffuq.app.ui.components.ToggleRow
 import com.tadaffuq.app.ui.files.categoryLabel
 import com.tadaffuq.app.ui.theme.T
 import com.tadaffuq.data.Settings
+import com.tadaffuq.data.ProxyMode
 import com.tadaffuq.data.TaskStatus
 import com.tadaffuq.data.ThemeMode
 import com.tadaffuq.engine.FileNames
@@ -126,6 +127,15 @@ fun SettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit
                     value = if (s.globalLimitBps > 0) Fmt.speed(s.globalLimitBps) else stringResource(R.string.unlimited), onClick = { dialog = "limit" })
                 Hairline()
                 SettingRow(stringResource(R.string.user_agent), stringResource(R.string.user_agent_desc), value = s.userAgent.ifBlank { stringResource(R.string.default_value) }, onClick = { dialog = "ua" })
+            }
+        }
+
+        item { SectionHeader(stringResource(R.string.sec_network)) }
+        item {
+            Card(padding = PaddingValues(vertical = 4.dp)) {
+                SettingRow(stringResource(R.string.proxy), stringResource(R.string.proxy_desc),
+                    value = when (s.proxyMode) { ProxyMode.NONE -> stringResource(R.string.proxy_none); else -> "${s.proxyMode.name} · ${Fmt.iso(s.proxyHost + ":" + s.proxyPort)}" },
+                    onClick = { dialog = "proxy" })
             }
         }
 
@@ -193,6 +203,11 @@ fun SettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit
         }
         "limit" -> com.tadaffuq.app.ui.downloads.SpeedLimitDialog(s.globalLimitBps, { dialog = null }) { v -> set { it.copy(globalLimitBps = v) }; dialog = null }
         "ua" -> TextDialog(stringResource(R.string.user_agent), s.userAgent, { dialog = null }) { v -> set { it.copy(userAgent = v.trim()) }; dialog = null }
+        "proxy" -> ProxyDialog(s, vm.secrets.has(com.tadaffuq.app.core.SecretStore.PROXY_PASSWORD), { dialog = null }) { mode, host, port, user, pass ->
+            set { it.copy(proxyMode = mode, proxyHost = host, proxyPort = port, proxyUser = user) }
+            if (pass != null) vm.secrets.put(com.tadaffuq.app.core.SecretStore.PROXY_PASSWORD, pass)
+            dialog = null
+        }
         "data" -> DataLimitDialog(s, { dialog = null }) { d, m -> set { it.copy(dailyLimitBytes = d, monthlyLimitBytes = m) }; dialog = null }
     }
 }
@@ -244,6 +259,36 @@ private fun DataLimitDialog(s: Settings, onDismiss: () -> Unit, onSave: (Long, L
             }
         },
         confirmButton = { TextButton(onClick = { onSave(((Fmt.parseNumber(daily) ?: 0.0) * mb).toLong(), ((Fmt.parseNumber(monthly) ?: 0.0) * mb).toLong()) }) { Text(stringResource(R.string.save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
+}
+
+@Composable
+private fun ProxyDialog(s: Settings, hasPassword: Boolean, onDismiss: () -> Unit, onSave: (ProxyMode, String, Int, String, String?) -> Unit) {
+    var mode by remember { mutableStateOf(s.proxyMode) }
+    var host by remember { mutableStateOf(s.proxyHost) }
+    var port by remember { mutableStateOf(if (s.proxyPort > 0) s.proxyPort.toString() else "") }
+    var user by remember { mutableStateOf(s.proxyUser) }
+    var pass by remember { mutableStateOf<String?>(null) }
+    val portNum = Fmt.parseNumber(port)?.toInt() ?: 0
+    val valid = mode == ProxyMode.NONE || (host.isNotBlank() && portNum in 1..65535)
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(R.string.proxy)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ProxyMode.entries.forEach { m -> FilterChip(mode == m, { mode = m }, label = { Text(if (m == ProxyMode.NONE) stringResource(R.string.proxy_none) else m.name) }) }
+                }
+                if (mode != ProxyMode.NONE) {
+                    OutlinedTextField(host, { host = it.trim() }, label = { Text(stringResource(R.string.proxy_host)) }, singleLine = true)
+                    OutlinedTextField(port, { port = it.trim() }, label = { Text(stringResource(R.string.proxy_port)) }, singleLine = true)
+                    OutlinedTextField(user, { user = it.trim() }, label = { Text(stringResource(R.string.proxy_user)) }, singleLine = true)
+                    OutlinedTextField(pass ?: "", { pass = it }, label = { Text(stringResource(R.string.proxy_password)) }, singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        supportingText = { Text(stringResource(if (hasPassword && pass == null) R.string.secret_saved else R.string.secret_desc)) })
+                    if (mode == ProxyMode.SOCKS5) Text(stringResource(R.string.socks_note), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
+                }
+            }
+        },
+        confirmButton = { TextButton(enabled = valid, onClick = { onSave(mode, host, portNum, user, pass) }) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }
 

@@ -13,6 +13,13 @@ object Doctor {
         CHANGED_ON_SERVER,    // الملف تغيّر: بدء جديد آمن بدل خلط نسختين
         SERVER_ERRORS,        // 5xx/429 متكررة: الخادم مزدحم
         NETWORK_UNSTABLE,     // إعادة محاولات كثيرة بسبب الشبكة
+        DNS_FAILURE,          // تعذّر تحويل اسم الخادم
+        TLS_FAILURE,          // شهادة غير موثوقة أو مصافحة فاشلة: لا تجاوز للحماية
+        TIMEOUT,              // انتهت المهلة
+        CONNECTION_REFUSED,   // الخادم رفض الاتصال
+        SERVER_BUSY,          // 429/503: تراجع تلقائي عن الاتصالات
+        PERMISSION,           // لا صلاحية للكتابة في المجلد
+        BACKGROUND_RESTRICTED, // النظام يقيّد التطبيق في الخلفية
         SLOW_SERVER,          // السرعة لا تزيد مع الاتصالات: الحد من الخادم
         SINGLE_CONNECTION_CAP, // سرعة الاتصال الواحد منخفضة والمزيد يساعد
         LOW_SPACE,
@@ -32,6 +39,7 @@ object Doctor {
         val autoTuneStopped: Boolean = false,
         val freeBytes: Long = -1,
         val remainingBytes: Long = -1,
+        val backgroundRestricted: Boolean = false,
     )
 
     fun diagnose(i: Input): List<Finding> {
@@ -41,10 +49,16 @@ object Doctor {
             DownloadError.NotFound -> out += Finding.NOT_FOUND
             DownloadError.ChangedOnServer -> out += Finding.CHANGED_ON_SERVER
             is DownloadError.InsufficientSpace -> out += Finding.LOW_SPACE
-            is DownloadError.Storage -> out += Finding.STORAGE_ERROR
+            is DownloadError.Storage -> out += if (i.error.detail.contains("EACCES") || i.error.detail.contains("ermission")) Finding.PERMISSION else Finding.STORAGE_ERROR
             is DownloadError.ChecksumMismatch -> out += Finding.CHECKSUM_MISMATCH
-            is DownloadError.Http -> out += Finding.SERVER_ERRORS
-            is DownloadError.Network -> out += Finding.NETWORK_UNSTABLE
+            is DownloadError.Http -> out += if (i.error.code == 429 || i.error.code == 503) Finding.SERVER_BUSY else Finding.SERVER_ERRORS
+            is DownloadError.Network -> out += when (i.error.kind) {
+                NetFail.DNS -> Finding.DNS_FAILURE
+                NetFail.TLS -> Finding.TLS_FAILURE
+                NetFail.TIMEOUT -> Finding.TIMEOUT
+                NetFail.REFUSED -> Finding.CONNECTION_REFUSED
+                NetFail.RESET -> Finding.NETWORK_UNSTABLE
+            }
             DownloadError.RangeNotSupported -> out += Finding.NO_RESUME
             null -> Unit
         }
@@ -59,6 +73,7 @@ object Doctor {
         if (i.freeBytes >= 0 && i.remainingBytes > 0 && i.freeBytes < i.remainingBytes * 11 / 10) {
             if (Finding.LOW_SPACE !in out) out += Finding.LOW_SPACE
         }
+        if (i.backgroundRestricted) out += Finding.BACKGROUND_RESTRICTED
         if (out.isEmpty()) out += Finding.HEALTHY
         return out
     }

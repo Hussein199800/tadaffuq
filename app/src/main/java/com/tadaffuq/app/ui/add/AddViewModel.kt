@@ -60,6 +60,7 @@ data class AddState(
     val referer: String = "",
     val userAgent: String = "",
     val cookies: String = "",
+    val mirrors: String = "",
     val packageName: String = "",
     val duplicatePolicy: DuplicatePolicy = DuplicatePolicy.RENAME,
     val submitting: Boolean = false,
@@ -182,6 +183,7 @@ class AddViewModel @Inject constructor(
                     packageId = packageId,
                     wifiOnly = s.wifiOnly,
                     startPaused = s.startPaused,
+                    mirrors = if (s.single) s.mirrors.ifBlank { null } else null,
                 )
             }
             manager.enqueue(toAdd)
