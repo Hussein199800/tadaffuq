@@ -23,6 +23,9 @@ import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Rule
+import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -51,6 +54,7 @@ import androidx.core.os.LocaleListCompat
 import com.tadaffuq.app.BuildConfig
 import com.tadaffuq.app.R
 import com.tadaffuq.app.core.Fmt
+import com.tadaffuq.app.core.sr
 import com.tadaffuq.app.download.StorageDirs
 import com.tadaffuq.app.ui.MainViewModel
 import com.tadaffuq.app.ui.add.AddRequest
@@ -86,6 +90,12 @@ fun MoreScreen(padding: PaddingValues, open: (String) -> Unit) {
                 SettingRow(stringResource(R.string.reports), stringResource(R.string.reports_desc), Icons.Rounded.BarChart, onClick = { open("reports") })
                 Hairline()
                 SettingRow(stringResource(R.string.link_hub), stringResource(R.string.link_hub_desc), Icons.Rounded.Link, onClick = { open("links") })
+                Hairline()
+                SettingRow(stringResource(R.string.rules), stringResource(R.string.rules_desc), Icons.Rounded.Rule, onClick = { open("rules") })
+                Hairline()
+                SettingRow(stringResource(R.string.vault), stringResource(R.string.vault_desc), Icons.Rounded.Lock, onClick = { open("vault") })
+                Hairline()
+                SettingRow(stringResource(R.string.backup), stringResource(R.string.backup_desc), Icons.Rounded.Backup, onClick = { open("backup") })
                 Hairline()
                 SettingRow(stringResource(R.string.trash), stringResource(R.string.trash_desc), Icons.Rounded.DeleteOutline, onClick = { open("trash") })
                 Hairline()
@@ -155,6 +165,38 @@ fun SettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit
                 SettingRow(stringResource(R.string.data_limits), stringResource(R.string.data_limits_desc),
                     value = "${stringResource(R.string.daily)}: ${if (s.dailyLimitBytes > 0) Fmt.bytes(s.dailyLimitBytes) else stringResource(R.string.unlimited)} · ${stringResource(R.string.monthly)}: ${if (s.monthlyLimitBytes > 0) Fmt.bytes(s.monthlyLimitBytes) else stringResource(R.string.unlimited)}",
                     onClick = { dialog = "data" })
+            }
+        }
+
+        item { SectionHeader(stringResource(R.string.sec_automation)) }
+        item {
+            val ctx = LocalContext.current
+            val tree = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+                if (uri != null) {
+                    ctx.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    set { it.copy(moveToTree = uri.toString()) }
+                }
+            }
+            Card(padding = PaddingValues(vertical = 4.dp)) {
+                ToggleRow(stringResource(R.string.window), sr(R.string.window_desc, s.windowStart, s.windowEnd), s.windowEnabled) { v -> set { it.copy(windowEnabled = v) } }
+                if (s.windowEnabled) {
+                    var ws by remember(s.windowStart) { mutableFloatStateOf(s.windowStart.toFloat()) }
+                    var we by remember(s.windowEnd) { mutableFloatStateOf(s.windowEnd.toFloat()) }
+                    SliderRow(stringResource(R.string.window_start), stringResource(R.string.window_hour_desc), ws, 0f..23f, 22, Fmt.iso("%02d:00".format(java.util.Locale.ROOT, ws.toInt())), { ws = it }) { set { it.copy(windowStart = ws.toInt()) } }
+                    SliderRow(stringResource(R.string.window_end), stringResource(R.string.window_hour_desc), we, 0f..23f, 22, Fmt.iso("%02d:00".format(java.util.Locale.ROOT, we.toInt())), { we = it }) { set { it.copy(windowEnd = we.toInt()) } }
+                }
+                Hairline()
+                var free by remember(s.minFreeMb) { mutableFloatStateOf((s.minFreeMb / 100).toFloat()) }
+                SliderRow(stringResource(R.string.min_free), stringResource(R.string.min_free_desc), free, 0f..50f, 49,
+                    if (free.toInt() == 0) stringResource(R.string.off) else Fmt.bytes(free.toLong() * 100 * 1024 * 1024), { free = it }) { set { it.copy(minFreeMb = free.toLong() * 100) } }
+                Hairline()
+                ToggleRow(stringResource(R.string.auto_extract), stringResource(R.string.auto_extract_desc), s.autoExtract) { v -> set { it.copy(autoExtract = v) } }
+                Hairline()
+                SettingRow(stringResource(R.string.move_tree), stringResource(R.string.move_tree_desc),
+                    value = if (s.moveToTree.isBlank()) stringResource(R.string.off) else com.tadaffuq.app.download.TaskFiles.treeName(ctx, s.moveToTree),
+                    onClick = { tree.launch(null) }) {
+                    if (s.moveToTree.isNotBlank()) TextButton(onClick = { set { it.copy(moveToTree = "") } }) { Text(stringResource(R.string.off)) }
+                }
             }
         }
 

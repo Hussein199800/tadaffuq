@@ -109,6 +109,10 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.work.runtime)
     implementation(libs.androidx.webkit)
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.documentfile)
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

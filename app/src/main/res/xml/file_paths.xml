@@ -2,4 +2,5 @@
 <paths>
     <external-path name="downloads" path="Download/" />
     <cache-path name="share" path="share/" />
+    <cache-path name="vault" path="vault-open/" />
 </paths>

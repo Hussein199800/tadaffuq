@@ -85,7 +85,7 @@ class ScreenshotTest {
         val settings = SettingsRepository(ctx)
         val manager = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), com.tadaffuq.app.download.AppCredentials(ctx, com.tadaffuq.app.core.SecretStore(ctx)), Conditions(ctx), Notifier(ctx))
         tvm = com.tadaffuq.app.ui.torrent.TorrentViewModel(com.tadaffuq.app.download.TorrentManager(ctx, db, settings, manager, Notifier(ctx)), settings)
-        vm = MainViewModel(ctx, db, settings, manager, com.tadaffuq.app.core.SecretStore(ctx))
+        vm = MainViewModel(ctx, db, settings, manager, com.tadaffuq.app.core.SecretStore(ctx), com.tadaffuq.app.vault.Vault(ctx))
     }
 
     private fun shoot(name: String, ar: Boolean, dark: Boolean, popup: Boolean = false, content: @Composable () -> Unit) {

@@ -53,6 +53,8 @@ fun holdText(h: Hold): String = stringResource(
         Hold.TOO_HOT -> R.string.hold_hot
         Hold.DAILY_LIMIT -> R.string.hold_daily
         Hold.MONTHLY_LIMIT -> R.string.hold_monthly
+        Hold.OUTSIDE_WINDOW -> R.string.hold_window
+        Hold.LOW_STORAGE -> R.string.hold_storage
     },
 )
 

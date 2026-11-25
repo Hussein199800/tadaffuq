@@ -19,9 +19,9 @@ class Converters {
 
 @Database(
     entities = [TaskEntity::class, SegmentEntity::class, UsageEntity::class, PackageEntity::class, SavedLinkEntity::class, BookmarkEntity::class, HistoryEntity::class, TorrentEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)],
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -33,7 +33,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "tadaffuq.db"
-        const val VERSION = 3
+        const val VERSION = 4
 
         // لا fallbackToDestructiveMigration أبداً: سجل المستخدم لا يُحذف مع التحديثات.
         fun build(context: Context): AppDatabase =

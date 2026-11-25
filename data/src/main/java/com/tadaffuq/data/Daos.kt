@@ -96,6 +96,7 @@ interface UsageDao {
 @Dao
 interface LinkDao {
     @Query("SELECT * FROM saved_links ORDER BY createdAt DESC") fun observe(): Flow<List<SavedLinkEntity>>
+    @Query("SELECT * FROM saved_links") suspend fun all(): List<SavedLinkEntity>
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insert(links: List<SavedLinkEntity>)
     @Query("DELETE FROM saved_links WHERE id IN (:ids)") suspend fun delete(ids: List<Long>)
 
@@ -106,6 +107,7 @@ interface LinkDao {
 @Dao
 interface BrowserDao {
     @Query("SELECT * FROM bookmarks ORDER BY createdAt DESC") fun bookmarks(): Flow<List<BookmarkEntity>>
+    @Query("SELECT * FROM bookmarks") suspend fun allBookmarks(): List<BookmarkEntity>
     @Upsert suspend fun upsertBookmark(b: BookmarkEntity)
     @Query("DELETE FROM bookmarks WHERE url = :url") suspend fun deleteBookmark(url: String)
     @Query("SELECT * FROM history ORDER BY visitedAt DESC LIMIT :limit") fun history(limit: Int = 300): Flow<List<HistoryEntity>>

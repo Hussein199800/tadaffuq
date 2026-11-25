@@ -51,6 +51,11 @@ object StorageDirs {
         Intent(Intent.ACTION_VIEW).setDataAndType(uri(context, file), mime(file.name))
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
 
+    /** لملف مؤقت داخل cache (المجلد الخاص): يُفتح عبر FileProvider بمسار share. */
+    fun openIntentCache(context: Context, file: File): Intent =
+        Intent(Intent.ACTION_VIEW).setDataAndType(FileProvider.getUriForFile(context, context.packageName + ".files", file), mime(file.name))
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+
     fun shareIntent(context: Context, files: List<File>): Intent {
         val uris = ArrayList(files.map { uri(context, it) })
         val send = if (uris.size == 1) Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_STREAM, uris[0]).setType(mime(files[0].name))

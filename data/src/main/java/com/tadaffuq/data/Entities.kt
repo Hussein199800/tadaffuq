@@ -61,6 +61,10 @@ data class TaskEntity(
     val trashedAt: Long? = null,
     /** روابط بديلة للملف نفسه، سطر لكل رابط. */
     @androidx.room.ColumnInfo(defaultValue = "NULL") val mirrors: String? = null,
+    /** فك الأرشيف تلقائياً بعد الاكتمال والتحقق. */
+    @androidx.room.ColumnInfo(defaultValue = "0") val postExtract: Boolean = false,
+    /** موعد البدء المجدول (ملّي ثانية)، أو null للبدء فوراً. */
+    @androidx.room.ColumnInfo(defaultValue = "NULL") val scheduledAt: Long? = null,
 )
 
 @Entity(

@@ -35,6 +35,16 @@ class PureAppLogicTest {
         assertEquals(Hold.WIFI_ONLY, Policy.hold(Settings(), cell, 0, 0, taskWifiOnly = true))
     }
 
+    @Test fun timeWindowAndStorageFloor() {
+        val night = Settings(windowEnabled = true, windowStart = 23, windowEnd = 7)
+        assertNull(Policy.hold(night, wifi, 0, 0, hourNow = 2))
+        assertNull(Policy.hold(night, wifi, 0, 0, hourNow = 23))
+        assertEquals(Hold.OUTSIDE_WINDOW, Policy.hold(night, wifi, 0, 0, hourNow = 12))
+        assertEquals(Hold.OUTSIDE_WINDOW, Policy.hold(night, wifi, 0, 0, hourNow = 7))
+        assertEquals(Hold.LOW_STORAGE, Policy.hold(Settings(minFreeMb = 500), wifi.copy(freeBytes = 100L * 1024 * 1024), 0, 0, hourNow = 12))
+        assertNull(Policy.hold(Settings(minFreeMb = 500), wifi.copy(freeBytes = -1), 0, 0, hourNow = 12))
+    }
+
     @Test fun thermalCapsConnections() {
         assertEquals(8, Policy.connectionCap(wifi, 8))
         assertEquals(2, Policy.connectionCap(wifi.copy(thermal = 2), 8))

@@ -152,3 +152,31 @@ class QuickTileService : TileService() {
         }
     }
 }
+
+/**
+ * يوقظ الطابور في موعد مجدول. WorkManager لا يضمن الدقة الزمنية (Doze وتوفير الطاقة)،
+ * فالموعد تقريبي وتقول الواجهة ذلك صراحة. لا نطلب صلاحية المنبهات الدقيقة.
+ */
+@HiltWorker
+class ScheduleWorker @AssistedInject constructor(
+    @Assisted ctx: Context,
+    @Assisted params: WorkerParameters,
+    private val manager: DownloadManager,
+) : CoroutineWorker(ctx, params) {
+    override suspend fun doWork(): Result {
+        manager.start()
+        manager.wake()
+        ResumeWorker.enqueueExpedited(applicationContext)
+        return Result.success()
+    }
+
+    companion object {
+        fun at(ctx: Context, timeMs: Long) {
+            val delay = (timeMs - System.currentTimeMillis()).coerceAtLeast(0)
+            val req = OneTimeWorkRequestBuilder<ScheduleWorker>()
+                .setInitialDelay(delay, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .build()
+            WorkManager.getInstance(ctx).enqueueUniqueWork("schedule", ExistingWorkPolicy.REPLACE, req)
+        }
+    }
+}

@@ -36,7 +36,28 @@ class MainViewModel @Inject constructor(
     private val settingsRepo: SettingsRepository,
     val manager: DownloadManager,
     val secrets: com.tadaffuq.app.core.SecretStore,
+    val vault: com.tadaffuq.app.vault.Vault,
 ) : ViewModel() {
+    suspend fun exportBackup(): String = com.tadaffuq.app.core.Backup.export(db, settingsRepo.current())
+    suspend fun importBackup(json: String): com.tadaffuq.app.core.Backup.ImportResult {
+        val r = com.tadaffuq.app.core.Backup.import(db, json, settingsRepo.current())
+        r.settings?.let { st -> settingsRepo.update { st } }
+        return r
+    }
+
+    /** ينقل ملفاً مكتملاً إلى المجلد الخاص المشفّر؛ الأصل يُحذف بعد التحقق فقط. */
+    suspend fun moveToVault(t: TaskEntity) = withContext(Dispatchers.IO) {
+        val f = t.filePath?.let(::File)?.takeIf { it.exists() } ?: error("missing")
+        vault.add(f, deleteOriginal = true)
+        db.tasks().delete(listOf(t.id))
+    }
+
+    /** نسخ أو نقل إلى مجلد اختاره المستخدم عبر SAF (بطاقة SD أو USB أو غيرهما). */
+    suspend fun copyToTree(t: TaskEntity, tree: android.net.Uri, move: Boolean) = withContext(Dispatchers.IO) {
+        val f = t.filePath?.let(::File)?.takeIf { it.exists() } ?: error("missing")
+        val uri = com.tadaffuq.app.download.TaskFiles.copyToTree(ctx, f, tree.toString())
+        if (move) { f.delete(); db.tasks().update(t.copy(filePath = uri.toString())) }
+    }
     private fun <T> StateFlowOf(flow: kotlinx.coroutines.flow.Flow<T>, initial: T): StateFlow<T> =
         flow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initial)
 

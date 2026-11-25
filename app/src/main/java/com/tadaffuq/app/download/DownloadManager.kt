@@ -64,6 +64,8 @@ data class NewTask(
     /** يبدأ متوقفاً (للحفظ في الطابور دون بدء). */
     val startPaused: Boolean = false,
     val mirrors: String? = null,
+    val postExtract: Boolean = false,
+    val scheduledAt: Long? = null,
 )
 
 /**
@@ -107,6 +109,7 @@ class DownloadManager @Inject constructor(
     @Volatile private var settings = Settings()
     @Volatile private var started = false
     @Volatile private var pendingCount = 0
+    private var ticks = 0
 
     fun start() {
         synchronized(this) { if (started) return; started = true }
@@ -128,6 +131,8 @@ class DownloadManager @Inject constructor(
                 delay(1_000)
                 val total = _live.value.values.sumOf { it.speedBps } + externalSpeed()
                 _speedHistory.update { (it.drop(1) + total) }
+                // المساحة والنافذة الزمنية والمواعيد تتغير مع الوقت: مراجعة دورية رخيصة
+                if (++ticks % 30 == 0) { conditions.refreshStorage(StorageDirs.root()); wake() }
             }
         }
         usage.start(scope)
@@ -145,7 +150,10 @@ class DownloadManager @Inject constructor(
         val d = conditions.state.value
         val hold = Policy.hold(s, d, usage.cellularToday, usage.cellularMonth)
         _hold.value = hold
-        val waiting = dao.withStatus(listOf(TaskStatus.QUEUED, TaskStatus.WAITING_NETWORK))
+        val now = System.currentTimeMillis()
+        val all = dao.withStatus(listOf(TaskStatus.QUEUED, TaskStatus.WAITING_NETWORK))
+        val (future, waiting) = all.partition { (it.scheduledAt ?: 0) > now }
+        future.minOfOrNull { it.scheduledAt!! }?.let { ScheduleWorker.at(ctx, it) }
         pendingCount = waiting.size
         if (hold != null) {
             jobs.keys.toList().forEach { stop(it, TaskStatus.WAITING_NETWORK) }
@@ -282,7 +290,8 @@ class DownloadManager @Inject constructor(
             dao.update(done)
             limiters.remove(t.id)
             StorageDirs.scan(ctx, dest)
-            if (settings.notifyOnComplete) notifier.completed(done)
+            val final = postActions(done, dest)
+            if (settings.notifyOnComplete) notifier.completed(final)
         } catch (e: CancellationException) {
             if (killed) throw e // موت العملية: لا يُكتب شيء، كما في الواقع
             val status = stopAs.remove(t.id) ?: TaskStatus.PAUSED
@@ -309,6 +318,27 @@ class DownloadManager @Inject constructor(
                 dao.setStatus(t.id, TaskStatus.FAILED, "INTERNAL", e.javaClass.simpleName)
             }
         }
+    }
+
+    /**
+     * إجراءات بعد الاكتمال والتحقق: فك الأرشيف (إن طُلب ولم تفشل البصمة) ثم النقل إلى مجلد SAF.
+     * فشلها لا يُفشل التنزيل؛ يُسجَّل في errorDetail فقط.
+     */
+    private suspend fun postActions(t: TaskEntity, file: File): TaskEntity {
+        var cur = t
+        if ((t.postExtract || settings.autoExtract) && t.hashOk != false && com.tadaffuq.engine.Archives.isArchive(file.name)) {
+            val dest = File(file.parentFile, file.name.substringBeforeLast('.').removeSuffix(".tar"))
+            runCatching { com.tadaffuq.engine.Archives.extract(file, dest) }
+                .onFailure { e -> cur = cur.copy(errorDetail = "EXTRACT:" + ((e as? com.tadaffuq.engine.ArchiveException)?.reason ?: e.javaClass.simpleName)); dao.update(cur) }
+                .onSuccess { StorageDirs.scan(ctx, dest) }
+        }
+        val tree = settings.moveToTree
+        if (tree.isNotBlank()) {
+            runCatching { TaskFiles.copyToTree(ctx, file, tree) }
+                .onSuccess { uri -> file.delete(); cur = cur.copy(filePath = uri.toString()); dao.update(cur) }
+                .onFailure { cur = cur.copy(errorDetail = "MOVE_FAILED"); dao.update(cur) }
+        }
+        return cur
     }
 
     // ===== واجهة الاستخدام =====
@@ -366,6 +396,7 @@ class DownloadManager @Inject constructor(
                 expectedHash = n.expectedHash?.trim()?.ifBlank { null }, userAgent = n.userAgent, referer = n.referer,
                 cookies = n.cookies, priority = n.priority, packageId = n.packageId, wifiOnly = n.wifiOnly,
                 speedLimitBps = n.speedLimitBps, mirrors = n.mirrors?.trim()?.ifBlank { null },
+                postExtract = n.postExtract, scheduledAt = n.scheduledAt?.takeIf { it > System.currentTimeMillis() },
             )
         })
         wake()

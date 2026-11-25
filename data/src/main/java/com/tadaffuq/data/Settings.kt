@@ -56,7 +56,22 @@ data class Settings(
     val torrentUpLimit: Int = 256 * 1024,
     val torrentSeedDefault: Boolean = false,
     val torrentRatio: Float = 1f,
-)
+    /** قواعد التنظيم بصيغة JSON (انظر Rule). */
+    val rulesJson: String = "[]",
+    /** فك الأرشيفات تلقائياً بعد اكتمالها. */
+    val autoExtract: Boolean = false,
+    /** مجلد SAF يُنقل إليه كل ملف بعد اكتماله (بطاقة SD أو USB أو مجلد آخر)، أو فارغ. */
+    val moveToTree: String = "",
+    /** نافذة زمنية يومية للتنزيل (مثلاً الليل). */
+    val windowEnabled: Boolean = false,
+    val windowStart: Int = 1,
+    val windowEnd: Int = 7,
+    /** إيقاف الطابور إن قلّت المساحة الحرة عن هذا الحد (م.ب)، 0 = معطّل. */
+    val minFreeMb: Long = 500,
+) {
+    val rules: List<Rule> get() = Rule.listFrom(rulesJson)
+}
+
 
 private val Context.store: DataStore<Preferences> by preferencesDataStore("settings")
 
@@ -96,6 +111,13 @@ class SettingsRepository(private val context: Context) {
         val tUp = intPreferencesKey("torrentUpLimit")
         val tSeed = booleanPreferencesKey("torrentSeedDefault")
         val tRatio = androidx.datastore.preferences.core.floatPreferencesKey("torrentRatio")
+        val rules = stringPreferencesKey("rulesJson")
+        val autoExtract = booleanPreferencesKey("autoExtract")
+        val moveTree = stringPreferencesKey("moveToTree")
+        val wEnabled = booleanPreferencesKey("windowEnabled")
+        val wStart = intPreferencesKey("windowStart")
+        val wEnd = intPreferencesKey("windowEnd")
+        val minFree = longPreferencesKey("minFreeMb")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -142,6 +164,13 @@ class SettingsRepository(private val context: Context) {
             p[K.tUp] = s.torrentUpLimit.coerceAtLeast(0)
             p[K.tSeed] = s.torrentSeedDefault
             p[K.tRatio] = s.torrentRatio.coerceIn(0.1f, 100f)
+            p[K.rules] = s.rulesJson
+            p[K.autoExtract] = s.autoExtract
+            p[K.moveTree] = s.moveToTree
+            p[K.wEnabled] = s.windowEnabled
+            p[K.wStart] = s.windowStart.coerceIn(0, 23)
+            p[K.wEnd] = s.windowEnd.coerceIn(0, 23)
+            p[K.minFree] = s.minFreeMb.coerceAtLeast(0)
         }
     }
 
@@ -182,6 +211,13 @@ class SettingsRepository(private val context: Context) {
             torrentUpLimit = p[K.tUp] ?: d.torrentUpLimit,
             torrentSeedDefault = p[K.tSeed] ?: d.torrentSeedDefault,
             torrentRatio = p[K.tRatio] ?: d.torrentRatio,
+            rulesJson = p[K.rules] ?: d.rulesJson,
+            autoExtract = p[K.autoExtract] ?: d.autoExtract,
+            moveToTree = p[K.moveTree] ?: d.moveToTree,
+            windowEnabled = p[K.wEnabled] ?: d.windowEnabled,
+            windowStart = p[K.wStart] ?: d.windowStart,
+            windowEnd = p[K.wEnd] ?: d.windowEnd,
+            minFreeMb = p[K.minFree] ?: d.minFreeMb,
         )
     }
 }

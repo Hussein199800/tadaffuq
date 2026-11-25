@@ -159,6 +159,14 @@ private fun FileInfoSheet(t: TaskEntity, vm: MainViewModel, onDismiss: () -> Uni
     var reference by remember { mutableStateOf("") }
     var verify by remember { mutableStateOf<Boolean?>(null) }
     var warnExe by remember { mutableStateOf(false) }
+    var msg by remember { mutableStateOf<String?>(null) }
+    var treeMove by remember { mutableStateOf(false) }
+    val treePicker = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) scope.launch {
+            msg = runCatching { vm.copyToTree(t, uri, treeMove) }.fold({ ctx.getString(if (treeMove) R.string.moved else R.string.copied) }, { ctx.getString(R.string.copy_failed) })
+            if (treeMove) onDismiss()
+        }
+    }
     val settings by vm.settings.collectAsState()
 
     fun open() {
@@ -201,8 +209,22 @@ private fun FileInfoSheet(t: TaskEntity, vm: MainViewModel, onDismiss: () -> Uni
                     AssistChip(onClick = { ctx.startActivity(StorageDirs.shareIntent(ctx, listOf(file))) }, label = { Text(stringResource(R.string.action_share)) })
                     AssistChip(onClick = { renaming = true }, label = { Text(stringResource(R.string.rename)) })
                 }
+                if (file?.exists() == true) {
+                    AssistChip(onClick = { treeMove = false; treePicker.launch(null) }, label = { Text(stringResource(R.string.copy_to_folder)) })
+                    AssistChip(onClick = { treeMove = true; treePicker.launch(null) }, label = { Text(stringResource(R.string.move_to_folder)) })
+                    AssistChip(onClick = { scope.launch { runCatching { vm.moveToVault(t) }.onSuccess { onDismiss() }.onFailure { msg = it.message } } }, label = { Text(stringResource(R.string.move_to_vault)) })
+                    if (com.tadaffuq.engine.Archives.isArchive(t.fileName)) AssistChip(onClick = {
+                        scope.launch {
+                            msg = ctx.getString(R.string.extracting)
+                            msg = runCatching { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                com.tadaffuq.engine.Archives.extract(file, java.io.File(file.parentFile, file.name.substringBeforeLast('.').removeSuffix(".tar")))
+                            } }.fold({ r -> ctx.getString(R.string.extracted_n, r.files) }, { e -> ctx.getString(R.string.extract_failed) + " " + ((e as? com.tadaffuq.engine.ArchiveException)?.reason ?: "") })
+                        }
+                    }, label = { Text(stringResource(R.string.extract)) })
+                }
                 AssistChip(onClick = { vm.moveToTrash(listOf(t)); onDismiss() }, label = { Text(stringResource(R.string.move_to_trash)) })
             }
+            msg?.let { Text(it, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall) }
             Spacer(Modifier.height(20.dp))
         }
     }
@@ -244,7 +266,13 @@ private fun CleanupSheet(files: List<TaskEntity>, vm: MainViewModel, onDismiss: 
     var scanning by remember { mutableStateOf(false) }
     val large = files.filter { it.totalBytes >= 500L * 1024 * 1024 }.sortedByDescending { it.totalBytes }
     val empty = files.filter { it.totalBytes == 0L }
-    val missing = files.filter { f -> f.filePath?.let { !File(it).exists() } ?: true }
+    val missing = files.filter { f -> !com.tadaffuq.app.download.TaskFiles.exists(androidx.compose.ui.platform.LocalContext.current, f.filePath) }
+    val allTasks by vm.tasks.collectAsState()
+    // ملفات .tdq جزئية لا تخص أي مهمة (من مهام حُذفت أو انهيار قديم)
+    val orphans = remember(allTasks) {
+        val known = allTasks.filter { it.status != TaskStatus.COMPLETED }.map { File(it.dirPath, it.fileName + StorageDirs.PART_SUFFIX).path }.toSet()
+        StorageDirs.root().walkTopDown().maxDepth(4).filter { it.isFile && it.name.endsWith(StorageDirs.PART_SUFFIX) && it.path !in known }.toList()
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
         Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 20.dp)) {
@@ -281,6 +309,10 @@ private fun CleanupSheet(files: List<TaskEntity>, vm: MainViewModel, onDismiss: 
             Text(stringResource(R.string.empty_files_title), style = MaterialTheme.typography.titleSmall)
             if (empty.isEmpty()) Text(stringResource(R.string.none_found), color = T.extra.secondaryText)
             else TextButton(onClick = { vm.moveToTrash(empty) }) { Text(sr(R.string.trash_n, empty.size)) }
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.orphan_parts), style = MaterialTheme.typography.titleSmall)
+            if (orphans.isEmpty()) Text(stringResource(R.string.none_found), color = T.extra.secondaryText)
+            else TextButton(onClick = { orphans.forEach { it.delete() } }) { Text(com.tadaffuq.app.core.sr(R.string.delete_n_size, orphans.size, Fmt.bytes(orphans.sumOf { it.length() }))) }
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.missing_files), style = MaterialTheme.typography.titleSmall)
             if (missing.isEmpty()) Text(stringResource(R.string.none_found), color = T.extra.secondaryText)

@@ -19,5 +19,6 @@ object AppModule {
     @Provides @Singleton fun secrets(@ApplicationContext c: Context) = com.tadaffuq.app.core.SecretStore(c)
     @Provides @Singleton fun credentials(@ApplicationContext c: Context, secrets: com.tadaffuq.app.core.SecretStore) = com.tadaffuq.app.download.AppCredentials(c, secrets)
     @Provides @Singleton fun clients(secrets: com.tadaffuq.app.core.SecretStore) = com.tadaffuq.app.download.ClientProvider(secrets)
+    @Provides @Singleton fun vault(@ApplicationContext c: Context) = com.tadaffuq.app.vault.Vault(c)
     @Provides @Singleton fun conditions(@ApplicationContext c: Context) = Conditions(c)
 }

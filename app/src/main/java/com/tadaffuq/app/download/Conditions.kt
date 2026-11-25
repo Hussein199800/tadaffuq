@@ -25,6 +25,8 @@ data class DeviceState(
     val charging: Boolean = false,
     /** PowerManager.THERMAL_STATUS_* أو 0 إن لم تتوفر. */
     val thermal: Int = 0,
+    /** المساحة الحرة في مجلد التنزيلات، ‎-1 إن لم تُقرأ. */
+    val freeBytes: Long = -1,
 )
 
 class Conditions(private val context: Context) {
@@ -34,6 +36,12 @@ class Conditions(private val context: Context) {
     /** للاختبارات فقط: حالة جهاز محددة. */
     @androidx.annotation.VisibleForTesting
     fun set(state: DeviceState) { _state.value = state }
+
+    /** تُحدَّث المساحة الحرة دورياً من المدير (قراءة رخيصة). */
+    fun refreshStorage(dir: java.io.File) {
+        val free = runCatching { (if (dir.exists()) dir else dir.parentFile ?: dir).usableSpace }.getOrDefault(-1L)
+        _state.update { it.copy(freeBytes = free) }
+    }
 
     fun start() {
         val cm = context.getSystemService(ConnectivityManager::class.java)

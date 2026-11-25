@@ -113,6 +113,9 @@ fun TaskCard(
                     Text(Fmt.percent(downloaded, total), style = MaterialTheme.typography.labelMedium, color = T.extra.secondaryText)
                 }
                 if (task.status == TaskStatus.FAILED) Text(errorText(task.errorCode), style = MaterialTheme.typography.bodySmall, color = T.extra.danger)
+                task.scheduledAt?.takeIf { it > System.currentTimeMillis() && task.status.isWaiting }?.let {
+                    Text(com.tadaffuq.app.core.sr(R.string.schedule_at, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                }
             }
             if (task.hashOk == false) Text(stringResource(R.string.err_checksum), style = MaterialTheme.typography.bodySmall, color = T.extra.danger)
         }

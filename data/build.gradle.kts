@@ -40,3 +40,6 @@ dependencies {
     testImplementation(libs.coroutines.test)
     testImplementation(libs.room.testing)
 }
+
+// مخطط Room يُولَّد أثناء الترجمة؛ أصول الاختبار تُدمج بعده حتى يجد اختبار الترحيل أحدث إصدار
+tasks.matching { it.name.contains("UnitTestAssets") }.configureEach { dependsOn("kspDebugKotlin", "kspReleaseKotlin") }

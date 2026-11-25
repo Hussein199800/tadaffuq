@@ -67,6 +67,8 @@ data class AddState(
     val remotePassword: String = "",
     /** رابط Magnet في النص: يُفتح في نافذة التورنت. */
     val magnet: String? = null,
+    val scheduledAt: Long? = null,
+    val extract: Boolean = false,
     val packageName: String = "",
     val duplicatePolicy: DuplicatePolicy = DuplicatePolicy.RENAME,
     val submitting: Boolean = false,
@@ -197,10 +199,18 @@ class AddViewModel @Inject constructor(
                     DuplicatePolicy.RENAME -> Unit // الاسم الفريد يُختار عند الاكتمال
                 }
                 val name = FileNames.sanitize(item.name.ifBlank { item.probe?.fileName ?: "download" })
+                // قواعد التنظيم: أول قاعدة مطابقة تحدد المجلد والأولوية والسرعة والفك
+                val rule = com.tadaffuq.data.Rule.firstMatch(settings.rules, name, item.url, item.probe?.totalBytes ?: -1)
+                val dir = rule?.folder?.let(com.tadaffuq.data.Rule::safeFolder)?.takeIf { it.isNotEmpty() }?.let { java.io.File(StorageDirs.root(), it).path }
+                    ?: StorageDirs.dirFor(FileNames.category(name), settings.sortByCategory).path
                 NewTask(
                     url = item.url,
                     fileName = name,
-                    dirPath = StorageDirs.dirFor(FileNames.category(name), settings.sortByCategory).path,
+                    dirPath = dir,
+                    priority = rule?.priority ?: 0,
+                    speedLimitBps = (rule?.speedLimitKbps ?: 0) * 1024,
+                    postExtract = s.extract || rule?.extract == true,
+                    scheduledAt = s.scheduledAt,
                     probe = item.probe,
                     connections = s.connections,
                     expectedHash = if (s.single) s.expectedHash.ifBlank { null } else null,

@@ -21,6 +21,13 @@ junit = "4.13.2"
 robolectric = "4.16"
 
 [libraries]
+commons-compress = { module = "org.apache.commons:commons-compress", version = "1.28.0" }
+xz = { module = "org.tukaani:xz", version = "1.10" }
+junrar = { module = "com.github.junrar:junrar", version = "7.5.5" }
+androidx-biometric = { module = "androidx.biometric:biometric", version = "1.1.0" }
+androidx-documentfile = { module = "androidx.documentfile:documentfile", version = "1.1.0" }
+glance-appwidget = { module = "androidx.glance:glance-appwidget", version = "1.1.1" }
+glance-material3 = { module = "androidx.glance:glance-material3", version = "1.1.1" }
 libtorrent4j = { module = "org.libtorrent4j:libtorrent4j", version = "2.1.0-39" }
 libtorrent4j-arm64 = { module = "org.libtorrent4j:libtorrent4j-android-arm64", version = "2.1.0-39" }
 libtorrent4j-arm = { module = "org.libtorrent4j:libtorrent4j-android-arm", version = "2.1.0-39" }

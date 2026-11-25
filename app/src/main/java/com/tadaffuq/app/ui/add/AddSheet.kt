@@ -54,7 +54,7 @@ import com.tadaffuq.app.ui.errorText
 import com.tadaffuq.app.ui.theme.T
 import com.tadaffuq.engine.FileNames
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> Unit = {}, vm: AddViewModel = hiltViewModel()) {
     LaunchedEffect(request) { vm.open(request) }
@@ -142,6 +142,9 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
                 )
                 SwitchLine(stringResource(R.string.add_wifi_only), stringResource(R.string.add_wifi_only_desc), s.wifiOnly) { v -> vm.update { it.copy(wifiOnly = v) } }
                 SwitchLine(stringResource(R.string.add_start_paused), stringResource(R.string.add_start_paused_desc), s.startPaused) { v -> vm.update { it.copy(startPaused = v) } }
+                if (s.items.any { com.tadaffuq.engine.Archives.isArchive(it.name) })
+                    SwitchLine(stringResource(R.string.add_extract), stringResource(R.string.add_extract_desc), s.extract) { v -> vm.update { it.copy(extract = v) } }
+                ScheduleRow(s.scheduledAt) { t -> vm.update { it.copy(scheduledAt = t) } }
                 TextButton(onClick = { advanced = !advanced }, modifier = Modifier.padding(horizontal = 8.dp)) {
                     Text(stringResource(if (advanced) R.string.hide_advanced else R.string.show_advanced))
                 }
@@ -247,5 +250,31 @@ private fun ItemRow(item: Item, single: Boolean, vm: AddViewModel) {
         if (item.duplicates.isNotEmpty()) {
             Text(stringResource(R.string.dup_found_inline), style = MaterialTheme.typography.bodySmall, color = T.extra.warning)
         }
+    }
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ScheduleRow(at: Long?, onPick: (Long?) -> Unit) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    fun nextAt(hour: Int, minute: Int): Long {
+        val c = java.util.Calendar.getInstance()
+        c.set(java.util.Calendar.HOUR_OF_DAY, hour); c.set(java.util.Calendar.MINUTE, minute); c.set(java.util.Calendar.SECOND, 0)
+        if (c.timeInMillis <= System.currentTimeMillis()) c.add(java.util.Calendar.DAY_OF_YEAR, 1)
+        return c.timeInMillis
+    }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+        Text(stringResource(R.string.schedule), style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.schedule_desc), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(at == null, { onPick(null) }, label = { Text(stringResource(R.string.schedule_now)) })
+            FilterChip(false, { onPick(System.currentTimeMillis() + 3_600_000) }, label = { Text(stringResource(R.string.schedule_hour)) })
+            FilterChip(false, { onPick(nextAt(1, 0)) }, label = { Text(stringResource(R.string.schedule_night)) })
+            FilterChip(false, {
+                val c = java.util.Calendar.getInstance()
+                android.app.TimePickerDialog(ctx, { _, h, m -> onPick(nextAt(h, m)) }, c.get(java.util.Calendar.HOUR_OF_DAY), c.get(java.util.Calendar.MINUTE), true).show()
+            }, label = { Text(stringResource(R.string.schedule_custom)) })
+        }
+        if (at != null) Text(com.tadaffuq.app.core.sr(R.string.schedule_at, Fmt.date(at)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
     }
 }

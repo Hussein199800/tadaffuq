@@ -152,7 +152,7 @@ class MainActivity : AppCompatActivity() {
         )
         val entry by nav.currentBackStackEntryAsState()
         val route = entry?.destination?.route
-        val tabRoute = when (route) { "settings", "reports", "links", "trash", "about" -> "more"; else -> route }
+        val tabRoute = when (route) { "settings", "reports", "links", "trash", "about", "rules", "vault", "backup", "dev", "rpc" -> "more"; else -> route }
         fun go(r: String) = nav.navigate(r) {
             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
@@ -201,6 +201,9 @@ class MainActivity : AppCompatActivity() {
                 composable("links") { LinksScreen(vm, padding, { nav.popBackStack() }) { add(it) } }
                 composable("trash") { TrashScreen(vm, padding) { nav.popBackStack() } }
                 composable("about") { AboutScreen(padding) { nav.popBackStack() } }
+                composable("rules") { com.tadaffuq.app.ui.more.RulesScreen(vm, padding) { nav.popBackStack() } }
+                composable("vault") { com.tadaffuq.app.ui.more.VaultScreen(vm, padding) { nav.popBackStack() } }
+                composable("backup") { com.tadaffuq.app.ui.more.BackupScreen(vm, padding) { nav.popBackStack() } }
             }
         }
         pending?.let { req -> AddSheet(req, onDismiss = { pending = null }, onTorrent = { m -> pending = null; pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = m) }) }
