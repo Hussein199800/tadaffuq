@@ -208,7 +208,8 @@
     <string name="previous">Previous</string>
     <string name="next">Next</string>
     <string name="trackers_blocked">%1$d trackers blocked on this page</string>
-    <string name="private_note">Private tabs aren\'t saved to history and don\'t cache pages, but cookies are shared with other tabs because of how WebView works.</string>
+    <string name="private_note">Private tabs aren\'t saved to history and don\'t use the cache, but your device\'s WebView can\'t isolate them, so cookies are shared with other tabs. This isn\'t full privacy.</string>
+    <string name="private_note_isolated">Private tabs are isolated: cookies and storage are separate from other tabs and are deleted after the last private tab closes, and nothing is saved to history. Your network and provider still see what you visit.</string>
     <string name="no_bookmarks">No bookmarks yet</string>
     <string name="no_history">History is empty</string>
     <string name="clear_history">Clear history</string>
@@ -291,7 +292,7 @@
     <string name="user_agent">User-Agent</string>
     <string name="user_agent_desc">Some servers require a specific one; usually keep the default</string>
     <string name="wifi_only">Wi-Fi only</string>
-    <string name="wifi_only_desc">No downloads on mobile data or metered networks</string>
+    <string name="wifi_only_desc">Means unmetered: no downloads on mobile data or on Wi-Fi marked as metered (such as a phone hotspot)</string>
     <string name="only_charging">Only while charging</string>
     <string name="only_charging_desc">Pauses when unplugged and resumes when charging</string>
     <string name="low_battery">Pause on low battery</string>
@@ -624,6 +625,14 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="err_hash_invalid">Invalid checksum reference (not SHA-256, SHA-1 or MD5). Retrying finishes the file without verification.</string>
     <string name="err_checksum_kept">The file wasn\'t published because it doesn\'t match the checksum. Retrying downloads it again.</string>
     <string name="about_build">Build</string>
+    <string name="add_saves_to">Saves to: %1$s</string>
+    <string name="storage_fallback">Couldn\'t write to Downloads; files are saved in the app\'s own folder for now (removed if the app is uninstalled).</string>
+    <string name="storage_denied">Storage permission wasn\'t granted; the file will be saved in the app\'s own folder.</string>
+    <string name="sec_capture">Capture</string>
+    <string name="tile_add">Copy tile in Quick Settings</string>
+    <string name="tile_add_desc">Tap the tile after copying a link to open the add window. The clipboard is never read in the background.</string>
+    <string name="tile_add_done">Tile added</string>
+    <string name="tile_add_manual">Pull down Quick Settings twice, tap Edit (pencil), then drag the “Tadaffuq” tile into the panel.</string>
     <plurals name="notif_running">
         <item quantity="one">Downloading %d file</item>
         <item quantity="other">Downloading %d files</item>

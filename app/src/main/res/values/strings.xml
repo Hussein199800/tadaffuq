@@ -208,7 +208,8 @@
     <string name="previous">السابق</string>
     <string name="next">التالي</string>
     <string name="trackers_blocked">حُجب %1$d متتبعاً في هذه الصفحة</string>
-    <string name="private_note">التبويب الخاص لا يُسجَّل في السجل ولا يخزّن الصفحات مؤقتاً، لكن ملفات تعريف الارتباط مشتركة مع بقية التبويبات بحكم محرك WebView.</string>
+    <string name="private_note">التبويب الخاص لا يُسجَّل في السجل ولا يستعمل الذاكرة المؤقتة، لكن جهازك لا يدعم عزل WebView، فملفات تعريف الارتباط مشتركة مع بقية التبويبات. ليس خصوصية كاملة.</string>
+    <string name="private_note_isolated">التبويب الخاص معزول: ملفات تعريف الارتباط والتخزين منفصلة عن بقية التبويبات وتُحذف بعد إغلاق آخر تبويب خاص، ولا يُسجَّل في السجل. الشبكة ومزوّدها يريان ما تزوره كالمعتاد.</string>
     <string name="no_bookmarks">لا مفضلة بعد</string>
     <string name="no_history">السجل فارغ</string>
     <string name="clear_history">مسح السجل</string>
@@ -291,7 +292,7 @@
     <string name="user_agent">هوية المتصفح (User-Agent)</string>
     <string name="user_agent_desc">بعض الخوادم تتطلب هوية معينة؛ اتركها افتراضية غالباً</string>
     <string name="wifi_only">Wi-Fi فقط</string>
-    <string name="wifi_only_desc">لا تنزيل على بيانات الجوال أو الشبكات المحدودة</string>
+    <string name="wifi_only_desc">يعني شبكة غير محدودة: لا تنزيل على بيانات الجوال ولا على Wi-Fi مُعلَّمة «محدودة» (نقطة اتصال الهاتف مثلاً)</string>
     <string name="only_charging">أثناء الشحن فقط</string>
     <string name="only_charging_desc">يتوقف عند فصل الشاحن ويُستأنف عند وصله</string>
     <string name="low_battery">التوقف عند انخفاض البطارية</string>
@@ -624,6 +625,14 @@
     <string name="err_hash_invalid">مرجع البصمة غير صالح (ليس SHA-256 أو SHA-1 أو MD5). إعادة المحاولة تكمل الملف دون تحقق.</string>
     <string name="err_checksum_kept">لم يُنشر الملف لأنه لا يطابق البصمة. إعادة المحاولة تنزّله من جديد.</string>
     <string name="about_build">البناء</string>
+    <string name="add_saves_to">يُحفظ في: %1$s</string>
+    <string name="storage_fallback">تعذّرت الكتابة في «التنزيلات»؛ تُحفظ الملفات مؤقتاً في مجلد التطبيق الخاص (يُحذف عند إلغاء تثبيته).</string>
+    <string name="storage_denied">لم يُمنح إذن التخزين؛ سيُحفظ الملف في مجلد التطبيق الخاص.</string>
+    <string name="sec_capture">الالتقاط</string>
+    <string name="tile_add">بلاطة النسخ في الإعدادات السريعة</string>
+    <string name="tile_add_desc">المس البلاطة بعد نسخ رابط فتُفتح نافذة الإضافة. لا تقرأ الحافظة في الخلفية.</string>
+    <string name="tile_add_done">أُضيفت البلاطة</string>
+    <string name="tile_add_manual">اسحب لوحة الإعدادات السريعة للأسفل مرتين، واضغط «تعديل» (القلم)، ثم اسحب بلاطة «تدفّق» إلى اللوحة.</string>
     <plurals name="notif_running">
         <item quantity="zero">لا تنزيلات</item>
         <item quantity="one">يجري تنزيل ملف واحد</item>

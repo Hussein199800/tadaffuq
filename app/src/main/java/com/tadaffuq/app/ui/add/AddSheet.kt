@@ -86,6 +86,9 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
             if (request.clipboardEmpty && s.input.isBlank()) item {
                 Text(stringResource(R.string.clip_empty), style = MaterialTheme.typography.bodyMedium, color = T.extra.warning, modifier = Modifier.padding(horizontal = 20.dp))
             }
+            if (s.items.isNotEmpty() && StorageDirs.usingFallback) item {
+                Text(stringResource(R.string.storage_fallback), style = MaterialTheme.typography.bodySmall, color = T.extra.warning, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+            }
             if (s.items.isEmpty() && s.input.isNotBlank() && s.magnet == null) item {
                 Text(stringResource(R.string.add_no_links), color = T.extra.secondaryText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 20.dp))
             }
@@ -251,6 +254,9 @@ private fun ItemRow(item: Item, single: Boolean, vm: AddViewModel) {
         if (item.errorCode == "HOSTKEY_NEW" && item.errorDetail != null) {
             Text(stringResource(R.string.hostkey_new_text, item.errorDetail), style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = { vm.trustHostKey(item) }) { Text(stringResource(R.string.hostkey_trust)) }
+        }
+        if (item.probe != null) vm.displayDir(item)?.let { d ->
+            Text(com.tadaffuq.app.core.sr(R.string.add_saves_to, Fmt.iso(d)), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(top = 2.dp))
         }
         if (item.probe != null && FileNames.isExecutable(item.name)) {
             Text(stringResource(R.string.exe_warning), style = MaterialTheme.typography.bodySmall, color = T.extra.warning, modifier = Modifier.padding(top = 2.dp))

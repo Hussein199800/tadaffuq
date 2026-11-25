@@ -19,6 +19,7 @@ class TadaffuqApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        com.tadaffuq.app.download.StorageDirs.init(this)
         manager.start()
         torrents.start()
         rpc.start()

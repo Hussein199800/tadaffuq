@@ -205,7 +205,7 @@ fun BrowserScreen(padding: PaddingValues, onDownload: (AddRequest) -> Unit, bloc
                         TextButton(onClick = { BrowserTabs.open(ctx); sheet = null }) { Text(stringResource(R.string.new_tab)) }
                         TextButton(onClick = { BrowserTabs.open(ctx, private = true); sheet = null }) { Text(stringResource(R.string.new_private_tab)) }
                     }
-                    Text(stringResource(R.string.private_note), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                    Text(stringResource(if (BrowserTabs.privateIsolated) R.string.private_note_isolated else R.string.private_note), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                 }
             }
         }

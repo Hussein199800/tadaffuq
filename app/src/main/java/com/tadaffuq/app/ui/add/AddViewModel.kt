@@ -142,7 +142,7 @@ class AddViewModel @Inject constructor(
     private suspend fun probeAll() {
         val sem = Semaphore(4)
         val s = _state.value
-        val settings = settingsRepo.current()
+        val settings = settingsRepo.current().also { settingsCache = it }
         kotlinx.coroutines.coroutineScope {
             s.items.filter { it.probing }.map { item ->
                 async {
@@ -221,9 +221,7 @@ class AddViewModel @Inject constructor(
                 val name = FileNames.sanitize(item.name.ifBlank { item.probe?.fileName ?: "download" })
                 // قواعد التنظيم: أول قاعدة مطابقة تحدد المجلد والأولوية والسرعة والفك
                 val rule = com.tadaffuq.data.Rule.firstMatch(settings.rules, name, item.url, item.probe?.totalBytes ?: -1)
-                val dir = com.tadaffuq.data.Rule.safeFolder(s.subfolder).takeIf { it.isNotEmpty() }?.let { java.io.File(StorageDirs.root(), it).path }
-                    ?: rule?.folder?.let(com.tadaffuq.data.Rule::safeFolder)?.takeIf { it.isNotEmpty() }?.let { java.io.File(StorageDirs.root(), it).path }
-                    ?: StorageDirs.dirFor(FileNames.category(name), settings.sortByCategory).path
+                val dir = destination(item, settings, s).path
                 NewTask(
                     url = item.url,
                     fileName = name,
@@ -247,6 +245,23 @@ class AddViewModel @Inject constructor(
             manager.enqueue(toAdd)
             _state.update { it.copy(submitting = false, done = true) }
         }
+    }
+
+    @Volatile private var settingsCache: com.tadaffuq.data.Settings? = null
+
+    /** مجلد الحفظ الفعلي لعنصر (المجلد الفرعي ← قاعدة مطابقة ← الفئة)، نفسه المعروض والمستعمل عند الإضافة. */
+    private fun destination(item: Item, settings: com.tadaffuq.data.Settings, s: AddState): java.io.File {
+        val name = FileNames.sanitize(item.name.ifBlank { item.probe?.fileName ?: "download" })
+        val rule = com.tadaffuq.data.Rule.firstMatch(settings.rules, name, item.url, item.probe?.totalBytes ?: -1)
+        return com.tadaffuq.data.Rule.safeFolder(s.subfolder).takeIf { it.isNotEmpty() }?.let { java.io.File(StorageDirs.root(), it) }
+            ?: rule?.folder?.let(com.tadaffuq.data.Rule::safeFolder)?.takeIf { it.isNotEmpty() }?.let { java.io.File(StorageDirs.root(), it) }
+            ?: StorageDirs.dirFor(FileNames.category(name), settings.sortByCategory)
+    }
+
+    /** للعرض: «Download/تدفق/…» بدل المسار الكامل. */
+    fun displayDir(item: Item): String? {
+        val st = settingsCache ?: return null
+        return StorageDirs.display(destination(item, st, _state.value))
     }
 
     fun saveForLater() = viewModelScope.launch {

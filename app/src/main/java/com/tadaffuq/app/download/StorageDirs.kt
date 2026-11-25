@@ -19,8 +19,39 @@ object StorageDirs {
     const val ROOT = "تدفق"
     const val PART_SUFFIX = ".tdq"
 
+    @Volatile private var appDir: File? = null
+    @Volatile private var checkedAt = 0L
+    @Volatile private var publicOk = true
+
+    /** يُستدعى عند بدء التطبيق: مجلد خاص بالتطبيق احتياطاً إن تعذّرت الكتابة في التنزيلات العامة. */
+    fun init(context: Context) { appDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)?.let { File(it, ROOT) } }
+
     @Suppress("DEPRECATION")
-    fun root(): File = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), ROOT)
+    fun publicRoot(): File = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), ROOT)
+
+    /**
+     * «التنزيلات/تدفق» إن أمكنت الكتابة فيه فعلاً (لا افتراض)، وإلا مجلد التطبيق الخاص
+     * (Android/data/…/Download/تدفق) مع تنبيه في الواجهة. يُعاد الفحص كل 10 ثوانٍ على الأكثر.
+     */
+    fun root(): File {
+        val pub = publicRoot()
+        val fallback = appDir ?: return pub
+        val now = System.currentTimeMillis()
+        if (now - checkedAt > 10_000) {
+            publicOk = runCatching { (pub.isDirectory || pub.mkdirs()) && pub.canWrite() }.getOrDefault(false)
+            checkedAt = now
+        }
+        return if (publicOk) pub else fallback
+    }
+
+    val usingFallback: Boolean get() = appDir != null && root() != publicRoot()
+
+    /** مسار مختصر للعرض: من «Download» فما بعد. */
+    fun display(dir: File): String {
+        val p = dir.path
+        val i = p.indexOf("/" + Environment.DIRECTORY_DOWNLOADS + "/")
+        return if (i >= 0) p.substring(i + 1) else p
+    }
 
     fun trash(): File = File(root(), ".سلة")
 

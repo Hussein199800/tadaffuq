@@ -194,3 +194,21 @@ class ScheduleWorker @AssistedInject constructor(
         }
     }
 }
+
+/** طلب إضافة بلاطة النسخ من داخل التطبيق (Android 13+)؛ الأقدم يعرض خطوات يدوية. */
+object TileRequest {
+    /** يعيد false إن لم يكن الطلب البرمجي متاحاً (تُعرض الخطوات اليدوية). */
+    fun request(context: Context, onResult: (Boolean) -> Unit): Boolean {
+        if (android.os.Build.VERSION.SDK_INT < 33) return false
+        val sbm = context.getSystemService(android.app.StatusBarManager::class.java) ?: return false
+        return runCatching {
+            sbm.requestAddTileService(
+                android.content.ComponentName(context, QuickTileService::class.java),
+                context.getString(com.tadaffuq.app.R.string.tile_label),
+                android.graphics.drawable.Icon.createWithResource(context, com.tadaffuq.app.R.drawable.ic_notification),
+                context.mainExecutor,
+            ) { code -> onResult(code == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED || code == android.app.StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED) }
+            true
+        }.getOrDefault(false)
+    }
+}

@@ -125,6 +125,15 @@ fun SettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit
             }
         }
 
+        item { SectionHeader(stringResource(R.string.sec_capture)) }
+        item {
+            Card(padding = PaddingValues(vertical = 4.dp)) {
+                SettingRow(stringResource(R.string.tile_add), stringResource(R.string.tile_add_desc), onClick = {
+                    if (!com.tadaffuq.app.download.TileRequest.request(ctx) { ok -> if (ok) android.widget.Toast.makeText(ctx, R.string.tile_add_done, android.widget.Toast.LENGTH_SHORT).show() }) dialog = "tile"
+                })
+            }
+        }
+
         item { SectionHeader(stringResource(R.string.sec_notifications)) }
         item {
             Card(padding = PaddingValues(vertical = 4.dp)) {
@@ -201,6 +210,12 @@ fun SettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit
             AppCompatDelegate.setApplicationLocales(if (l.isBlank()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(l))
         }
         "limit" -> SpeedLimitDialog(s.globalLimitBps, { dialog = null }) { v -> set { it.copy(globalLimitBps = v) }; dialog = null }
+        "tile" -> androidx.compose.material3.AlertDialog(
+            onDismissRequest = { dialog = null },
+            confirmButton = { TextButton(onClick = { dialog = null }) { Text(stringResource(android.R.string.ok)) } },
+            title = { Text(stringResource(R.string.tile_add)) },
+            text = { Text(stringResource(R.string.tile_add_manual)) },
+        )
     }
 }
 

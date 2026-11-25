@@ -84,7 +84,14 @@ class MainActivity : AppCompatActivity() {
     private var lastClip: String? = null
 
     private val notifPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
-    private val storagePermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    /** Android 9: تُنتظر نتيجة إذن التخزين قبل فتح نافذة الإضافة (لا تُضاف مهمة إلى مجلد لا يُكتب فيه). */
+    private var awaitingStorage: AddRequest? = null
+    private val storagePermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val r = awaitingStorage ?: return@registerForActivityResult
+        awaitingStorage = null
+        if (!granted) android.widget.Toast.makeText(this, R.string.storage_denied, android.widget.Toast.LENGTH_LONG).show()
+        pending = r
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -148,7 +155,9 @@ class MainActivity : AppCompatActivity() {
     private fun add(req: AddRequest) {
         if (com.tadaffuq.torrent.TorrentEngine.isMagnet(req.text)) { pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = req.text.trim()); return }
         if (Build.VERSION.SDK_INT <= 28 && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            awaitingStorage = req
             storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            return
         }
         pending = req
     }

@@ -19,7 +19,7 @@ import com.tadaffuq.app.ui.add.AddRequest
 import java.io.ByteArrayInputStream
 
 /** تبويب متصفح بحالة قابلة للمراقبة من Compose. */
-class BrowserTab(val id: Long, val private: Boolean, val webView: WebView) {
+class BrowserTab(val id: Long, val private: Boolean, val webView: WebView, val isolated: Boolean = false) {
     val url = mutableStateOf("")
     val title = mutableStateOf("")
     val progress = mutableStateOf(0)
@@ -66,7 +66,13 @@ object BrowserTabs {
     @SuppressLint("SetJavaScriptEnabled")
     fun open(context: Context, url: String = HOME, private: Boolean = false): BrowserTab {
         val wv = WebView(MutableContextWrapper(context.applicationContext))
-        val tab = BrowserTab(nextId++, private, wv)
+        // عزل حقيقي للتبويب الخاص (كوكيز وتخزين منفصلان) حيث يدعم WebView الملفات الشخصية (Profiles)
+        val isolated = private && runCatching {
+            androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE).also {
+                if (it) { androidx.webkit.ProfileStore.getInstance().getOrCreateProfile(PRIVATE_PROFILE); androidx.webkit.WebViewCompat.setProfile(wv, PRIVATE_PROFILE) }
+            }
+        }.getOrDefault(false)
+        val tab = BrowserTab(nextId++, private, wv, isolated)
         wv.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = !private
@@ -84,7 +90,7 @@ object BrowserTabs {
             saveFormData = false
         }
         applyDesktop(wv)
-        CookieManager.getInstance().setAcceptThirdPartyCookies(wv, false)
+        cookiesFor(tab).setAcceptThirdPartyCookies(wv, false)
         wv.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val scheme = request.url.scheme?.lowercase()
@@ -116,7 +122,7 @@ object BrowserTabs {
                     text = dlUrl,
                     referer = tab.url.value.ifBlank { null },
                     userAgent = userAgent,
-                    cookies = CookieManager.getInstance().getCookie(dlUrl),
+                    cookies = cookiesFor(tab).getCookie(dlUrl),
                     suggestedName = URLUtil.guessFileName(dlUrl, contentDisposition, mimeType),
                 ),
             )
@@ -126,6 +132,15 @@ object BrowserTabs {
         current.value = tabs.lastIndex
         return tab
     }
+
+    private fun cookiesFor(tab: BrowserTab): CookieManager =
+        if (tab.isolated) runCatching { androidx.webkit.ProfileStore.getInstance().getProfile(PRIVATE_PROFILE)?.cookieManager }.getOrNull() ?: CookieManager.getInstance()
+        else CookieManager.getInstance()
+
+    private const val PRIVATE_PROFILE = "tadaffuq-private"
+
+    /** هل يعزل هذا الجهاز التبويب الخاص فعلاً (للوصف الصادق في الواجهة). */
+    val privateIsolated: Boolean get() = runCatching { androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE) }.getOrDefault(false)
 
     private fun sync(tab: BrowserTab) {
         tab.url.value = tab.webView.url.orEmpty()
@@ -144,8 +159,10 @@ object BrowserTabs {
     fun close(tab: BrowserTab) {
         val i = tabs.indexOf(tab)
         tabs.remove(tab)
-        if (tab.private) tab.webView.clearCache(true)
+        // لا clearCache(true): يمسح ذاكرة WebView المشتركة لكل التبويبات. التبويب الخاص لا يكتب ذاكرة أصلاً (LOAD_NO_CACHE)،
+        // والمعزول يُحذف ملفه الشخصي كاملاً بعد إغلاق آخر تبويب خاص
         tab.webView.destroy()
+        if (tab.isolated && tabs.none { it.isolated }) runCatching { androidx.webkit.ProfileStore.getInstance().deleteProfile(PRIVATE_PROFILE) }
         current.value = (if (i <= current.value) current.value - 1 else current.value).coerceIn(0, (tabs.size - 1).coerceAtLeast(0))
     }
 
