@@ -49,7 +49,8 @@ class HttpDownloader(
     private val taskLimiter: RateLimiter = RateLimiter(),
     private val globalLimiter: RateLimiter = RateLimiter(),
     private val listener: DownloadListener = object : DownloadListener {},
-    private val usableSpace: (File) -> Long = { (it.parentFile ?: it).usableSpace },
+    /** المساحة المتاحة لمجلد موجود (يُنشأ المجلد قبل السؤال)؛ ‎-1 إن تعذّر الاستعلام. */
+    private val usableSpace: (File) -> Long = { dir -> runCatching { dir.usableSpace }.getOrDefault(-1L) },
     /** الحد الأعلى للاتصالات قابلاً للتغيير أثناء التنزيل (من لوحة التحكم السريعة). */
     private val liveMaxConnections: () -> Int = { config.maxConnections },
 ) {
@@ -63,8 +64,10 @@ class HttpDownloader(
     suspend fun run(): ProbeResult = withContext(Dispatchers.IO) {
         val probe = Prober(client).probe(spec)
         var restarted = false
+        // الملف الجزئي يُقبل فقط إن كان طوله بالضبط الحجم المحجوز (نحجزه كاملاً عند البدء)؛
+        // ملف مقتطع أو مستبدل يعني أن «المنجز» في الجدول قد لا يكون على القرص.
         val reuse = saved?.takeIf {
-            it.segments.isNotEmpty() && file.exists() && probe.resumable && it.probe.resumable &&
+            it.segments.isNotEmpty() && file.isFile && file.length() == probe.totalBytes && probe.resumable && it.probe.resumable &&
                 Prober.sameContent(it.probe, probe) && SegmentPlanner.isConsistent(it.segments, probe.totalBytes)
         }
         if (reuse != null) {
@@ -81,13 +84,26 @@ class HttpDownloader(
         }
         listener.onStart(probe, restarted)
 
+        // المجلد أولاً، ثم قابلية الكتابة، ثم المساحة الفعلية لوحدة التخزين (P0-01).
+        val dir = file.absoluteFile.parentFile ?: throw DownloadException(DownloadError.Storage("no parent"))
+        if (!dir.isDirectory && !dir.mkdirs() && !dir.isDirectory) throw DownloadException(DownloadError.Storage("cannot create ${dir.path}"))
+        if (!dir.canWrite()) throw DownloadException(DownloadError.Storage("EACCES ${dir.path}"))
+        val remaining = if (probe.totalBytes > 0) probe.totalBytes - segments.sumOf { it.downloaded } else 0
+        val ticket = SpaceLedger.reserve(dir, remaining)
+        reservation = ticket
         if (probe.totalBytes > 0) {
-            val remaining = probe.totalBytes - segments.sumOf { it.downloaded }
-            val available = usableSpace(file)
-            if (available in 0 until remaining) throw DownloadException(DownloadError.InsufficientSpace(remaining, available))
+            val available = usableSpace(dir)
+            if (available >= 0) {
+                // ما حجزته تنزيلات أخرى جارية على وحدة التخزين نفسها ولم تكتبه بعد
+                val others = SpaceLedger.reservedByOthers(dir, ticket)
+                if (available - others < remaining) {
+                    SpaceLedger.release(ticket); reservation = null
+                    throw DownloadException(DownloadError.InsufficientSpace(remaining + others, available, dir.path))
+                }
+            } // تعذّر الاستعلام (‎-1): نتابع، ونعالج ENOSPC أثناء الكتابة
         }
+        spacePath = dir.path
 
-        file.parentFile?.mkdirs()
         val raf = try {
             RandomAccessFile(file, "rw").apply {
                 if (reuse == null) {
@@ -107,13 +123,19 @@ class HttpDownloader(
             }
         } finally {
             withContext(NonCancellable) {
-                runCatching { raf.channel.force(false) }
-                listener.persist(ResumeState(probe, segments.map { it.state() }))
+                // لقطة ثابتة أولاً ثم تثبيت القرص، ولا يُحفظ تقدم لم يتأكد تثبيته (P0-04)
+                val snapshot = segments.map { it.state() }
+                val synced = runCatching { raf.channel.force(false) }.isSuccess
+                if (synced) listener.persist(ResumeState(probe, snapshot))
                 runCatching { raf.close() }
+                reservation?.let(SpaceLedger::release)
             }
         }
         probe
     }
+
+    private var reservation: SpaceLedger.Ticket? = null
+    private var spacePath: String = ""
 
     private suspend fun supervise(probe: ProbeResult, channel: FileChannel) = coroutineScope {
         val jobs = HashMap<Segment, Job>()
@@ -195,8 +217,11 @@ class HttpDownloader(
             }
             if (now - lastPersistNs >= config.persistIntervalMs * 1_000_000L) {
                 lastPersistNs = now
+                // اللقطة قبل force: كل بايت محسوب فيها مكتوب قبل التثبيت (العمال قد يتقدمون بعدها، فلا بأس)
+                val snapshot = segments.map { it.state() }
                 channel.force(false)
-                listener.persist(ResumeState(probe, segments.map { it.state() }))
+                listener.persist(ResumeState(probe, snapshot))
+                reservation?.let { SpaceLedger.update(it, probe.totalBytes - snapshot.sumOf { s -> s.downloaded }) }
             }
         }
     }
@@ -247,12 +272,22 @@ class HttpDownloader(
             builder.header("Range", "bytes=${seg.position}-${seg.end}")
             probe.ifRangeValidator?.let { builder.header("If-Range", it) }
         }
-        client.executeCancellable(builder.build()).use { r ->
+        client.withResponse(builder.build()) { r ->
+            var limit = Long.MAX_VALUE // أقصى بايتات يُسمح بقراءتها من هذا الجسم
             when (r.code) {
                 206 -> {
+                    // RFC 9110 §14.4: البداية = الموضع المطلوب، والنهاية ضمن المطلوب، والإجمالي مطابق،
+                    // وطول الجسم (إن أُعلن) يساوي طول المدى، وبلا ترميز ضغط.
                     val cr = parseContentRange(r.header("Content-Range"))
-                    if (cr == null || cr.first != seg.position) throw DownloadException(DownloadError.RangeNotSupported)
+                    if (cr == null || !cr.valid || cr.first != seg.position || cr.last > seg.end) throw DownloadException(DownloadError.RangeNotSupported)
                     if (cr.total != null && cr.total != probe.totalBytes) throw DownloadException(DownloadError.ChangedOnServer)
+                    val len = r.body?.contentLength() ?: -1
+                    if (len >= 0 && len != cr.last - cr.first + 1) throw DownloadException(DownloadError.RangeNotSupported)
+                    if (r.header("Content-Encoding")?.let { !it.equals("identity", true) } == true) throw DownloadException(DownloadError.RangeNotSupported)
+                    // كل جزء يُقارن معرّفه بمعرّف الفحص: ملف آخر بالحجم نفسه لا يُخلط
+                    val tag = r.header("ETag")?.takeUnless { it.startsWith("W/") }
+                    if (probe.strongEtag != null && tag != null && tag != probe.strongEtag) throw DownloadException(DownloadError.ChangedOnServer)
+                    limit = cr.last - cr.first + 1
                 }
                 200 -> {
                     // طلبنا جزءاً مع If-Range فأعاد الخادم الملف كاملاً: المحتوى تغيّر.
@@ -262,18 +297,21 @@ class HttpDownloader(
                 401, 403, 410 -> throw DownloadException(DownloadError.LinkExpired(r.code))
                 404 -> throw DownloadException(DownloadError.NotFound)
                 else -> {
-                    val retryAfter = r.header("Retry-After")?.trim()?.toLongOrNull()?.times(1000)
+                    val retryAfter = parseRetryAfter(r.header("Retry-After"))
                     throw DownloadException(DownloadError.Http(r.code), retryAfter?.let(::RetryAfter))
                 }
             }
             val source = r.body?.source() ?: throw IOException("empty body")
             val buf = ByteArray(config.bufferBytes)
+            var read = 0L
             while (true) {
                 currentCoroutineContext().ensureActive()
                 if (seg.done) return
                 if (shouldYield()) throw Yield()
-                val n = source.read(buf)
+                if (read >= limit) return
+                val n = source.read(buf, 0, minOf(buf.size.toLong(), limit - read).toInt())
                 if (n < 0) return
+                read += n
                 taskLimiter.acquire(n)
                 globalLimiter.acquire(n)
                 val written = synchronized(seg) {
@@ -296,11 +334,30 @@ class HttpDownloader(
         try {
             while (bb.hasRemaining()) channel.write(bb, position + bb.position())
         } catch (e: IOException) {
-            throw DownloadException(DownloadError.Storage(e.message ?: "write"), e)
+            // امتلاء فعلي أثناء الكتابة (حتى مع الحجم المجهول أو تنزيلات أخرى)
+            val msg = e.message.orEmpty()
+            if (msg.contains("ENOSPC") || msg.contains("No space left", true)) {
+                val dir = File(spacePath)
+                throw DownloadException(DownloadError.InsufficientSpace(length.toLong(), usableSpace(dir).coerceAtLeast(0), spacePath), e)
+            }
+            throw DownloadException(DownloadError.Storage(msg.ifBlank { "write" }), e)
         }
     }
 
     private class RetryAfter(val ms: Long) : Exception()
+
+    companion object {
+        /** Retry-After بصيغتيه: ثوانٍ أو تاريخ HTTP (RFC 9110 §10.2.3). */
+        fun parseRetryAfter(v: String?): Long? {
+            val t = v?.trim() ?: return null
+            t.toLongOrNull()?.let { return (it * 1000).coerceAtLeast(0) }
+            return runCatching {
+                val d = java.time.ZonedDateTime.parse(t, java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME)
+                (d.toInstant().toEpochMilli() - System.currentTimeMillis()).coerceAtLeast(0)
+            }.getOrNull()
+        }
+        private const val TICK_MS = 200L
+    }
     private class Yield : Exception()
 
     /**
@@ -343,7 +400,4 @@ class HttpDownloader(
         }
     }
 
-    companion object {
-        private const val TICK_MS = 200L
-    }
 }

@@ -167,7 +167,7 @@ class LiveSettingsTest {
         try {
             val probe = Prober(client).probe(RequestSpec(server.url()))
             var last: ResumeState? = null
-            val f = tmp.newFile("nosplit.part")
+            val f = tmp.newFile("nosplit.part").also { java.io.RandomAccessFile(it, "rw").use { r -> r.setLength(data.size.toLong()) } }
             HttpDownloader(client, RequestSpec(server.url()), f, DownloadConfig(connections = 4, minSplitBytes = 64 * 1024, dynamicSplit = false),
                 ResumeState(probe, listOf(SegmentState(0, 0, data.size - 1L, 0))),
                 listener = object : DownloadListener { override suspend fun persist(state: ResumeState) { last = state } }).run()

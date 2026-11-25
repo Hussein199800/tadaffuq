@@ -66,21 +66,32 @@ internal fun RequestSpec.toRequest(url: String = this.url): Request.Builder = Re
     header("Accept-Encoding", "identity")
 }
 
-/** ينفّذ الطلب ويلغيه فوراً إن أُلغي الـ coroutine (الإيقاف المؤقت). */
-internal suspend fun OkHttpClient.executeCancellable(request: Request): Response {
+/**
+ * ينفّذ الطلب ويقرأ الاستجابة داخل [block] ثم يغلقها دائماً. الإلغاء (الإيقاف) يُسقط الاتصال فوراً
+ * طوال عمر الطلب، **بما في ذلك قراءة الجسم**، لا بعد مهلة القراءة: المعالج يُسجَّل لحظة بدء الإلغاء
+ * (onCancelling) لأن الـ coroutine نفسه محجوب في قراءة متزامنة فلا «يكتمل» قبل انتهائها.
+ */
+@OptIn(kotlinx.coroutines.InternalCoroutinesApi::class)
+internal suspend inline fun <T> OkHttpClient.withResponse(request: Request, block: (Response) -> T): T {
     val call = newCall(request)
     val job = currentCoroutineContext()[Job]
-    val handle = job?.invokeOnCompletion { if (it != null) call.cancel() }
+    val handle = job?.invokeOnCompletion(onCancelling = true, invokeImmediately = true) { if (it != null) call.cancel() }
     try {
         currentCoroutineContext().ensureActive()
-        return call.execute()
+        return call.execute().use(block)
+    } catch (e: java.io.IOException) {
+        // استثناء الإدخال/الإخراج بسبب إلغائنا نحن يُعاد كإلغاء لا كخطأ شبكة
+        currentCoroutineContext().ensureActive()
+        throw e
     } finally {
         handle?.dispose()
     }
 }
 
 /** RFC 9110 §14.4: «bytes a-b/total». */
-internal data class ContentRange(val first: Long, val last: Long, val total: Long?)
+internal data class ContentRange(val first: Long, val last: Long, val total: Long?) {
+    val valid: Boolean get() = first >= 0 && last >= first && (total == null || last < total)
+}
 
 internal fun parseContentRange(value: String?): ContentRange? {
     if (value == null) return null

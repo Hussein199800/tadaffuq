@@ -21,6 +21,9 @@ data class ProbeResult(
     val mimeType: String?,
 ) {
     val resumable: Boolean get() = acceptRanges && totalBytes > 0
+    /** ETag قوي فقط (الضعيف W/ لا يصلح للمقارنة البايتية ولا لـ If-Range). */
+    val strongEtag: String? get() = etag?.takeUnless { it.startsWith("W/") }
+
     /** المعرّف الذي يصلح لـ If-Range: ETag قوي، وإلا Last-Modified. */
     val ifRangeValidator: String? get() = etag?.takeUnless { it.startsWith("W/") } ?: lastModified
 }
@@ -118,7 +121,8 @@ sealed class DownloadError(val retryable: Boolean) {
     /** الخادم أعاد ملفاً مختلفاً (ETag/Last-Modified/الحجم)؛ الاستئناف غير آمن. */
     data object ChangedOnServer : DownloadError(false)
     data object RangeNotSupported : DownloadError(false)
-    data class InsufficientSpace(val needed: Long, val available: Long) : DownloadError(false)
+    /** المطلوب والمتاح بالبايت، والمجلد المقصود (لعرضها للمستخدم). */
+    data class InsufficientSpace(val needed: Long, val available: Long, val path: String = "") : DownloadError(false)
     data class Storage(val detail: String) : DownloadError(false)
     data class ChecksumMismatch(val expected: String, val actual: String) : DownloadError(false)
     /** اسم المستخدم أو كلمة المرور مرفوضة (FTP/SFTP). */

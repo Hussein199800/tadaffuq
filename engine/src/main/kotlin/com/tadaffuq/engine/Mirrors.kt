@@ -51,7 +51,7 @@ class MirrorSelector(private val client: OkHttpClient, private val sampleBytes: 
         val starts = listOf(0L, (p.totalBytes / 2 - n / 2).coerceAtLeast(0), (p.totalBytes - n).coerceAtLeast(0)).distinct()
         starts.map { s ->
             val req = spec.toRequest(p.finalUrl).header("Range", "bytes=$s-${s + n - 1}").get().build()
-            client.executeCancellable(req).use { r ->
+            client.withResponse(req) { r ->
                 if (r.code != 206) throw IOException("no range ${r.code}")
                 val cr = parseContentRange(r.header("Content-Range"))
                 if (cr?.first != s) throw IOException("bad range")

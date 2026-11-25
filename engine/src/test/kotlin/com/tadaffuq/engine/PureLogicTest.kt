@@ -97,7 +97,11 @@ class PureLogicTest {
         assertTrue(Prober.sameContent(p, p))
         assertFalse(Prober.sameContent(p, p.copy(totalBytes = 11)))
         assertFalse(Prober.sameContent(p, p.copy(etag = "\"b\"")))
-        assertTrue(Prober.sameContent(p, p.copy(etag = null)))
+        // تدقيق P0-03: اختفاء ETag قوي كان معلناً لم يعد دليلاً على الثبات
+        assertFalse(Prober.sameContent(p, p.copy(etag = null)))
+        val lmOnly = p.copy(etag = null)
+        assertTrue(Prober.sameContent(lmOnly, lmOnly))
+        assertFalse(Prober.sameContent(lmOnly, lmOnly.copy(lastModified = null)))
         assertEquals("d1", p.copy(etag = "W/\"x\"").ifRangeValidator)
         // بلا أي معرّف: لا دليل على أن المحتوى نفسه، فلا استئناف عبر الجلسات
         val bare = p.copy(etag = null, lastModified = null)
