@@ -50,6 +50,12 @@ data class Settings(
     val proxyPort: Int = 0,
     val proxyUser: String = "",
     val reduceMotion: Boolean = false,
+    val torrentDht: Boolean = true,
+    /** بايت/ث، 0 = بلا حد. الرفع محدود افتراضياً حفاظاً على بيانات المستخدم. */
+    val torrentDownLimit: Int = 0,
+    val torrentUpLimit: Int = 256 * 1024,
+    val torrentSeedDefault: Boolean = false,
+    val torrentRatio: Float = 1f,
 )
 
 private val Context.store: DataStore<Preferences> by preferencesDataStore("settings")
@@ -85,6 +91,11 @@ class SettingsRepository(private val context: Context) {
         val proxyPort = intPreferencesKey("proxyPort")
         val proxyUser = stringPreferencesKey("proxyUser")
         val reduceMotion = booleanPreferencesKey("reduceMotion")
+        val tDht = booleanPreferencesKey("torrentDht")
+        val tDown = intPreferencesKey("torrentDownLimit")
+        val tUp = intPreferencesKey("torrentUpLimit")
+        val tSeed = booleanPreferencesKey("torrentSeedDefault")
+        val tRatio = androidx.datastore.preferences.core.floatPreferencesKey("torrentRatio")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -126,6 +137,11 @@ class SettingsRepository(private val context: Context) {
             p[K.proxyPort] = s.proxyPort
             p[K.proxyUser] = s.proxyUser
             p[K.reduceMotion] = s.reduceMotion
+            p[K.tDht] = s.torrentDht
+            p[K.tDown] = s.torrentDownLimit.coerceAtLeast(0)
+            p[K.tUp] = s.torrentUpLimit.coerceAtLeast(0)
+            p[K.tSeed] = s.torrentSeedDefault
+            p[K.tRatio] = s.torrentRatio.coerceIn(0.1f, 100f)
         }
     }
 
@@ -161,6 +177,11 @@ class SettingsRepository(private val context: Context) {
             proxyPort = p[K.proxyPort] ?: d.proxyPort,
             proxyUser = p[K.proxyUser] ?: d.proxyUser,
             reduceMotion = p[K.reduceMotion] ?: d.reduceMotion,
+            torrentDht = p[K.tDht] ?: d.torrentDht,
+            torrentDownLimit = p[K.tDown] ?: d.torrentDownLimit,
+            torrentUpLimit = p[K.tUp] ?: d.torrentUpLimit,
+            torrentSeedDefault = p[K.tSeed] ?: d.torrentSeedDefault,
+            torrentRatio = p[K.tRatio] ?: d.torrentRatio,
         )
     }
 }

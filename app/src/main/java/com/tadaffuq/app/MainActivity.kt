@@ -71,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var manager: DownloadManager
     private val vm: MainViewModel by viewModels()
     private var pending by mutableStateOf<AddRequest?>(null)
+    private var pendingTorrent by mutableStateOf<com.tadaffuq.app.ui.torrent.TorrentRequest?>(null)
     private var jumpTo by mutableStateOf<String?>(null)
     private var clipboardLink by mutableStateOf<String?>(null)
     private var lastClip: String? = null
@@ -109,14 +110,27 @@ class MainActivity : AppCompatActivity() {
     private fun handle(intent: Intent?) {
         when (intent?.action) {
             Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)?.let { add(AddRequest(it)) }
-            Intent.ACTION_VIEW -> intent.dataString?.let { add(AddRequest(it)) }
+            Intent.ACTION_VIEW -> {
+                val data = intent.data
+                when {
+                    data?.scheme == "magnet" -> pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = data.toString())
+                    data?.scheme == "content" || data?.scheme == "file" -> readTorrent(data)
+                    else -> intent.dataString?.let { add(AddRequest(it)) }
+                }
+            }
             ACTION_ADD -> add(AddRequest(""))
             ACTION_DOWNLOADS -> jumpTo = "downloads"
             ACTION_RESUME_ALL -> { jumpTo = "downloads"; lifecycleScope.launch { manager.resumeAll() } }
         }
     }
 
+    private fun readTorrent(uri: android.net.Uri) {
+        val bytes = runCatching { contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull()
+        if (bytes != null && bytes.size < 20_000_000) pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(raw = bytes)
+    }
+
     private fun add(req: AddRequest) {
+        if (com.tadaffuq.torrent.TorrentEngine.isMagnet(req.text)) { pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = req.text.trim()); return }
         if (Build.VERSION.SDK_INT <= 28 && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
@@ -189,7 +203,8 @@ class MainActivity : AppCompatActivity() {
                 composable("about") { AboutScreen(padding) { nav.popBackStack() } }
             }
         }
-        pending?.let { req -> AddSheet(req, onDismiss = { pending = null }) }
+        pending?.let { req -> AddSheet(req, onDismiss = { pending = null }, onTorrent = { m -> pending = null; pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = m) }) }
+        pendingTorrent?.let { r -> com.tadaffuq.app.ui.torrent.TorrentAddSheet(r, onDismiss = { pendingTorrent = null }) }
     }
 
     companion object {

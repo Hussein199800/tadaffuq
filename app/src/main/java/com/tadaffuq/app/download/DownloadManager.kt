@@ -126,7 +126,7 @@ class DownloadManager @Inject constructor(
         scope.launch {
             while (true) {
                 delay(1_000)
-                val total = _live.value.values.sumOf { it.speedBps }
+                val total = _live.value.values.sumOf { it.speedBps } + externalSpeed()
                 _speedHistory.update { (it.drop(1) + total) }
             }
         }
@@ -185,7 +185,11 @@ class DownloadManager @Inject constructor(
     }
 
     /** هل بقي عمل؟ تستعمله الخدمة وعامل الاستئناف ليتوقفا عند الفراغ. */
-    fun hasWork(): Boolean = jobs.isNotEmpty() || (pendingCount > 0 && _hold.value == null)
+    fun hasWork(): Boolean = jobs.isNotEmpty() || (pendingCount > 0 && _hold.value == null) || externalWork()
+
+    /** يضيف التورنت سرعته وعمله دون اعتماد دائري بين المديرين. */
+    @Volatile var externalSpeed: () -> Long = { 0L }
+    @Volatile var externalWork: () -> Boolean = { false }
 
     private fun stop(id: Long, status: TaskStatus) {
         val job = jobs[id] ?: return

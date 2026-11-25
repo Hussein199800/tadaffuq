@@ -10,3 +10,6 @@
 -dontwarn org.newsclub.net.unix.**
 -dontwarn com.sun.jna.**
 -dontwarn org.ietf.jgss.**
+# libtorrent4j: واجهات JNI تُستدعى من الشيفرة الأصلية بالاسم
+-keep class org.libtorrent4j.swig.** { *; }
+-keep class org.libtorrent4j.** { *; }

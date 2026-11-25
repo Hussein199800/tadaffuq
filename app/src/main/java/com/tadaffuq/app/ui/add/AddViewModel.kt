@@ -65,6 +65,8 @@ data class AddState(
     val mirrors: String = "",
     /** كلمة مرور FTP/SFTP: تُحفظ مشفّرة ولا تبقى في الرابط. */
     val remotePassword: String = "",
+    /** رابط Magnet في النص: يُفتح في نافذة التورنت. */
+    val magnet: String? = null,
     val packageName: String = "",
     val duplicatePolicy: DuplicatePolicy = DuplicatePolicy.RENAME,
     val submitting: Boolean = false,
@@ -106,6 +108,8 @@ class AddViewModel @Inject constructor(
         parseJob = viewModelScope.launch {
             if (!immediate) delay(500)
             val text = _state.value.input
+            val magnet = Regex("""magnet:\?[^\s<>"']+""", RegexOption.IGNORE_CASE).find(text)?.value
+            _state.update { it.copy(magnet = magnet) }
             val raw = LinkTools.extract(text).flatMap { if (LinkTools.hasSequence(it)) LinkTools.expandSequence(it) else listOf(it) }
                 .filter(com.tadaffuq.engine.Protocols::isSupported)
             // كلمة مرور داخل رابط FTP/SFTP تُنقل إلى المخزن المشفّر وتُحذف من الرابط

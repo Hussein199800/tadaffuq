@@ -119,3 +119,35 @@ data class HistoryEntity(
     val title: String,
     val visitedAt: Long = System.currentTimeMillis(),
 )
+
+enum class TorrentRunState { ACTIVE, PAUSED, COMPLETED, ERROR }
+
+/** تورنت محفوظ: الميتاداتا والملفات المختارة وقواعد المشاركة. بيانات الاستئناف في ملف بجانب الجلسة. */
+@Entity(tableName = "torrents")
+data class TorrentEntity(
+    @PrimaryKey val infoHash: String,
+    val name: String,
+    val saveDir: String,
+    val raw: ByteArray,
+    /** مؤشرات الملفات المطلوبة مفصولة بفواصل. */
+    val wanted: String,
+    val totalSize: Long,
+    val wantedSize: Long,
+    val state: TorrentRunState = TorrentRunState.ACTIVE,
+    /** الاستمرار بالمشاركة بعد الاكتمال حتى بلوغ النسبة. */
+    val seedAfter: Boolean = false,
+    val ratioLimit: Float = 1f,
+    val downLimit: Int = 0,
+    val upLimit: Int = 0,
+    val uploaded: Long = 0,
+    val downloaded: Long = 0,
+    val addedAt: Long = System.currentTimeMillis(),
+    val completedAt: Long? = null,
+    val magnet: String? = null,
+) {
+    fun wantedSet(): Set<Int> = wanted.split(',').mapNotNull { it.trim().toIntOrNull() }.toSet()
+    override fun equals(other: Any?) = other is TorrentEntity && other.infoHash == infoHash && other.state == state && other.wanted == wanted &&
+        other.uploaded == uploaded && other.downloaded == downloaded && other.seedAfter == seedAfter && other.ratioLimit == ratioLimit &&
+        other.downLimit == downLimit && other.upLimit == upLimit && other.completedAt == completedAt
+    override fun hashCode() = infoHash.hashCode()
+}

@@ -15,4 +15,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Tadaffuq"
-include(":engine", ":data", ":app")
+include(":engine", ":torrent", ":data", ":app")

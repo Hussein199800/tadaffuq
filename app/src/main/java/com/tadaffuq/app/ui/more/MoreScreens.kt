@@ -158,6 +158,25 @@ fun SettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit
             }
         }
 
+        item { SectionHeader(stringResource(R.string.sec_torrent)) }
+        item {
+            Card(padding = PaddingValues(vertical = 4.dp)) {
+                ToggleRow(stringResource(R.string.torrent_dht), stringResource(R.string.torrent_dht_desc), s.torrentDht) { v -> set { it.copy(torrentDht = v) } }
+                Hairline()
+                SettingRow(stringResource(R.string.torrent_up_limit), stringResource(R.string.torrent_up_limit_desc),
+                    value = if (s.torrentUpLimit > 0) Fmt.speed(s.torrentUpLimit.toLong()) else stringResource(R.string.unlimited), onClick = { dialog = "tup" })
+                Hairline()
+                SettingRow(stringResource(R.string.torrent_down_limit), stringResource(R.string.torrent_down_limit_desc),
+                    value = if (s.torrentDownLimit > 0) Fmt.speed(s.torrentDownLimit.toLong()) else stringResource(R.string.unlimited), onClick = { dialog = "tdown" })
+                Hairline()
+                ToggleRow(stringResource(R.string.torrent_seed_after), stringResource(R.string.torrent_seed_default_desc), s.torrentSeedDefault) { v -> set { it.copy(torrentSeedDefault = v) } }
+                Hairline()
+                var ratio by remember(s.torrentRatio) { mutableFloatStateOf(s.torrentRatio) }
+                SliderRow(stringResource(R.string.torrent_ratio), stringResource(R.string.torrent_ratio_desc), ratio, 0.5f..5f, 8,
+                    Fmt.iso(String.format(java.util.Locale.ROOT, "%.1f", ratio)), { ratio = it }) { set { it.copy(torrentRatio = ratio) } }
+            }
+        }
+
         item { SectionHeader(stringResource(R.string.sec_files)) }
         item {
             Card(padding = PaddingValues(vertical = 4.dp)) {
@@ -208,6 +227,8 @@ fun SettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit
             if (pass != null) vm.secrets.put(com.tadaffuq.app.core.SecretStore.PROXY_PASSWORD, pass)
             dialog = null
         }
+        "tup" -> com.tadaffuq.app.ui.downloads.SpeedLimitDialog(s.torrentUpLimit.toLong(), { dialog = null }) { v -> set { it.copy(torrentUpLimit = v.toInt()) }; dialog = null }
+        "tdown" -> com.tadaffuq.app.ui.downloads.SpeedLimitDialog(s.torrentDownLimit.toLong(), { dialog = null }) { v -> set { it.copy(torrentDownLimit = v.toInt()) }; dialog = null }
         "data" -> DataLimitDialog(s, { dialog = null }) { d, m -> set { it.copy(dailyLimitBytes = d, monthlyLimitBytes = m) }; dialog = null }
     }
 }

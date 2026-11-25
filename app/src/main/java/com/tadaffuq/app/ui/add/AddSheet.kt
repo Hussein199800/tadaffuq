@@ -56,7 +56,7 @@ import com.tadaffuq.engine.FileNames
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddSheet(request: AddRequest, onDismiss: () -> Unit, vm: AddViewModel = hiltViewModel()) {
+fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> Unit = {}, vm: AddViewModel = hiltViewModel()) {
     LaunchedEffect(request) { vm.open(request) }
     val s by vm.state.collectAsState()
     LaunchedEffect(s.done) { if (s.done) onDismiss() }
@@ -75,7 +75,14 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, vm: AddViewModel = hilt
                     minLines = 2, maxLines = 6,
                 )
             }
-            if (s.items.isEmpty() && s.input.isNotBlank()) item {
+            s.magnet?.let { m ->
+                item {
+                    androidx.compose.material3.FilledTonalButton(onClick = { onTorrent(m) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                        Text(stringResource(R.string.torrent_open_magnet))
+                    }
+                }
+            }
+            if (s.items.isEmpty() && s.input.isNotBlank() && s.magnet == null) item {
                 Text(stringResource(R.string.add_no_links), color = T.extra.secondaryText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 20.dp))
             }
             if (s.items.size > 1) item {

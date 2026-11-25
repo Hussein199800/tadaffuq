@@ -112,3 +112,14 @@ interface BrowserDao {
     @Insert suspend fun visit(h: HistoryEntity)
     @Query("DELETE FROM history") suspend fun clearHistory()
 }
+
+@Dao
+interface TorrentDao {
+    @Query("SELECT * FROM torrents ORDER BY addedAt DESC") fun observe(): Flow<List<TorrentEntity>>
+    @Query("SELECT * FROM torrents") suspend fun all(): List<TorrentEntity>
+    @Query("SELECT * FROM torrents WHERE infoHash = :hash") suspend fun get(hash: String): TorrentEntity?
+    @Upsert suspend fun upsert(t: TorrentEntity)
+    @Query("DELETE FROM torrents WHERE infoHash = :hash") suspend fun delete(hash: String)
+    @Query("UPDATE torrents SET state = :state WHERE infoHash = :hash") suspend fun setState(hash: String, state: TorrentRunState)
+    @Query("UPDATE torrents SET uploaded = :up, downloaded = :down WHERE infoHash = :hash") suspend fun counters(hash: String, up: Long, down: Long)
+}

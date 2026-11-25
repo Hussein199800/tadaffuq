@@ -13,13 +13,15 @@ class Converters {
     @TypeConverter fun status(s: String): TaskStatus = TaskStatus.valueOf(s)
     @TypeConverter fun net(n: NetKind): String = n.name
     @TypeConverter fun net(n: String): NetKind = NetKind.valueOf(n)
+    @TypeConverter fun tstate(s: TorrentRunState): String = s.name
+    @TypeConverter fun tstate(s: String): TorrentRunState = TorrentRunState.valueOf(s)
 }
 
 @Database(
-    entities = [TaskEntity::class, SegmentEntity::class, UsageEntity::class, PackageEntity::class, SavedLinkEntity::class, BookmarkEntity::class, HistoryEntity::class],
-    version = 2,
+    entities = [TaskEntity::class, SegmentEntity::class, UsageEntity::class, PackageEntity::class, SavedLinkEntity::class, BookmarkEntity::class, HistoryEntity::class, TorrentEntity::class],
+    version = 3,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -27,10 +29,11 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun usage(): UsageDao
     abstract fun links(): LinkDao
     abstract fun browser(): BrowserDao
+    abstract fun torrents(): TorrentDao
 
     companion object {
         const val NAME = "tadaffuq.db"
-        const val VERSION = 2
+        const val VERSION = 3
 
         // لا fallbackToDestructiveMigration أبداً: سجل المستخدم لا يُحذف مع التحديثات.
         fun build(context: Context): AppDatabase =

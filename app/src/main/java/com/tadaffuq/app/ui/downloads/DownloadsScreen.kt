@@ -55,10 +55,14 @@ enum class Filter(val label: Int, val match: (TaskStatus) -> Boolean) {
     COMPLETED(R.string.f_completed, { it == TaskStatus.COMPLETED }),
     PAUSED(R.string.f_paused, { it == TaskStatus.PAUSED }),
     FAILED(R.string.f_failed, { it == TaskStatus.FAILED }),
+    TORRENT(R.string.f_torrent, { false }),
 }
 
 @Composable
-fun DownloadsScreen(vm: MainViewModel, onAdd: () -> Unit, padding: PaddingValues) {
+fun DownloadsScreen(vm: MainViewModel, onAdd: () -> Unit, padding: PaddingValues, tvm: com.tadaffuq.app.ui.torrent.TorrentViewModel = androidx.hilt.navigation.compose.hiltViewModel()) {
+    val torrents by tvm.torrents.collectAsState()
+    val tlive by tvm.live.collectAsState()
+    var torrentDetail by rememberSaveable { mutableStateOf<String?>(null) }
     val tasks by vm.tasks.collectAsState()
     val live by vm.live.collectAsState()
     val hold by vm.hold.collectAsState()
@@ -92,11 +96,15 @@ fun DownloadsScreen(vm: MainViewModel, onAdd: () -> Unit, padding: PaddingValues
             }
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Filter.entries.forEach { f ->
-                    Chip(stringResource(f.label), filter == f, { filter = f }, count = tasks.count { f.match(it.status) }.takeIf { f != Filter.ALL })
+                    if (f == Filter.TORRENT && torrents.isEmpty()) return@forEach
+                    Chip(stringResource(f.label), filter == f, { filter = f }, count = (if (f == Filter.TORRENT) torrents.size else tasks.count { f.match(it.status) }).takeIf { f != Filter.ALL })
                 }
             }
         }
-        if (shown.isEmpty()) item {
+        if (filter == Filter.ALL || filter == Filter.TORRENT) items(torrents, key = { "t" + it.infoHash }) { t ->
+            com.tadaffuq.app.ui.torrent.TorrentCard(t, tlive[t.infoHash]) { torrentDetail = t.infoHash }
+        }
+        if (shown.isEmpty() && !(filter == Filter.ALL && torrents.isNotEmpty()) && filter != Filter.TORRENT) item {
             EmptyState(
                 Icons.Rounded.Download,
                 stringResource(if (tasks.isEmpty()) R.string.empty_downloads else R.string.empty_filter),
@@ -114,6 +122,7 @@ fun DownloadsScreen(vm: MainViewModel, onAdd: () -> Unit, padding: PaddingValues
         }
     }
 
+    torrentDetail?.let { h -> com.tadaffuq.app.ui.torrent.TorrentDetailSheet(h, { torrentDetail = null }, tvm) }
     detail?.let { id -> tasks.firstOrNull { it.id == id }?.let { TaskDetailSheet(it, live[id], vm) { detail = null } } ?: run { detail = null } }
 
     if (confirmDelete) DeleteDialog(

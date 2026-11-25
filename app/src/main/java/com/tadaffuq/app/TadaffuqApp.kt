@@ -11,6 +11,7 @@ import javax.inject.Inject
 class TadaffuqApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var manager: DownloadManager
+    @Inject lateinit var torrents: com.tadaffuq.app.download.TorrentManager
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -18,5 +19,6 @@ class TadaffuqApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         manager.start()
+        torrents.start()
     }
 }

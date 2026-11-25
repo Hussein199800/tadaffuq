@@ -56,6 +56,7 @@ import java.io.File
 class ScreenshotTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
     private lateinit var vm: MainViewModel
+    private lateinit var tvm: com.tadaffuq.app.ui.torrent.TorrentViewModel
 
     @Before fun setUp() {
         val ctx = RuntimeEnvironment.getApplication()
@@ -83,6 +84,7 @@ class ScreenshotTest {
         }
         val settings = SettingsRepository(ctx)
         val manager = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), com.tadaffuq.app.download.AppCredentials(ctx, com.tadaffuq.app.core.SecretStore(ctx)), Conditions(ctx), Notifier(ctx))
+        tvm = com.tadaffuq.app.ui.torrent.TorrentViewModel(com.tadaffuq.app.download.TorrentManager(ctx, db, settings, manager, Notifier(ctx)), settings)
         vm = MainViewModel(ctx, db, settings, manager, com.tadaffuq.app.core.SecretStore(ctx))
     }
 
@@ -117,8 +119,8 @@ class ScreenshotTest {
     @Test fun home_ar_light() = shoot("home_ar_light", true, false) { HomeScreen(vm, "https://example.org/files/archive-2025.zip", {}, {}, pad) }
     @Test fun home_ar_dark() = shoot("home_ar_dark", true, true) { HomeScreen(vm, null, {}, {}, pad) }
     @Test fun home_en_light() = shoot("home_en_light", false, false) { HomeScreen(vm, null, {}, {}, pad) }
-    @Test fun downloads_ar_light() = shoot("downloads_ar_light", true, false) { DownloadsScreen(vm, {}, pad) }
-    @Test fun downloads_en_dark() = shoot("downloads_en_dark", false, true) { DownloadsScreen(vm, {}, pad) }
+    @Test fun downloads_ar_light() = shoot("downloads_ar_light", true, false) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun downloads_en_dark() = shoot("downloads_en_dark", false, true) { DownloadsScreen(vm, {}, pad, tvm) }
     @Test fun files_ar_light() = shoot("files_ar_light", true, false) { FilesScreen(vm, pad) }
     @Test fun more_ar_light() = shoot("more_ar_light", true, false) { MoreScreen(pad) {} }
     @Test fun settings_ar_light() = shoot("settings_ar_light", true, false) { SettingsScreen(vm, pad) {} }

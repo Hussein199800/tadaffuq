@@ -18,6 +18,16 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+    }
+    // APK لكل معمارية + APK شامل؛ وحزمة AAB تقسّم تلقائياً في Play
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            isUniversalApk = true
+        }
     }
 
     // مفتاح التوقيع لا يُرفع أبداً: keystore.properties (مستثنى من git) أو متغيرات TADAFFUQ_*.
@@ -68,13 +78,17 @@ android {
             }
         }
     }
-    packaging { resources { excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "/META-INF/versions/9/OSGI-INF/MANIFEST.MF") } }
+    packaging { jniLibs { useLegacyPackaging = false }; resources { excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "/META-INF/versions/9/OSGI-INF/MANIFEST.MF") } }
     dependenciesInfo { includeInApk = false; includeInBundle = false }
 }
 kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
 dependencies {
     implementation(project(":data"))
+    implementation(project(":torrent"))
+    implementation(libs.libtorrent4j.arm64)
+    implementation(libs.libtorrent4j.arm)
+    implementation(libs.libtorrent4j.x64)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)

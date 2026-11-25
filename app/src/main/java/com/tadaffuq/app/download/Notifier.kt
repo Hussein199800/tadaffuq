@@ -103,6 +103,20 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         )
     }
 
+    fun torrentCompleted(name: String) {
+        if (!canPost()) return
+        nm.notify(
+            (DONE_BASE + 500_000 + name.hashCode() % 100_000).toInt(),
+            NotificationCompat.Builder(ctx, CH_DONE)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(ctx.getString(R.string.notif_done, name))
+                .setContentText(ctx.getString(R.string.torrent_done_text))
+                .setAutoCancel(true)
+                .setContentIntent(openApp())
+                .build(),
+        )
+    }
+
     fun failed(t: TaskEntity) {
         if (!canPost()) return
         nm.notify(
