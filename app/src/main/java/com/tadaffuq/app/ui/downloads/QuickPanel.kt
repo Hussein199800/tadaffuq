@@ -18,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,14 +29,14 @@ import androidx.compose.ui.unit.dp
 import com.tadaffuq.app.R
 import com.tadaffuq.app.core.Fmt
 import com.tadaffuq.app.ui.components.Card
-import com.tadaffuq.app.ui.components.SliderRow
 import com.tadaffuq.app.ui.components.ToggleRow
 import com.tadaffuq.app.ui.theme.T
 import com.tadaffuq.data.Settings
 import com.tadaffuq.engine.SpeedMode
 
 /**
- * لوحة التحكم السريعة: تعديل السرعة والاتصالات والمتزامن وشروط الشبكة دون دخول الإعدادات.
+ * لوحة التحكم السريعة، مطوية افتراضياً وبثلاثة خيارات فقط: حد السرعة، وطريقة التنزيل، وWi-Fi فقط.
+ * الاتصالات والمتزامن في الإعدادات ← التحميل.
  * كل تغيير يُطبَّق فوراً على التنزيلات الجارية (حد السرعة والاتصالات حيّان في المحرك).
  */
 @Composable
@@ -52,9 +51,8 @@ fun QuickPanel(s: Settings, speedNow: Long, initiallyOpen: Boolean = false, onCh
                 Text(
                     listOf(
                         if (s.globalLimitBps > 0) Fmt.speed(s.globalLimitBps) else stringResource(R.string.unlimited),
-                        stringResource(R.string.qp_conn, Fmt.iso(s.maxConnections.toString())),
-                        stringResource(R.string.qp_parallel, Fmt.iso(s.maxParallel.toString())),
-                        if (s.wifiOnly) "Wi-Fi" else null,
+                        stringResource(com.tadaffuq.app.ui.more.modeLabel(s.mode)),
+                        if (s.wifiOnly) stringResource(R.string.wifi_only) else null,
                     ).filterNotNull().joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText,
                 )
@@ -72,21 +70,13 @@ fun QuickPanel(s: Settings, speedNow: Long, initiallyOpen: Boolean = false, onCh
                     }
                     FilterChip(s.globalLimitBps !in presets, { custom = true }, label = { Text(stringResource(R.string.schedule_custom)) })
                 }
-                var conn by remember(s.maxConnections) { mutableFloatStateOf(s.maxConnections.toFloat()) }
-                SliderRow(stringResource(R.string.max_connections), stringResource(R.string.qp_live), conn, 1f..32f, 30, Fmt.iso(conn.toInt().toString()), { conn = it }) {
-                    onChange { it.copy(maxConnections = conn.toInt()) }
-                }
-                var par by remember(s.maxParallel) { mutableFloatStateOf(s.maxParallel.toFloat()) }
-                SliderRow(stringResource(R.string.max_parallel), stringResource(R.string.max_parallel_desc), par, 1f..10f, 8, Fmt.iso(par.toInt().toString()), { par = it }) {
-                    onChange { it.copy(maxParallel = par.toInt()) }
-                }
-                ToggleRow(stringResource(R.string.wifi_only), stringResource(R.string.wifi_only_desc), s.wifiOnly) { v -> onChange { it.copy(wifiOnly = v) } }
                 Text(stringResource(R.string.speed_mode), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 6.dp))
                 Row(Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     listOf(SpeedMode.NORMAL to R.string.mode_normal, SpeedMode.MAX to R.string.mode_max, SpeedMode.WEAK_NETWORK to R.string.mode_weak, SpeedMode.SAVER to R.string.mode_saver).forEach { (m, l) ->
                         FilterChip(s.mode == m, { onChange { it.copy(mode = m) } }, label = { Text(stringResource(l)) })
                     }
                 }
+                ToggleRow(stringResource(R.string.wifi_only), stringResource(R.string.wifi_only_desc), s.wifiOnly) { v -> onChange { it.copy(wifiOnly = v) } }
                 Text(stringResource(R.string.qp_now, Fmt.speed(speedNow)), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
             }
         }

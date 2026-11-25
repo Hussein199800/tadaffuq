@@ -78,59 +78,112 @@ fun accentPair(a: com.tadaffuq.data.Accent): Pair<Color, Color> = when (a) {
     com.tadaffuq.data.Accent.ROSE -> Color(0xFFFF8FB1) to Color(0xFFB3265A)
 }
 
+/** درجات ثيم جاهز لوضع واحد (فاتح أو داكن). كل نص فوق خلفيته بتباين 4.5:1 على الأقل. */
+@Immutable
+data class Tones(
+    val primary: Color, val onPrimary: Color, val primaryContainer: Color, val onPrimaryContainer: Color,
+    val background: Color, val card: Color, val low: Color, val high: Color, val highest: Color,
+    val onSurface: Color, val secondaryText: Color, val hairline: Color, val outline: Color,
+    val secondaryContainer: Color, val onSecondaryContainer: Color,
+)
+
+/** الثيمات الجاهزة (الأساس)، ولون التمييز يُطبَّق فوقها للرسوم والتقدم. */
+fun paletteTones(p: com.tadaffuq.data.Palette, dark: Boolean): Tones = when (p) {
+    com.tadaffuq.data.Palette.NAVY_MINT -> if (dark) Tones(
+        Mint, Color(0xFF04261D), Color(0xFF12352E), Color(0xFFB8F5E3), DarkBg, Color(0xFF161B22), Color(0xFF12161D), Color(0xFF1C222B), Color(0xFF2D333B),
+        Color(0xFFE6EDF3), Color(0xFF9AA4AF), Color(0xFF262C34), Color(0xFF6E7681), Color(0xFF1C2E47), Color(0xFFD3E3FA),
+    ) else Tones(
+        Navy, Color.White, Color(0xFFD6F7EE), Color(0xFF0A3B30), LightBg, Color.White, Color(0xFFF0F3F7), Color.White, Color(0xFFE3E8EE),
+        Color(0xFF111827), Color(0xFF5B6573), Color(0xFFE5E9EF), Color(0xFF8A94A3), Color(0xFFE3EAF3), Navy,
+    )
+    // أخضر عميق وذهبي على عاجي نهاراً، فحمي بإضاءة خفيفة ليلاً (من هوية «طاقتي»)
+    com.tadaffuq.data.Palette.GREEN_GOLD -> if (dark) Tones(
+        Color(0xFF2FC77F), Color(0xFF04130B), Color(0xFF143326), Color(0xFFBFF0D6), Color(0xFF07080A), Color(0xFF15171B), Color(0xFF0E1013), Color(0xFF1D2025), Color(0xFF2A2E34),
+        Color(0xFFF3F5F1), Color(0xFF8E959C), Color(0xFF23272C), Color(0xFF6B7178), Color(0xFF2B2513), Color(0xFFF7DDA0),
+    ) else Tones(
+        Color(0xFF0F5F3E), Color.White, Color(0xFFDCEFE4), Color(0xFF0A3B26), Color(0xFFF4F2EB), Color(0xFFFFFDF8), Color(0xFFEFECE3), Color(0xFFFFFFFF), Color(0xFFE6E2D6),
+        Color(0xFF10241A), Color(0xFF5B665D), Color(0xFFE4E0D4), Color(0xFF88907F), Color(0xFFF6EBCF), Color(0xFF5C3D00),
+    )
+    com.tadaffuq.data.Palette.ORANGE_VIOLET -> if (dark) Tones(
+        Color(0xFFFF9A5C), Color(0xFF2A1200), Color(0xFF3A2316), Color(0xFFFFD9C2), Color(0xFF120E18), Color(0xFF1C1724), Color(0xFF16121D), Color(0xFF241E2E), Color(0xFF332B3F),
+        Color(0xFFF2EDF7), Color(0xFFA69DB2), Color(0xFF2A2433), Color(0xFF746A82), Color(0xFF2C2240), Color(0xFFE3D6FF),
+    ) else Tones(
+        Color(0xFFB4470F), Color.White, Color(0xFFFFE3D2), Color(0xFF4A1A00), Color(0xFFFBF7F4), Color.White, Color(0xFFF5EFEB), Color.White, Color(0xFFEDE5E0),
+        Color(0xFF1F1430), Color(0xFF625A6E), Color(0xFFECE4E0), Color(0xFF948A9E), Color(0xFFEDE6FB), Color(0xFF3B2470),
+    )
+    com.tadaffuq.data.Palette.IVORY_BLACK -> if (dark) Tones(
+        Color(0xFFF5F0E6), Color(0xFF141414), Color(0xFF2A2824), Color(0xFFF5F0E6), Color(0xFF000000), Color(0xFF121212), Color(0xFF0A0A0A), Color(0xFF1C1C1C), Color(0xFF2A2A2A),
+        Color(0xFFF5F0E6), Color(0xFFA39E94), Color(0xFF262626), Color(0xFF6F6B64), Color(0xFF24221E), Color(0xFFEDE6D6),
+    ) else Tones(
+        Color(0xFF141414), Color.White, Color(0xFFECE6D8), Color(0xFF141414), Color(0xFFF7F3EA), Color(0xFFFFFDF7), Color(0xFFF0EBDF), Color(0xFFFFFFFF), Color(0xFFE6E0D3),
+        Color(0xFF141414), Color(0xFF5F5A50), Color(0xFFE6E0D3), Color(0xFF8C867A), Color(0xFFECE6D8), Color(0xFF141414),
+    )
+}
+
+/** لون التمييز المقترن بكل ثيم جاهز (يُختار تلقائياً عند تبديل الثيم، ويبقى قابلاً للتغيير). */
+fun pairedAccent(p: com.tadaffuq.data.Palette) = when (p) {
+    com.tadaffuq.data.Palette.NAVY_MINT -> com.tadaffuq.data.Accent.MINT
+    com.tadaffuq.data.Palette.GREEN_GOLD -> com.tadaffuq.data.Accent.AMBER
+    com.tadaffuq.data.Palette.ORANGE_VIOLET -> com.tadaffuq.data.Accent.VIOLET
+    com.tadaffuq.data.Palette.IVORY_BLACK -> com.tadaffuq.data.Accent.BLUE
+}
+
 @Composable
 fun TadaffuqTheme(
     mode: ThemeMode = ThemeMode.SYSTEM,
     fontScale: Float = 1f,
     dynamic: Boolean = false,
     accent: com.tadaffuq.data.Accent = com.tadaffuq.data.Accent.MINT,
+    palette: com.tadaffuq.data.Palette = com.tadaffuq.data.Palette.NAVY_MINT,
     content: @Composable () -> Unit,
 ) {
     val dark = when (mode) { ThemeMode.SYSTEM -> isSystemInDarkTheme(); ThemeMode.DARK -> true; ThemeMode.LIGHT -> false }
     val (bright, deep) = accentPair(accent)
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val useDynamic = dynamic && android.os.Build.VERSION.SDK_INT >= 31
+    val t = paletteTones(palette, dark)
     val base = if (dark) darkColorScheme(
-        primary = Mint, onPrimary = Color(0xFF04261D),
-        primaryContainer = Color(0xFF12352E), onPrimaryContainer = Color(0xFFB8F5E3),
-        secondary = Color(0xFF8DB4E8), onSecondary = Color(0xFF0B1F38),
-        secondaryContainer = Color(0xFF1C2E47), onSecondaryContainer = Color(0xFFD3E3FA),
-        background = DarkBg, onBackground = Color(0xFFE6EDF3),
-        surface = DarkBg, onSurface = Color(0xFFE6EDF3),
-        surfaceVariant = Color(0xFF1C222B), onSurfaceVariant = Color(0xFF9AA4AF),
-        surfaceContainer = Color(0xFF161B22), surfaceContainerHigh = Color(0xFF1C222B), surfaceContainerLow = Color(0xFF12161D),
-        surfaceContainerHighest = Color(0xFF2D333B),
-        outline = Color(0xFF6E7681), outlineVariant = Color(0xFF262C34),
+        primary = t.primary, onPrimary = t.onPrimary,
+        primaryContainer = t.primaryContainer, onPrimaryContainer = t.onPrimaryContainer,
+        secondary = bright, onSecondary = t.background,
+        secondaryContainer = t.secondaryContainer, onSecondaryContainer = t.onSecondaryContainer,
+        background = t.background, onBackground = t.onSurface,
+        surface = t.background, onSurface = t.onSurface,
+        surfaceVariant = t.high, onSurfaceVariant = t.secondaryText,
+        surfaceContainer = t.card, surfaceContainerHigh = t.high, surfaceContainerLow = t.low,
+        surfaceContainerHighest = t.highest,
+        outline = t.outline, outlineVariant = t.hairline,
         error = Color(0xFFFF7B72), onError = Color(0xFF3D0A07),
     ) else lightColorScheme(
-        primary = Navy, onPrimary = Color.White,
-        primaryContainer = Color(0xFFD6F7EE), onPrimaryContainer = Color(0xFF0A3B30),
-        secondary = Color(0xFF0E8C6E), onSecondary = Color.White,
-        secondaryContainer = Color(0xFFE3EAF3), onSecondaryContainer = Navy,
-        background = LightBg, onBackground = Color(0xFF111827),
-        surface = LightBg, onSurface = Color(0xFF111827),
-        surfaceVariant = Color(0xFFE9EDF2), onSurfaceVariant = Color(0xFF5B6573),
-        surfaceContainer = Color.White, surfaceContainerHigh = Color.White, surfaceContainerLow = Color(0xFFF0F3F7),
-        surfaceContainerHighest = Color(0xFFE3E8EE),
-        outline = Color(0xFF8A94A3), outlineVariant = Color(0xFFE5E9EF),
+        primary = t.primary, onPrimary = t.onPrimary,
+        primaryContainer = t.primaryContainer, onPrimaryContainer = t.onPrimaryContainer,
+        secondary = deep, onSecondary = Color.White,
+        secondaryContainer = t.secondaryContainer, onSecondaryContainer = t.onSecondaryContainer,
+        background = t.background, onBackground = t.onSurface,
+        surface = t.background, onSurface = t.onSurface,
+        surfaceVariant = t.highest, onSurfaceVariant = t.secondaryText,
+        surfaceContainer = t.card, surfaceContainerHigh = t.high, surfaceContainerLow = t.low,
+        surfaceContainerHighest = t.highest,
+        outline = t.outline, outlineVariant = t.hairline,
         error = Color(0xFFC92A2F), onError = Color.White,
     )
     val scheme = when {
-        useDynamic && dark -> androidx.compose.material3.dynamicDarkColorScheme(ctx).copy(background = DarkBg, surface = DarkBg)
-        useDynamic -> androidx.compose.material3.dynamicLightColorScheme(ctx).copy(background = LightBg, surface = LightBg)
-        dark -> base.copy(primary = bright, secondary = bright.copy(alpha = 1f))
-        else -> base.copy(secondary = deep)
+        useDynamic && dark -> androidx.compose.material3.dynamicDarkColorScheme(ctx).copy(background = t.background, surface = t.background)
+        useDynamic -> androidx.compose.material3.dynamicLightColorScheme(ctx).copy(background = t.background, surface = t.background)
+        // الافتراضي كما كان: في الداكن يصير لون التمييز هو الأساسي
+        dark && palette == com.tadaffuq.data.Palette.NAVY_MINT -> base.copy(primary = bright)
+        else -> base
     }
     val accentDark = if (useDynamic) scheme.primary else bright
     val accentLight = if (useDynamic) scheme.primary else deep
+    // النجاح والتحذير والخطر ثابتة دلالياً في كل الثيمات
     val extra = if (dark) Extra(
-        secondaryText = Color(0xFF9AA4AF), hairline = Color(0xFF262C34), success = Mint, warning = Color(0xFFF2B35B),
-        danger = Color(0xFFFF7B72), paused = Color(0xFF8B949E), card = Color(0xFF161B22),
+        secondaryText = t.secondaryText, hairline = t.hairline, success = Mint, warning = Color(0xFFF2B35B),
+        danger = Color(0xFFFF7B72), paused = Color(0xFF8B949E), card = t.card,
         chartLine = accentDark, chartFill = accentDark.copy(alpha = 0.18f),
     ) else Extra(
-        // أخضر النص أغمق من النعناعي ليبلغ تباين 4.5:1 على الأبيض
-        secondaryText = Color(0xFF5B6573), hairline = Color(0xFFE5E9EF), success = Color(0xFF0B7F63), warning = Color(0xFF9A5B00),
-        danger = Color(0xFFC92A2F), paused = Color(0xFF6B7280), card = Color.White,
+        secondaryText = t.secondaryText, hairline = t.hairline, success = Color(0xFF0B7F63), warning = Color(0xFF9A5B00),
+        danger = Color(0xFFC92A2F), paused = Color(0xFF6B7280), card = t.card,
         chartLine = accentLight, chartFill = accentLight.copy(alpha = 0.2f),
     )
     CompositionLocalProvider(LocalExtra provides extra) {

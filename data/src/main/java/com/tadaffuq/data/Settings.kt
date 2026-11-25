@@ -18,6 +18,10 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class ListDensity { COMFORTABLE, COMPACT }
 enum class ProxyMode { NONE, HTTP, SOCKS5 }
 enum class Accent { MINT, BLUE, VIOLET, AMBER, ROSE }
+/** ثيمات جاهزة: الأساس (الخلفية والأسطح والأساسي)؛ لون التمييز فوقها. */
+enum class Palette { NAVY_MINT, GREEN_GOLD, ORANGE_VIOLET, IVORY_BLACK }
+/** حجم خط داخل التطبيق، يُضرب في تكبير خط النظام (لا يلغيه). */
+enum class TextSize(val scale: Float) { SMALL(0.9f), DEFAULT(1f), LARGE(1.15f) }
 
 /** إعدادات التطبيق. القيم الافتراضية بسيطة، والمتقدم اختياري. */
 data class Settings(
@@ -77,6 +81,8 @@ data class Settings(
     /** ألوان Material You من خلفية الجهاز (Android 12+). */
     val dynamicColor: Boolean = false,
     val accent: Accent = Accent.MINT,
+    val palette: Palette = Palette.NAVY_MINT,
+    val textSize: TextSize = TextSize.DEFAULT,
     /** إشعار لكل ملف يعمل (تحت الإشعار الإجمالي). */
     val notifyPerTask: Boolean = true,
     val notifyOnFail: Boolean = true,
@@ -157,6 +163,8 @@ class SettingsRepository(private val context: Context) {
         val rpcPort = intPreferencesKey("rpcPort")
         val dynamic = booleanPreferencesKey("dynamicColor")
         val accent = stringPreferencesKey("accent")
+        val palette = stringPreferencesKey("palette")
+        val textSize = stringPreferencesKey("textSize")
         val nPer = booleanPreferencesKey("notifyPerTask")
         val nFail = booleanPreferencesKey("notifyOnFail")
         val nSound = booleanPreferencesKey("notifySound")
@@ -229,6 +237,8 @@ class SettingsRepository(private val context: Context) {
             p[K.rpcPort] = s.rpcPort.coerceIn(1024, 65535)
             p[K.dynamic] = s.dynamicColor
             p[K.accent] = s.accent.name
+            p[K.palette] = s.palette.name
+            p[K.textSize] = s.textSize.name
             p[K.nPer] = s.notifyPerTask
             p[K.nFail] = s.notifyOnFail
             p[K.nSound] = s.notifySound
@@ -295,6 +305,8 @@ class SettingsRepository(private val context: Context) {
             rpcPort = p[K.rpcPort] ?: d.rpcPort,
             dynamicColor = p[K.dynamic] ?: d.dynamicColor,
             accent = p[K.accent]?.let { runCatching { Accent.valueOf(it) }.getOrNull() } ?: d.accent,
+            palette = p[K.palette]?.let { runCatching { Palette.valueOf(it) }.getOrNull() } ?: d.palette,
+            textSize = p[K.textSize]?.let { runCatching { TextSize.valueOf(it) }.getOrNull() } ?: d.textSize,
             notifyPerTask = p[K.nPer] ?: d.notifyPerTask,
             notifyOnFail = p[K.nFail] ?: d.notifyOnFail,
             notifySound = p[K.nSound] ?: d.notifySound,

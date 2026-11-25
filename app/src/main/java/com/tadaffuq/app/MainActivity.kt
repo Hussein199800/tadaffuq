@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity() {
         }
         setContent {
             val settings by vm.settings.collectAsState()
-            TadaffuqTheme(settings.theme, dynamic = settings.dynamicColor, accent = settings.accent) {
+            TadaffuqTheme(settings.theme, fontScale = settings.textSize.scale, dynamic = settings.dynamicColor, accent = settings.accent, palette = settings.palette) {
                 androidx.compose.runtime.CompositionLocalProvider(com.tadaffuq.app.ui.components.LocalReduceMotion provides (settings.reduceMotion || systemReducedMotion())) { App() }
             }
         }
@@ -243,7 +243,7 @@ class MainActivity : AppCompatActivity() {
                 composable("downloads") { DownloadsScreen(vm, { add(AddRequest("")) }, padding) }
                 composable("files") { FilesScreen(vm, padding) }
                 composable("more") { MoreScreen(padding) { nav.navigate(it) } }
-                composable("settings") { SettingsScreen(vm, padding, { nav.popBackStack() }) { nav.navigate("advanced") } }
+                composable("settings") { SettingsScreen(vm, padding, { nav.popBackStack() }) { nav.navigate(it) } }
                 composable("advanced") { com.tadaffuq.app.ui.more.AdvancedSettingsScreen(vm, padding) { nav.popBackStack() } }
                 composable("reports") { ReportsScreen(vm, padding) { nav.popBackStack() } }
                 composable("links") { LinksScreen(vm, padding, { nav.popBackStack() }) { add(it) } }
