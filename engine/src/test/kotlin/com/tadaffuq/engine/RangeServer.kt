@@ -18,6 +18,8 @@ class RangeServer(
     val server = MockWebServer()
     val requests = AtomicInteger()
     val rangeRequests = AtomicInteger()
+    val cookieRequests = AtomicInteger()
+    val authRequests = AtomicInteger()
     /** عدد الطلبات التالية التي تُقطع بعد عدد بايتات محدد. */
     @Volatile var cutAfterBytes: Long = -1
     val cutsRemaining = AtomicInteger(0)
@@ -33,6 +35,8 @@ class RangeServer(
 
     override fun dispatch(request: RecordedRequest): MockResponse {
         requests.incrementAndGet()
+        if (request.getHeader("Cookie") != null) cookieRequests.incrementAndGet()
+        if (request.getHeader("Authorization") != null) authRequests.incrementAndGet()
         statusOverride?.let { return MockResponse().setResponseCode(it) }
         if (errorsRemaining.getAndDecrement() > 0) return MockResponse().setResponseCode(errorCode)
         val data = content

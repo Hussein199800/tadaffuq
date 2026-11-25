@@ -34,6 +34,7 @@ object HttpClients {
         .followRedirects(true)
         .followSslRedirects(true)
         .retryOnConnectionFailure(true)
+        .addNetworkInterceptor(SecretsGuard)
         .apply {
             if (proxy != null) {
                 proxy(Proxy(proxy.type, InetSocketAddress.createUnresolved(proxy.host, proxy.port)))
@@ -57,7 +58,11 @@ object HttpClients {
         .build()
 }
 
+/** وسم يرافق الطلب في كل تحويل: لمن تُرسل الأسرار. */
+internal data class SecretsScope(val authority: String, val https: Boolean)
+
 internal fun RequestSpec.toRequest(url: String = this.url): Request.Builder = Request.Builder().url(url).apply {
+    tag(SecretsScope::class.java, SecretsScope(secretsAuthority, this@toRequest.url.startsWith("https", true)))
     headers.forEach { (k, v) -> header(k, v) }
     userAgent?.let { header("User-Agent", it) }
     referer?.let { header("Referer", it) }
@@ -102,4 +107,23 @@ internal fun parseContentRange(value: String?): ContentRange? {
     val first = span.substringBefore('-').toLongOrNull() ?: return null
     val last = span.substringAfter('-').toLongOrNull() ?: return null
     return ContentRange(first, last, size.toLongOrNull())
+}
+
+/**
+ * يحذف الكوكيز وAuthorization (وReferer عند الهبوط من HTTPS إلى HTTP) من أي طلب — بما فيها التحويلات —
+ * يتجه إلى مضيف غير الذي التُقطت له الأسرار، أو عبر HTTP بعد التقاطها عبر HTTPS (P0-10).
+ * OkHttp يحذف Authorization وحده عند تغيّر المضيف، لكنه يُبقي Cookie الذي نضيفه يدوياً.
+ */
+internal object SecretsGuard : okhttp3.Interceptor {
+    override fun intercept(chain: okhttp3.Interceptor.Chain): Response {
+        val req = chain.request()
+        val scope = req.tag(SecretsScope::class.java) ?: return chain.proceed(req)
+        val authority = RequestSpec.authorityOf(req.url.toString())
+        val foreign = authority != scope.authority
+        val downgrade = scope.https && !req.isHttps
+        if (!foreign && !downgrade) return chain.proceed(req)
+        val clean = req.newBuilder().removeHeader("Cookie").removeHeader("Authorization")
+            .apply { if (downgrade) removeHeader("Referer") }.build()
+        return chain.proceed(clean)
+    }
 }

@@ -166,3 +166,27 @@ class AuditRegressionTest {
         assertEquals(sha(data), sha(f.readBytes()))
     }
 }
+
+class CookieScopeTest {
+    /** P0-10: الكوكيز لا تنتقل إلى مضيف آخر عبر التحويل، ولا عبر finalUrl أو مرآة. */
+    @Test fun cookiesStayWithTheirHost() = runBlocking {
+        val data = Random(3).nextBytes(200_000)
+        val other = RangeServer(data)      // مضيف/منفذ آخر (CDN)
+        val origin = MockWebServer().apply {
+            dispatcher = object : Dispatcher() {
+                override fun dispatch(request: RecordedRequest) = MockResponse().setResponseCode(302).setHeader("Location", other.url())
+            }
+            start()
+        }
+        try {
+            val spec = RequestSpec(origin.url("/dl").toString(), cookies = "session=SECRET", headers = mapOf("Authorization" to "Bearer TOKEN"))
+            val f = File.createTempFile("cookie", ".part").apply { deleteOnExit() }
+            HttpDownloader(HttpClients.create(), spec, f, DownloadConfig(connections = 2)).run()
+            assertEquals("session=SECRET", origin.takeRequest().getHeader("Cookie")) // صاحب الكوكيز يتلقاها
+            assertTrue("CDN received requests", other.requests.get() > 0)
+            assertEquals(0, other.cookieRequests.get())
+            assertEquals(0, other.authRequests.get())
+            assertArrayEquals(data, f.readBytes())
+        } finally { origin.shutdown(); other.close() }
+    }
+}

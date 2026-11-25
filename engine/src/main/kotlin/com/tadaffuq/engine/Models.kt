@@ -7,7 +7,22 @@ data class RequestSpec(
     val userAgent: String? = null,
     val referer: String? = null,
     val cookies: String? = null,
-)
+    /**
+     * المضيف (host:port) الذي التُقطت له الكوكيز وAuthorization. لا تُرسل إلا إليه، ولا عبر HTTP
+     * إن التُقطت عبر HTTPS. فارغ = مضيف [url] نفسه.
+     */
+    val secretsHost: String? = null,
+) {
+    /** المضيف المسموح له بالأسرار كما يحسبه الطلب الأول. */
+    val secretsAuthority: String get() = secretsHost ?: authorityOf(url)
+
+    companion object {
+        fun authorityOf(url: String): String = runCatching {
+            val u = java.net.URI(url.trim()); val port = if (u.port > 0) u.port else if (u.scheme.equals("https", true)) 443 else 80
+            "${u.host.lowercase()}:$port"
+        }.getOrDefault("")
+    }
+}
 
 /** نتيجة فحص الرابط قبل التنزيل (RFC 9110). */
 data class ProbeResult(
