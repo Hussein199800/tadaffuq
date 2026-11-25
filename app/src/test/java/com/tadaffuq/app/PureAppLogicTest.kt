@@ -66,6 +66,12 @@ class PureAppLogicTest {
         assertTrue(Search.matches("Report.PDF", "report"))
     }
 
+    @Test fun techLogRedactsSecrets() {
+        val s = com.tadaffuq.app.core.TechLog.sanitize("GET https://user:pw@cdn.x/f.bin?X-Amz-Signature=abc&token=1 Authorization: Bearer eyJabc.def cookie=sess hf_abcdefghijk1234")
+        assertFalse(s.contains("pw@")); assertFalse(s.contains("Signature")); assertFalse(s.contains("eyJabc")); assertFalse(s.contains("sess")); assertFalse(s.contains("hf_abcdefghijk"))
+        assertTrue(s.contains("https://***@cdn.x/f.bin?…"))
+    }
+
     @Test fun errorCodesRoundTrip() {
         listOf(DownloadError.NotFound, DownloadError.ChangedOnServer, DownloadError.LinkExpired(403), DownloadError.Http(503)).forEach {
             assertEquals(it, ErrorCodes.toError(ErrorCodes.of(it)))

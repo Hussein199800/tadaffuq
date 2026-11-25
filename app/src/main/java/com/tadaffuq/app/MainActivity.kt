@@ -203,6 +203,8 @@ class MainActivity : AppCompatActivity() {
                 composable("about") { AboutScreen(padding) { nav.popBackStack() } }
                 composable("rules") { com.tadaffuq.app.ui.more.RulesScreen(vm, padding) { nav.popBackStack() } }
                 composable("vault") { com.tadaffuq.app.ui.more.VaultScreen(vm, padding) { nav.popBackStack() } }
+                composable("dev") { com.tadaffuq.app.ui.more.DevScreen(padding, { nav.popBackStack() }) }
+                composable("rpc") { com.tadaffuq.app.ui.more.RpcScreen(vm, padding, { nav.popBackStack() }) }
                 composable("backup") { com.tadaffuq.app.ui.more.BackupScreen(vm, padding) { nav.popBackStack() } }
             }
         }

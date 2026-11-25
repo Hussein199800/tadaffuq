@@ -132,7 +132,10 @@ class DownloadManager @Inject constructor(
                 val total = _live.value.values.sumOf { it.speedBps } + externalSpeed()
                 _speedHistory.update { (it.drop(1) + total) }
                 // المساحة والنافذة الزمنية والمواعيد تتغير مع الوقت: مراجعة دورية رخيصة
-                if (++ticks % 30 == 0) { conditions.refreshStorage(StorageDirs.root()); wake() }
+                if (++ticks % 30 == 0) {
+                    conditions.refreshStorage(StorageDirs.root()); wake()
+                    if (jobs.isNotEmpty() || total > 0) runCatching { com.tadaffuq.app.widget.SpeedWidget.refresh(ctx) }
+                }
             }
         }
         usage.start(scope)
@@ -179,7 +182,9 @@ class DownloadManager @Inject constructor(
         val job = scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) { execute(t) }
         jobs[t.id] = job
         _running.value = jobs.keys.toSet()
+        scope.launch { runCatching { com.tadaffuq.app.widget.SpeedWidget.refresh(ctx) } }
         job.invokeOnCompletion {
+            scope.launch { runCatching { com.tadaffuq.app.widget.SpeedWidget.refresh(ctx) } }
             jobs.remove(t.id)
             _running.value = jobs.keys.toSet()
             _live.update { it - t.id }
@@ -222,7 +227,9 @@ class DownloadManager @Inject constructor(
         val limiter = limiters.getOrPut(t.id) { RateLimiter(t.speedLimitBps) }
         val counters = IntArray(3).also { it[0] = t.retries; it[1] = t.networkRetries; it[2] = t.serverRetries }
         var last: Snapshot? = null
+        com.tadaffuq.app.core.TechLog.log("start #${t.id} ${t.url} conn=${cfg.connections}/${cfg.maxConnections} resume=${saved != null}")
         val spec = RequestSpec(
+            headers = hubAuth(t.url),
             url = t.url,
             userAgent = t.userAgent ?: s.userAgent.ifBlank { null } ?: DEFAULT_UA,
             referer = t.referer,
@@ -248,6 +255,7 @@ class DownloadManager @Inject constructor(
             override fun onBytes(count: Long) = usage.add(count)
 
             override fun onRetry(segment: Int, attempt: Int, error: DownloadError, delayMs: Long) {
+                com.tadaffuq.app.core.TechLog.log("retry #${t.id} seg=$segment attempt=$attempt $error wait=${delayMs}ms")
                 counters[0]++
                 when (error) {
                     is DownloadError.Network -> counters[1]++
@@ -300,6 +308,7 @@ class DownloadManager @Inject constructor(
             }
             throw e
         } catch (e: DownloadException) {
+            com.tadaffuq.app.core.TechLog.log("fail #${t.id} ${e.error}")
             withContext(NonCancellable) {
                 val offline = e.error is DownloadError.Network && !conditions.state.value.connected
                 dao.get(t.id)?.let {
@@ -344,6 +353,13 @@ class DownloadManager @Inject constructor(
     // ===== واجهة الاستخدام =====
 
     private val client: OkHttpClient get() = clients.get(settings)
+
+    /** رمز Hugging Face يُرسل لمضيفه فقط (OkHttp يحذفه عند التحويل لمضيف آخر)، ولا يُحفظ في قاعدة البيانات. */
+    private fun hubAuth(url: String): Map<String, String> {
+        val host = runCatching { java.net.URI(url).host }.getOrNull() ?: return emptyMap()
+        if (host != "huggingface.co") return emptyMap()
+        return credentials.hfToken()?.let { mapOf("Authorization" to "Bearer $it") } ?: emptyMap()
+    }
 
     /**
      * مع المرايا: تُرتَّب حسب سرعة عيّنة حقيقية بعد التحقق من تطابق المحتوى، وعند فشل مصدر

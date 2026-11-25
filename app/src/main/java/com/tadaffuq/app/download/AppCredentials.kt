@@ -14,5 +14,8 @@ class AppCredentials(context: Context, private val secrets: SecretStore) : Crede
 
     override fun knownHostKey(host: String, port: Int): String? = hosts.getString("$host:$port", null)
     fun trustHostKey(host: String, port: Int, fingerprint: String) = hosts.edit().putString("$host:$port", fingerprint).apply()
+    fun hfToken(): String? = secrets.get(SecretStore.HF_TOKEN)
+    fun setHfToken(t: String?) = secrets.put(SecretStore.HF_TOKEN, t?.trim())
+
     fun forgetHostKey(host: String, port: Int) = hosts.edit().remove("$host:$port").apply()
 }

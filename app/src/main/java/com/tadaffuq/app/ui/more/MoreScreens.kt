@@ -26,6 +26,8 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Rule
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Lan
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -96,6 +98,10 @@ fun MoreScreen(padding: PaddingValues, open: (String) -> Unit) {
                 SettingRow(stringResource(R.string.vault), stringResource(R.string.vault_desc), Icons.Rounded.Lock, onClick = { open("vault") })
                 Hairline()
                 SettingRow(stringResource(R.string.backup), stringResource(R.string.backup_desc), Icons.Rounded.Backup, onClick = { open("backup") })
+                Hairline()
+                SettingRow(stringResource(R.string.dev), stringResource(R.string.dev_desc), Icons.Rounded.Code, onClick = { open("dev") })
+                Hairline()
+                SettingRow(stringResource(R.string.rpc), stringResource(R.string.rpc_desc), Icons.Rounded.Lan, onClick = { open("rpc") })
                 Hairline()
                 SettingRow(stringResource(R.string.trash), stringResource(R.string.trash_desc), Icons.Rounded.DeleteOutline, onClick = { open("trash") })
                 Hairline()

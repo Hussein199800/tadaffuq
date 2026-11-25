@@ -12,6 +12,7 @@ class TadaffuqApp : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var manager: DownloadManager
     @Inject lateinit var torrents: com.tadaffuq.app.download.TorrentManager
+    @Inject lateinit var rpc: com.tadaffuq.app.download.RpcController
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -20,5 +21,6 @@ class TadaffuqApp : Application(), Configuration.Provider {
         super.onCreate()
         manager.start()
         torrents.start()
+        rpc.start()
     }
 }

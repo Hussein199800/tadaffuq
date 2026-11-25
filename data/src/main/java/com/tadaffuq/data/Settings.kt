@@ -68,6 +68,10 @@ data class Settings(
     val windowEnd: Int = 7,
     /** إيقاف الطابور إن قلّت المساحة الحرة عن هذا الحد (م.ب)، 0 = معطّل. */
     val minFreeMb: Long = 500,
+    /** واجهة RPC: مغلقة افتراضياً، ومحلية فقط ما لم يُسمح بالشبكة. */
+    val rpcEnabled: Boolean = false,
+    val rpcAllowNetwork: Boolean = false,
+    val rpcPort: Int = 6800,
 ) {
     val rules: List<Rule> get() = Rule.listFrom(rulesJson)
 }
@@ -118,6 +122,9 @@ class SettingsRepository(private val context: Context) {
         val wStart = intPreferencesKey("windowStart")
         val wEnd = intPreferencesKey("windowEnd")
         val minFree = longPreferencesKey("minFreeMb")
+        val rpcOn = booleanPreferencesKey("rpcEnabled")
+        val rpcNet = booleanPreferencesKey("rpcAllowNetwork")
+        val rpcPort = intPreferencesKey("rpcPort")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -171,6 +178,9 @@ class SettingsRepository(private val context: Context) {
             p[K.wStart] = s.windowStart.coerceIn(0, 23)
             p[K.wEnd] = s.windowEnd.coerceIn(0, 23)
             p[K.minFree] = s.minFreeMb.coerceAtLeast(0)
+            p[K.rpcOn] = s.rpcEnabled
+            p[K.rpcNet] = s.rpcAllowNetwork
+            p[K.rpcPort] = s.rpcPort.coerceIn(1024, 65535)
         }
     }
 
@@ -218,6 +228,9 @@ class SettingsRepository(private val context: Context) {
             windowStart = p[K.wStart] ?: d.windowStart,
             windowEnd = p[K.wEnd] ?: d.windowEnd,
             minFreeMb = p[K.minFree] ?: d.minFreeMb,
+            rpcEnabled = p[K.rpcOn] ?: d.rpcEnabled,
+            rpcAllowNetwork = p[K.rpcNet] ?: d.rpcAllowNetwork,
+            rpcPort = p[K.rpcPort] ?: d.rpcPort,
         )
     }
 }
