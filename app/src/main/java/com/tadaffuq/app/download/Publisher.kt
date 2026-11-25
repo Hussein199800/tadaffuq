@@ -109,9 +109,9 @@ class SafTarget(private val ctx: Context, treeUri: String) : PublishTarget {
  * «التنزيلات» العامة عبر MediaStore (Android 10+) حين لا تُتاح الكتابة المباشرة:
  * يُنشأ الملف مخفياً (IS_PENDING) ولا يظهر للتطبيقات الأخرى إلا بعد اكتمال النسخ والتحقق.
  */
+@androidx.annotation.RequiresApi(29)
 class MediaStoreTarget(private val ctx: Context, private val relativePath: String) : PublishTarget {
     override fun create(name: String, mime: String): String {
-        check(Build.VERSION.SDK_INT >= 29)
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, mime)
@@ -129,7 +129,7 @@ class MediaStoreTarget(private val ctx: Context, private val relativePath: Strin
         ctx.contentResolver.openFileDescriptor(Uri.parse(id), "r")?.use { it.statSize } ?: -1
 
     override fun finish(id: String) {
-        if (Build.VERSION.SDK_INT >= 29) ctx.contentResolver.update(Uri.parse(id), ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
+        ctx.contentResolver.update(Uri.parse(id), ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null)
     }
 
     override fun delete(id: String): Boolean = runCatching { ctx.contentResolver.delete(Uri.parse(id), null, null) > 0 }.getOrDefault(false)

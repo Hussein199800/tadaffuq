@@ -158,7 +158,7 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
                 Doctor.Input(
                     probe = probe.takeIf { t.finalUrl != null },
                     error = ErrorCodes.toError(t.errorCode, t.errorDetail),
-                    backgroundRestricted = android.os.Build.VERSION.SDK_INT >= 28 && ctx.getSystemService(android.app.ActivityManager::class.java).isBackgroundRestricted,
+                    backgroundRestricted = ctx.getSystemService(android.app.ActivityManager::class.java).isBackgroundRestricted,
                     retries = t.retries, networkRetries = t.networkRetries, serverRetries = t.serverRetries,
                     averageBps = live?.averageBps ?: t.averageBps, connections = live?.connections ?: 0,
                     freeBytes = runCatching { File(t.dirPath).let { if (it.exists()) it else it.parentFile }?.usableSpace ?: -1 }.getOrDefault(-1),

@@ -8,8 +8,6 @@
     <string name="tab_more">More</string>
     <string name="shortcut_add">New download</string>
     <string name="tile_label">Tadaffuq</string>
-    <string name="tile_active">Downloading · tap to pause</string>
-    <string name="tile_idle">Idle · tap to resume</string>
     <string name="channel_active">Active downloads</string>
     <string name="channel_active_desc">One notification with the progress of all running downloads</string>
     <string name="channel_done">Finished and failed downloads</string>
@@ -188,7 +186,7 @@
     <string name="mobile_data">Mobile data</string>
     <string name="empty_home">Start your first download</string>
     <string name="empty_home_text">Paste a link, share one from any app, or download from the built-in browser.</string>
-    <string name="in_progress">In progress</string>
+    <string name="status_in_progress">In progress</string>
     <string name="see_all">See all</string>
     <string name="recent_done">Recently finished</string>
     <string name="clip_found">Link on clipboard: tap to download</string>
@@ -269,12 +267,9 @@
     <string name="about">About Tadaffuq</string>
     <string name="about_desc">Version, developer, privacy and licenses</string>
     <string name="sec_engine">Download engine</string>
-    <string name="sec_conditions">Conditions and limits</string>
     <string name="sec_files">Files and alerts</string>
     <string name="sec_browser">Browser</string>
-    <string name="sec_look">Appearance</string>
     <string name="speed_mode">Download mode</string>
-    <string name="speed_mode_desc">Tunes connections and retries for your situation</string>
     <string name="mode_normal">Smart (recommended)</string>
     <string name="mode_normal_desc">Picks the number of connections by itself for the server and network</string>
     <string name="mode_max">Maximum speed</string>
@@ -283,20 +278,13 @@
     <string name="mode_weak_desc">Two connections, more retries with longer waits: a bit slower but finishes on unstable networks</string>
     <string name="mode_saver">Data and battery saver</string>
     <string name="mode_saver_desc">Two connections, no auto-tuning</string>
-    <string name="max_connections">Maximum connections</string>
-    <string name="max_connections_desc">Per file; the server may accept fewer</string>
-    <string name="max_parallel">Parallel downloads</string>
-    <string name="max_parallel_desc">How many files download at once; the rest wait by priority</string>
     <string name="global_limit">Global speed limit</string>
-    <string name="global_limit_desc">For all downloads together; each task can also have its own</string>
     <string name="user_agent">User-Agent</string>
     <string name="user_agent_desc">Some servers require a specific one; usually keep the default</string>
     <string name="wifi_only">Wi-Fi only</string>
     <string name="wifi_only_desc">Unmetered only: no mobile data and no Wi-Fi marked metered, like a phone hotspot</string>
     <string name="only_charging">Only while charging</string>
     <string name="only_charging_desc">Pauses when unplugged and resumes when charging</string>
-    <string name="low_battery">Pause on low battery</string>
-    <string name="low_battery_desc">Unless the device is charging</string>
     <string name="pause_hot">Pause when hot</string>
     <string name="pause_hot_desc">Uses fewer connections when warm and pauses when the system reports severe heat</string>
     <string name="data_limits">Mobile data limits</string>
@@ -320,8 +308,6 @@
     <string name="block_trackers_desc">A small built-in list of known tracking and ad domains</string>
     <string name="desktop_mode">Desktop mode</string>
     <string name="desktop_mode_desc">Requests the desktop version of sites</string>
-    <string name="theme">Theme</string>
-    <string name="theme_desc">Light, dark or follow the system</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
@@ -359,8 +345,6 @@
     <string name="trash_empty_text">Files you delete from Files stay here for 30 days.</string>
     <string name="version_x">Version %1$s</string>
     <string name="about_text">An Arabic download manager to speed up and organize files: multiple connections, safe resume, a smart queue and a light browser. No ads, no trackers, no sign-in.</string>
-    <string name="developer">Developer</string>
-    <string name="developer_name">Hussein Taweel</string>
     <string name="privacy">Privacy</string>
     <string name="privacy_text">Tadaffuq sends no data anywhere. History, settings and cookies stay on your device, and cloud backup is off. It only connects to the servers you download from.</string>
     <string name="licenses">Licenses</string>
@@ -388,7 +372,6 @@
     <string name="mirrors_test">Test sources</string>
     <string name="mirror_ok">Content matches</string>
     <string name="mirror_bad">Different content or check failed: won\'t be used</string>
-    <string name="sec_network">Network</string>
     <string name="proxy">Proxy</string>
     <string name="proxy_desc">HTTP or SOCKS5 for all downloads, with optional authentication</string>
     <string name="proxy_none">No proxy</string>
@@ -499,18 +482,14 @@
     <string name="backup_done">Backup saved</string>
     <string name="restore_done">Imported: %1$d tasks · %2$d links · %3$d bookmarks</string>
     <string name="restore_failed">Not a valid Tadaffuq backup</string>
-    <string name="sec_automation">Automation</string>
     <string name="window">Daily time window</string>
     <string name="window_desc">Download only between %1$d:00 and %2$d:00 every day (e.g. night hours)</string>
     <string name="window_start">From</string>
     <string name="window_end">To</string>
-    <string name="window_hour_desc">Local time; may cross midnight</string>
     <string name="min_free">Free space floor</string>
     <string name="min_free_desc">The queue pauses if free space drops below this</string>
     <string name="auto_extract">Auto-extract archives</string>
     <string name="auto_extract_desc">ZIP, 7Z, RAR (v4 and older) and TAR, protected against malicious paths and compression bombs</string>
-    <string name="move_tree">Move files after download</string>
-    <string name="move_tree_desc">To a folder you choose: SD card, USB or other, without all-files access</string>
     <string name="copy_to_folder">Copy to folder…</string>
     <string name="move_to_folder">Move to folder…</string>
     <string name="copied">Copied</string>
@@ -559,12 +538,9 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="tile_active_n">%1$d running · tap to add copied</string>
     <string name="tile_add_copied">Add copied link</string>
     <string name="clip_empty">No link on the clipboard. Copy one and tap the tile, or paste it here.</string>
-    <string name="sec_download">Downloading</string>
     <string name="save_folder">Save folder</string>
     <string name="save_folder_desc">For new downloads. Each file moves to the chosen folder after it finishes; changing it doesn\'t affect downloads already added (change those from the task details).</string>
     <string name="reset_default">Default</string>
-    <string name="max_connections_live_desc">Per file, applied immediately even to running ones. The server may accept fewer.</string>
-    <string name="sec_network_basic">Network</string>
     <string name="auto_resume">Auto-resume</string>
     <string name="auto_resume_desc">Continue when the connection returns, when possible</string>
     <string name="sec_notifications">Notifications</string>
@@ -587,8 +563,6 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="accent_violet">Violet</string>
     <string name="accent_amber">Amber</string>
     <string name="accent_rose">Rose</string>
-    <string name="compact">Compact list</string>
-    <string name="compact_desc">Smaller cards to fit more downloads on screen</string>
     <string name="segments_in_list">Segment map in list</string>
     <string name="segments_in_list_desc">Shows each running download\'s connections instead of the progress bar</string>
     <string name="reduce_motion">Reduce motion</string>
@@ -603,7 +577,6 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="max_retries_desc">Per part before the download fails; resets on any progress</string>
     <string name="retry_delay">Wait before retrying</string>
     <string name="retry_delay_desc">The first wait, doubling each attempt up to 30 seconds</string>
-    <string name="sec_mobile">Mobile data</string>
     <string name="separate_mobile">Separate mobile data settings</string>
     <string name="separate_mobile_desc">Own connections, parallel downloads and speed limit when not on Wi-Fi</string>
     <string name="mobile_only">On mobile data only</string>
@@ -615,9 +588,6 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="about_privacy_value">No analytics, no ads</string>
     <string name="about_source">Source</string>
     <string name="quick_panel">Quick controls</string>
-    <string name="qp_conn">%1$s conn.</string>
-    <string name="qp_parallel">%1$s parallel</string>
-    <string name="qp_live">Applies immediately to running downloads</string>
     <string name="qp_now">Total speed now: %1$s</string>
     <string name="subfolder">Folder</string>
     <string name="subfolder_desc">A subfolder inside Download/%1$s; empty = by type and rules</string>
@@ -628,9 +598,7 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="add_saves_to">Saves to: %1$s</string>
     <string name="storage_fallback">Couldn\'t write to Downloads; files are saved in the app\'s own folder for now (removed if the app is uninstalled).</string>
     <string name="storage_denied">Storage permission wasn\'t granted; the file will be saved in the app\'s own folder.</string>
-    <string name="sec_capture">Capture</string>
     <string name="tile_add">Copy tile in Quick Settings</string>
-    <string name="tile_add_desc">Tap the tile after copying a link to open the add window. The clipboard is never read in the background.</string>
     <string name="tile_add_done">Tile added</string>
     <string name="tile_add_manual">Pull down Quick Settings twice, tap Edit (pencil), then drag the “Tadaffuq” tile into the panel.</string>
     <string name="task_dest">Destination after completion: %1$s</string>
@@ -679,7 +647,6 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="orphans_clean">Clean</string>
     <string name="orphans_confirm">Delete %1$s of orphan temporary files? This can\'t be undone.</string>
     <string name="orphans_done">Removed %1$s</string>
-    <string name="on">On</string>
     <string name="files_at_once_n">%1$d at once</string>
     <string name="all_networks">All networks</string>
     <plurals name="notif_running">

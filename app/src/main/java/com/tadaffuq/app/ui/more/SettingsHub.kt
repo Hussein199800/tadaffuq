@@ -287,7 +287,7 @@ private fun OrphansRow(vm: MainViewModel) {
         value = when {
             list == null -> "…"
             list.isEmpty() -> stringResource(R.string.orphans_none)
-            else -> sr(R.string.orphans_found, Fmt.bytes(size), com.tadaffuq.app.core.formatLatin(ctx.resources.getQuantityString(R.plurals.files_n, list.size), arrayOf(list.size)))
+            else -> sr(R.string.orphans_found, Fmt.bytes(size), com.tadaffuq.app.core.formatLatin(androidx.compose.ui.res.pluralStringResource(R.plurals.files_n, list.size), arrayOf(list.size)))
         }) {
         if (!list.isNullOrEmpty()) TextButton(onClick = { confirm = true }) { Text(stringResource(R.string.orphans_clean)) }
     }

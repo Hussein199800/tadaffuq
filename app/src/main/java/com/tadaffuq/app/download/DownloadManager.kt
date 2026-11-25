@@ -494,7 +494,7 @@ class DownloadManager @Inject constructor(
     private fun targetFor(t: TaskEntity): PublishTarget? = runCatching {
         when {
             !t.treeUri.isNullOrBlank() -> SafTarget(ctx, t.treeUri!!)
-            Build.VERSION.SDK_INT >= 29 && StorageDirs.isInAppDir(File(t.dirPath)) ->
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && StorageDirs.isInAppDir(File(t.dirPath)) ->
                 MediaStoreTarget(ctx, StorageDirs.mediaStorePath(File(t.dirPath)))
             else -> null
         }

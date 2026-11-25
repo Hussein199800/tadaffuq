@@ -8,8 +8,6 @@
     <string name="tab_more">المزيد</string>
     <string name="shortcut_add">تنزيل جديد</string>
     <string name="tile_label">تدفّق</string>
-    <string name="tile_active">يجري التنزيل · اضغط للإيقاف</string>
-    <string name="tile_idle">متوقف · اضغط للاستئناف</string>
     <string name="channel_active">التنزيلات الجارية</string>
     <string name="channel_active_desc">إشعار واحد يجمع تقدم كل التنزيلات العاملة</string>
     <string name="channel_done">اكتمال التنزيلات وأخطاؤها</string>
@@ -188,7 +186,7 @@
     <string name="mobile_data">بيانات الجوال</string>
     <string name="empty_home">ابدأ أول تنزيل</string>
     <string name="empty_home_text">الصق رابطاً، أو شارك رابطاً من أي تطبيق، أو نزّل من المتصفح المدمج.</string>
-    <string name="in_progress">قيد العمل</string>
+    <string name="status_in_progress">قيد العمل</string>
     <string name="see_all">عرض الكل</string>
     <string name="recent_done">اكتمل مؤخراً</string>
     <string name="clip_found">رابط في الحافظة: اضغط لتنزيله</string>
@@ -269,12 +267,9 @@
     <string name="about">عن تدفّق</string>
     <string name="about_desc">الإصدار والمطوّر والخصوصية والتراخيص</string>
     <string name="sec_engine">محرك التنزيل</string>
-    <string name="sec_conditions">الشروط والحدود</string>
     <string name="sec_files">الملفات والتنبيهات</string>
     <string name="sec_browser">المتصفح</string>
-    <string name="sec_look">المظهر</string>
     <string name="speed_mode">وضع التنزيل</string>
-    <string name="speed_mode_desc">يضبط الاتصالات والمحاولات حسب حالتك</string>
     <string name="mode_normal">ذكي (موصى به)</string>
     <string name="mode_normal_desc">يختار عدد الاتصالات بنفسه حسب الخادم والشبكة</string>
     <string name="mode_max">السرعة القصوى</string>
@@ -283,20 +278,13 @@
     <string name="mode_weak_desc">اتصالان ومحاولات أكثر بانتظار أطول: أبطأ قليلاً لكنه يكمل على الشبكات المتذبذبة</string>
     <string name="mode_saver">توفير البيانات والبطارية</string>
     <string name="mode_saver_desc">اتصالان بلا ضبط تلقائي</string>
-    <string name="max_connections">أقصى عدد للاتصالات</string>
-    <string name="max_connections_desc">لكل ملف، والخادم قد يقبل أقل من ذلك</string>
-    <string name="max_parallel">التنزيلات المتزامنة</string>
-    <string name="max_parallel_desc">كم ملفاً يُنزَّل في الوقت نفسه، والباقي ينتظر دوره حسب الأولوية</string>
     <string name="global_limit">حد السرعة العام</string>
-    <string name="global_limit_desc">لكل التنزيلات معاً، ولكل مهمة حدها الخاص أيضاً</string>
     <string name="user_agent">هوية المتصفح (User-Agent)</string>
     <string name="user_agent_desc">بعض الخوادم تتطلب هوية معينة؛ اتركها افتراضية غالباً</string>
     <string name="wifi_only">Wi-Fi فقط</string>
     <string name="wifi_only_desc">شبكة غير مقيسة فقط: لا بيانات جوال ولا شبكة Wi-Fi «محدودة» كنقطة اتصال الهاتف</string>
     <string name="only_charging">أثناء الشحن فقط</string>
     <string name="only_charging_desc">يتوقف عند فصل الشاحن ويُستأنف عند وصله</string>
-    <string name="low_battery">التوقف عند انخفاض البطارية</string>
-    <string name="low_battery_desc">ما لم يكن الجهاز على الشاحن</string>
     <string name="pause_hot">التوقف عند ارتفاع الحرارة</string>
     <string name="pause_hot_desc">يقلّل الاتصالات عند الدفء ويتوقف عند الحرارة الشديدة كما يبلغها النظام</string>
     <string name="data_limits">حدود بيانات الجوال</string>
@@ -320,8 +308,6 @@
     <string name="block_trackers_desc">قائمة صغيرة مدمجة لنطاقات تتبع وإعلانات معروفة</string>
     <string name="desktop_mode">وضع سطح المكتب</string>
     <string name="desktop_mode_desc">يطلب نسخة الحاسوب من المواقع</string>
-    <string name="theme">المظهر</string>
-    <string name="theme_desc">فاتح أو داكن أو حسب النظام</string>
     <string name="theme_system">حسب النظام</string>
     <string name="theme_light">فاتح</string>
     <string name="theme_dark">داكن</string>
@@ -359,8 +345,6 @@
     <string name="trash_empty_text">الملفات التي تحذفها من «الملفات» تبقى هنا 30 يوماً.</string>
     <string name="version_x">الإصدار %1$s</string>
     <string name="about_text">مدير تنزيل عربي لتسريع الملفات وإدارتها: اتصالات متعددة، واستئناف آمن، وطابور ذكي، ومتصفح خفيف. بلا إعلانات ولا متتبعات ولا تسجيل دخول.</string>
-    <string name="developer">تطوير</string>
-    <string name="developer_name">حسين الطويل</string>
     <string name="privacy">الخصوصية</string>
     <string name="privacy_text">لا يرسل تدفّق أي بيانات إلى أي جهة. التاريخ والإعدادات والكوكيز تبقى على جهازك، والنسخ الاحتياطي السحابي معطّل. الاتصال فقط بالخوادم التي تطلب التنزيل منها.</string>
     <string name="licenses">التراخيص</string>
@@ -388,7 +372,6 @@
     <string name="mirrors_test">اختبار المصادر</string>
     <string name="mirror_ok">المحتوى مطابق</string>
     <string name="mirror_bad">محتوى مختلف أو تعذّر الفحص: لن يُستعمل</string>
-    <string name="sec_network">الشبكة</string>
     <string name="proxy">الوكيل (Proxy)</string>
     <string name="proxy_desc">HTTP أو SOCKS5 لكل التنزيلات، مع مصادقة اختيارية</string>
     <string name="proxy_none">بلا وكيل</string>
@@ -499,18 +482,14 @@
     <string name="backup_done">حُفظت النسخة</string>
     <string name="restore_done">استُورد: %1$d مهمة · %2$d رابط · %3$d مفضلة</string>
     <string name="restore_failed">الملف ليس نسخة احتياطية صالحة من تدفّق</string>
-    <string name="sec_automation">الأتمتة</string>
     <string name="window">نافذة زمنية يومية</string>
     <string name="window_desc">التنزيل فقط بين %1$d:00 و%2$d:00 كل يوم (مثلاً ساعات الليل)</string>
     <string name="window_start">من</string>
     <string name="window_end">إلى</string>
-    <string name="window_hour_desc">بالتوقيت المحلي؛ تعبر منتصف الليل إن لزم</string>
     <string name="min_free">حد المساحة الحرة</string>
     <string name="min_free_desc">يتوقف الطابور إن قلّت المساحة عن هذا الحد</string>
     <string name="auto_extract">فك الأرشيفات تلقائياً</string>
     <string name="auto_extract_desc">ZIP و7Z وRAR (4 وما قبله) وTAR، مع حماية من المسارات الخبيثة وقنابل الضغط</string>
-    <string name="move_tree">نقل الملفات بعد الاكتمال</string>
-    <string name="move_tree_desc">إلى مجلد تختاره: بطاقة SD أو USB أو غيرهما، دون صلاحية الوصول لكل الملفات</string>
     <string name="copy_to_folder">نسخ إلى مجلد…</string>
     <string name="move_to_folder">نقل إلى مجلد…</string>
     <string name="copied">نُسخ</string>
@@ -559,12 +538,9 @@
     <string name="tile_active_n">يعمل %1$d · اضغط لإضافة المنسوخ</string>
     <string name="tile_add_copied">إضافة الرابط المنسوخ</string>
     <string name="clip_empty">لا يوجد رابط في الحافظة. انسخ رابطاً ثم اضغط البلاطة، أو الصقه هنا.</string>
-    <string name="sec_download">التحميل</string>
     <string name="save_folder">مجلد الحفظ</string>
     <string name="save_folder_desc">للتنزيلات الجديدة. كل ملف يُنقل إلى المجلد المختار بعد اكتماله؛ وتغييره لا يغيّر وجهة ما أُضيف قبله (تُغيَّر من تفاصيل المهمة).</string>
     <string name="reset_default">الافتراضي</string>
-    <string name="max_connections_live_desc">لكل ملف، ويُطبَّق فوراً حتى على الجاري. الخادم قد يقبل أقل.</string>
-    <string name="sec_network_basic">الشبكة</string>
     <string name="auto_resume">الاستئناف التلقائي</string>
     <string name="auto_resume_desc">أكمل عند عودة الاتصال إن أمكن</string>
     <string name="sec_notifications">الإشعارات</string>
@@ -587,8 +563,6 @@
     <string name="accent_violet">بنفسجي</string>
     <string name="accent_amber">كهرماني</string>
     <string name="accent_rose">وردي</string>
-    <string name="compact">عرض مضغوط</string>
-    <string name="compact_desc">بطاقات أصغر تُظهر تنزيلات أكثر في الشاشة</string>
     <string name="segments_in_list">خريطة الأجزاء في القائمة</string>
     <string name="segments_in_list_desc">تعرض اتصالات كل تنزيل جارٍ بدل شريط التقدم</string>
     <string name="reduce_motion">تقليل الحركة</string>
@@ -603,7 +577,6 @@
     <string name="max_retries_desc">لكل جزء قبل اعتبار التنزيل فاشلاً؛ العدّاد يُصفَّر مع أي تقدم</string>
     <string name="retry_delay">الانتظار قبل إعادة المحاولة</string>
     <string name="retry_delay_desc">المدة الأولى، وتتضاعف مع كل محاولة حتى 30 ثانية</string>
-    <string name="sec_mobile">بيانات الهاتف</string>
     <string name="separate_mobile">إعدادات مستقلة لبيانات الهاتف</string>
     <string name="separate_mobile_desc">اتصالات وتنزيلات متزامنة وحد سرعة خاصة عندما لا يتوفر Wi-Fi</string>
     <string name="mobile_only">على بيانات الهاتف فقط</string>
@@ -615,9 +588,6 @@
     <string name="about_privacy_value">لا تحليلات ولا إعلانات</string>
     <string name="about_source">المصدر</string>
     <string name="quick_panel">لوحة التحكم</string>
-    <string name="qp_conn">%1$s اتصال</string>
-    <string name="qp_parallel">%1$s متزامن</string>
-    <string name="qp_live">يُطبَّق فوراً على التنزيلات الجارية</string>
     <string name="qp_now">السرعة الإجمالية الآن: %1$s</string>
     <string name="subfolder">المجلد</string>
     <string name="subfolder_desc">مجلد فرعي داخل التنزيلات/%1$s، فارغ = حسب النوع والقواعد</string>
@@ -628,9 +598,7 @@
     <string name="add_saves_to">يُحفظ في: %1$s</string>
     <string name="storage_fallback">تعذّرت الكتابة في «التنزيلات»؛ تُحفظ الملفات مؤقتاً في مجلد التطبيق الخاص (يُحذف عند إلغاء تثبيته).</string>
     <string name="storage_denied">لم يُمنح إذن التخزين؛ سيُحفظ الملف في مجلد التطبيق الخاص.</string>
-    <string name="sec_capture">الالتقاط</string>
     <string name="tile_add">بلاطة النسخ في الإعدادات السريعة</string>
-    <string name="tile_add_desc">المس البلاطة بعد نسخ رابط فتُفتح نافذة الإضافة. لا تقرأ الحافظة في الخلفية.</string>
     <string name="tile_add_done">أُضيفت البلاطة</string>
     <string name="tile_add_manual">اسحب لوحة الإعدادات السريعة للأسفل مرتين، واضغط «تعديل» (القلم)، ثم اسحب بلاطة «تدفّق» إلى اللوحة.</string>
     <string name="task_dest">الوجهة بعد الاكتمال: %1$s</string>
@@ -679,7 +647,6 @@
     <string name="orphans_clean">تنظيف</string>
     <string name="orphans_confirm">حذف %1$s من الملفات المؤقتة اليتيمة؟ لا يمكن التراجع.</string>
     <string name="orphans_done">حُذف %1$s</string>
-    <string name="on">مفعّل</string>
     <string name="files_at_once_n">%1$d معاً</string>
     <string name="all_networks">كل الشبكات</string>
     <plurals name="notif_running">
