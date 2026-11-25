@@ -135,7 +135,8 @@ class DownloadManager @Inject constructor(
 
     /** للاختبارات: يحاكي موت العملية (يلغي كل شيء دون تحديث الحالة). */
     @androidx.annotation.VisibleForTesting
-    fun kill() { scope.coroutineContext[Job]?.cancel() }
+    fun kill() { killed = true; scope.coroutineContext[Job]?.cancel() }
+    @Volatile private var killed = false
 
     private suspend fun schedule() {
         val s = settings
@@ -277,6 +278,7 @@ class DownloadManager @Inject constructor(
             StorageDirs.scan(ctx, dest)
             if (settings.notifyOnComplete) notifier.completed(done)
         } catch (e: CancellationException) {
+            if (killed) throw e // موت العملية: لا يُكتب شيء، كما في الواقع
             val status = stopAs.remove(t.id) ?: TaskStatus.PAUSED
             withContext(NonCancellable) {
                 dao.get(t.id)?.let { dao.update(it.copy(status = status, retries = counters[0], networkRetries = counters[1], serverRetries = counters[2])) }
