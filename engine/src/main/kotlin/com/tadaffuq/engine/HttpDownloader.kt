@@ -62,7 +62,7 @@ class HttpDownloader(
     @Volatile private var sharedTarget = 1
 
     suspend fun run(): ProbeResult = withContext(Dispatchers.IO) {
-        val probe = Prober(client).probe(spec)
+        val probe = probeWithRetry()
         var restarted = false
         // الملف الجزئي يُقبل فقط إن كان طوله بالضبط الحجم المحجوز (نحجزه كاملاً عند البدء)؛
         // ملف مقتطع أو مستبدل يعني أن «المنجز» في الجدول قد لا يكون على القرص.
@@ -230,8 +230,34 @@ class HttpDownloader(
     private val toYield = java.util.concurrent.atomic.AtomicInteger()
     private fun shouldYield(): Boolean = toYield.getAndUpdate { if (it > 0) it - 1 else it } > 0
 
+    /** فحص الرابط بالتراجع نفسه (Retry-After و429/503 والشبكة)، لا محاولة واحدة. */
+    private suspend fun probeWithRetry(): ProbeResult {
+        var attempt = 0
+        while (true) {
+            try { return Prober(client).probe(spec) } catch (e: DownloadException) {
+                if (!e.error.retryable || ++attempt > config.maxRetries) throw e
+                val exp = config.baseRetryDelayMs * (1L shl (attempt - 1).coerceAtMost(16))
+                val wait = e.retryAfterMs?.coerceAtMost(config.maxRetryDelayMs * 4)
+                    ?: (exp.coerceAtMost(config.maxRetryDelayMs) * (0.75 + Random.nextDouble() * 0.5)).toLong()
+                listener.onRetry(-1, attempt, e.error, wait)
+                kotlinx.coroutines.delay(wait)
+            }
+        }
+    }
+
+    /**
+     * ميزانية المحاولات: تتجدد فقط بتقدم ذي معنى (256KB أو إكمال الجزء)، ولكل جزء سقف إجمالي
+     * (5 × الحد) حتى لا يدور خادم يقطع كل اتصال بعد بايتات قليلة إلى ما لا نهاية.
+     */
     private suspend fun runSegment(seg: Segment, probe: ProbeResult, channel: FileChannel) {
         var failures = 0
+        var total = 0
+        fun count(before: Long): Int {
+            val gained = seg.downloaded - before
+            val meaningful = gained >= MEANINGFUL_BYTES || (gained > 0 && seg.done)
+            if (++total > config.maxRetries * 5) return Int.MAX_VALUE
+            return if (meaningful) 1 else failures + 1
+        }
         while (!seg.done) {
             val before = seg.downloaded
             try {
@@ -242,16 +268,16 @@ class HttpDownloader(
                 return // الجزء يبقى غير مكتمل ويلتقطه اتصال آخر
             } catch (e: DownloadException) {
                 if (!e.error.retryable) throw e
-                failures = if (seg.downloaded > before) 1 else failures + 1
+                failures = count(before)
                 val err = e.error
                 val busy = err is DownloadError.Http && (err.code == 429 || err.code == 503)
                 if (busy) pushbacks.incrementAndGet()
-                backoff(seg, failures, e.error, (e.cause as? RetryAfter)?.ms)
+                backoff(seg, failures, e.error, e.retryAfterMs)
                 // الخادم مزدحم والاتصالات أكثر من المستهدف: نترك الجزء لاتصال آخر لاحقاً
                 if (busy && runningWorkers.get() > sharedTarget) return
             } catch (e: IOException) {
                 currentCoroutineContext().ensureActive()
-                failures = if (seg.downloaded > before) 1 else failures + 1
+                failures = count(before)
                 backoff(seg, failures, DownloadError.Network(NetFail.of(e)), null)
             }
         }
@@ -297,8 +323,7 @@ class HttpDownloader(
                 401, 403, 410 -> throw DownloadException(DownloadError.LinkExpired(r.code))
                 404 -> throw DownloadException(DownloadError.NotFound)
                 else -> {
-                    val retryAfter = parseRetryAfter(r.header("Retry-After"))
-                    throw DownloadException(DownloadError.Http(r.code), retryAfter?.let(::RetryAfter))
+                    throw DownloadException(DownloadError.Http(r.code), retryAfterMs = parseRetryAfter(r.header("Retry-After")))
                 }
             }
             val source = r.body?.source() ?: throw IOException("empty body")
@@ -344,8 +369,6 @@ class HttpDownloader(
         }
     }
 
-    private class RetryAfter(val ms: Long) : Exception()
-
     companion object {
         /** Retry-After بصيغتيه: ثوانٍ أو تاريخ HTTP (RFC 9110 §10.2.3). */
         fun parseRetryAfter(v: String?): Long? {
@@ -357,6 +380,7 @@ class HttpDownloader(
             }.getOrNull()
         }
         private const val TICK_MS = 200L
+        const val MEANINGFUL_BYTES = 256L * 1024
     }
     private class Yield : Exception()
 

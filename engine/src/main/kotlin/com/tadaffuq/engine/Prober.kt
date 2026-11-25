@@ -37,7 +37,7 @@ class Prober(private val client: OkHttpClient) {
             }
             401, 403 -> throw DownloadException(DownloadError.LinkExpired(r.code))
             404, 410 -> throw DownloadException(DownloadError.NotFound)
-            else -> throw DownloadException(DownloadError.Http(r.code))
+            else -> throw DownloadException(DownloadError.Http(r.code), retryAfterMs = HttpDownloader.parseRetryAfter(r.header("Retry-After")))
         }
         val encoded = r.header("Content-Encoding")?.let { !it.equals("identity", true) } == true
         if (r.code == 206) {

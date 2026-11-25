@@ -110,6 +110,7 @@ class DownloadManager @Inject constructor(
     private val nameLock = Mutex()
     @Volatile private var settings = Settings()
     @Volatile private var started = false
+    private val ready = kotlinx.coroutines.CompletableDeferred<Unit>()
     @Volatile private var pendingCount = 0
     private var ticks = 0
 
@@ -120,8 +121,10 @@ class DownloadManager @Inject constructor(
         scope.launch {
             // ما كان يعمل عند توقف العملية (إغلاق أو إعادة تشغيل) يعود للطابور ويُستأنف من آخر حفظ.
             // بدون الاستئناف التلقائي تبقى متوقفة حتى يستأنفها المستخدم (التقدم محفوظ في الحالتين)
+            // الترتيب: الإعدادات المحفوظة ثم الاستعادة ثم الجدولة، فلا تبدأ مهمة بإعدادات افتراضية
             settings = settingsRepo.current()
             recoverInterrupted(settings.autoResume)
+            ready.complete(Unit)
             settingsRepo.settings.collect {
                 val notifChanged = it.notifySound != settings.notifySound || it.notifyVibrate != settings.notifyVibrate
                 settings = it
@@ -131,7 +134,7 @@ class DownloadManager @Inject constructor(
             }
         }
         scope.launch { conditions.state.collect { applyLimiter(); wake() } }
-        scope.launch { for (w in wake) scheduleLock.withLock { schedule() } }
+        scope.launch { ready.await(); for (w in wake) scheduleLock.withLock { schedule() } }
         scope.launch {
             while (true) {
                 delay(1_000)
@@ -286,7 +289,8 @@ class DownloadManager @Inject constructor(
             baseRetryDelayMs = maxOf(eff.retryDelaySec * 1000L, if (eff.mode == com.tadaffuq.engine.SpeedMode.WEAK_NETWORK) base.baseRetryDelayMs else 0),
         )
         val limiter = limiters.getOrPut(t.id) { RateLimiter(t.speedLimitBps) }
-        val counters = IntArray(3).also { it[0] = t.retries; it[1] = t.networkRetries; it[2] = t.serverRetries }
+        // يحدّثها عمال متوازون: عدادات ذرية
+        val counters = java.util.concurrent.atomic.AtomicIntegerArray(intArrayOf(t.retries, t.networkRetries, t.serverRetries))
         var last: Snapshot? = null
         com.tadaffuq.app.core.TechLog.log("start #${t.id} ${t.url} conn=${cfg.connections}/${cfg.maxConnections} resume=${saved != null}")
         val spec = RequestSpec(
@@ -313,17 +317,17 @@ class DownloadManager @Inject constructor(
                     state.segments.map { SegmentEntity(t.id, it.index, it.start, it.end, it.downloaded) },
                     state.segments.sumOf { it.downloaded }, p.totalBytes, p.etag, p.lastModified, p.acceptRanges, p.finalUrl,
                 )
-                last?.let { dao.progress(t.id, it.downloaded, p.totalBytes, it.averageBps, it.maxBps) }
+                last?.let { dao.stats(t.id, it.averageBps, it.maxBps) }
             }
 
             override fun onBytes(count: Long) = usage.add(count)
 
             override fun onRetry(segment: Int, attempt: Int, error: DownloadError, delayMs: Long) {
                 com.tadaffuq.app.core.TechLog.log("retry #${t.id} seg=$segment attempt=$attempt $error wait=${delayMs}ms")
-                counters[0]++
+                counters.incrementAndGet(0)
                 when (error) {
-                    is DownloadError.Network -> counters[1]++
-                    is DownloadError.Http -> counters[2]++
+                    is DownloadError.Network -> counters.incrementAndGet(1)
+                    is DownloadError.Http -> counters.incrementAndGet(2)
                     else -> Unit
                 }
             }
@@ -335,7 +339,8 @@ class DownloadManager @Inject constructor(
             if (killed) throw e // موت العملية: لا يُكتب شيء، كما في الواقع
             val status = stopAs.remove(t.id) ?: TaskStatus.PAUSED
             withContext(NonCancellable) {
-                dao.get(t.id)?.let { dao.update(it.copy(status = status, retries = counters[0], networkRetries = counters[1], serverRetries = counters[2])) }
+                dao.setStatus(t.id, status)
+                dao.setRetries(t.id, counters[0], counters[1], counters[2])
             }
             throw e
         } catch (e: FinalizeFailure) {
@@ -381,7 +386,7 @@ class DownloadManager @Inject constructor(
      * 3) إعادة التسمية، ثم COMPLETED ومسح الأجزاء.
      * موت العملية بين أي خطوتين يُستعاد في [recoverInterrupted].
      */
-    private suspend fun finalize(t: TaskEntity, part: File, probe: ProbeResult, counters: IntArray, last: Snapshot?) {
+    private suspend fun finalize(t: TaskEntity, part: File, probe: ProbeResult, counters: java.util.concurrent.atomic.AtomicIntegerArray, last: Snapshot?) {
         dao.setStatus(t.id, TaskStatus.VERIFYING)
         var hashOk: Boolean? = null
         var actual: String? = null
@@ -572,16 +577,38 @@ class DownloadManager @Inject constructor(
     suspend fun pauseAll() = pause(jobs.keys + dao.withStatus(listOf(TaskStatus.QUEUED, TaskStatus.WAITING_NETWORK)).map { it.id })
     suspend fun resumeAll() = resume(dao.withStatus(listOf(TaskStatus.PAUSED, TaskStatus.WAITING_NETWORK)).map { it.id })
 
-    /** حذف مهام؛ withFiles يحذف الملف المكتمل أيضاً، والملف الجزئي يُحذف دائماً. */
-    suspend fun delete(ids: Collection<Long>, withFiles: Boolean) {
+    /**
+     * حذف مهام؛ withFiles يحذف الملف المكتمل أيضاً، والملف الجزئي يُحذف دائماً.
+     * إن تعذّر حذف الملف يبقى سجله (لا ملف يتيم بلا سجل). يعيد عدد ما تعذّر.
+     */
+    suspend fun delete(ids: Collection<Long>, withFiles: Boolean): Int {
+        val removed = ArrayList<Long>()
         ids.forEach { id ->
             jobs[id]?.let { stop(id, TaskStatus.PAUSED); it.join() }
             val t = dao.get(id) ?: return@forEach
             StorageDirs.partFile(t.dirPath, t.fileName, t.id).delete()
-            if (withFiles && t.status == TaskStatus.COMPLETED) t.filePath?.let { File(it).delete() }
             limiters.remove(id)
+            val f = t.filePath?.takeIf { withFiles && t.status == TaskStatus.COMPLETED }?.let(::File)
+            if (f == null || !f.exists() || f.delete()) removed += id
         }
-        dao.delete(ids.toList())
+        dao.delete(removed)
+        return ids.size - removed.size
+    }
+
+    /** نقل إلى السلة (قابل للاستعادة)؛ يعيد عدد ما تعذّر نقله، وسجله يبقى كما هو. */
+    suspend fun trash(ids: Collection<Long>): Int = withContext(Dispatchers.IO) {
+        val bin = StorageDirs.trash().apply { mkdirs() }
+        var failed = 0
+        ids.forEach { id ->
+            jobs[id]?.let { stop(id, TaskStatus.PAUSED); it.join() }
+            val t = dao.get(id) ?: return@forEach
+            val f = t.filePath?.let(::File)
+            if (f != null && f.exists()) {
+                val dest = File(bin, "${t.id}_${f.name}")
+                if (f.renameTo(dest)) dao.update(t.copy(filePath = dest.path, trashedAt = System.currentTimeMillis())) else failed++
+            } else dao.update(t.copy(trashedAt = System.currentTimeMillis()))
+        }
+        failed
     }
 
     val notifyPerTask: Boolean get() = settings.notifyPerTask
@@ -602,9 +629,9 @@ class DownloadManager @Inject constructor(
 
     /** تحديث رابط منتهٍ: يبقى التقدم، والمحرك يتحقق عند الاستئناف أن الملف نفسه (الحجم وETag). */
     suspend fun updateUrl(id: Long, url: String) {
-        val t = dao.get(id) ?: return
         jobs[id]?.let { stop(id, TaskStatus.PAUSED); it.join() }
-        dao.update(t.copy(url = url, finalUrl = null, status = TaskStatus.QUEUED, errorCode = null))
+        dao.get(id) ?: return
+        dao.setUrl(id, url)
         wake()
     }
 

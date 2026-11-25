@@ -49,7 +49,11 @@ class Conditions(private val context: Context) {
         cm.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) = updateNetwork(cm, network)
             override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) = updateFrom(caps)
-            override fun onLost(network: Network) { _state.update { it.copy(connected = false) } }
+            // فقد شبكة ليس دليلاً على فقد الاتصال: أثناء الانتقال (Wi-Fi↔جوال، VPN) قد تكون الشبكة الافتراضية الجديدة قائمة
+            override fun onLost(network: Network) {
+                val now = cm.activeNetwork
+                if (now == null || now == network) _state.update { it.copy(connected = false) } else updateNetwork(cm, now)
+            }
         })
 
         val battery = object : BroadcastReceiver() {

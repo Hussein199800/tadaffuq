@@ -1,5 +1,6 @@
 package com.tadaffuq.app.ui
 
+import com.tadaffuq.app.R
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
@@ -78,7 +79,7 @@ class MainViewModel @Inject constructor(
     fun pause(ids: Collection<Long>) = viewModelScope.launch { manager.pause(ids) }
     fun resume(ids: Collection<Long>) = viewModelScope.launch { manager.resume(ids) }
     fun restart(id: Long) = viewModelScope.launch { manager.restart(id) }
-    fun delete(ids: Collection<Long>, withFiles: Boolean) = viewModelScope.launch { manager.delete(ids, withFiles) }
+    fun delete(ids: Collection<Long>, withFiles: Boolean) = viewModelScope.launch { fileError(R.plurals.files_delete_failed, manager.delete(ids, withFiles)) }
     fun pauseAll() = viewModelScope.launch { manager.pauseAll() }
     fun resumeAll() = viewModelScope.launch { manager.resumeAll() }
     fun setPriority(id: Long, p: Int) = viewModelScope.launch { manager.setPriority(id, p) }
@@ -87,39 +88,44 @@ class MainViewModel @Inject constructor(
 
     // ===== الملفات =====
 
+    /** فشل عملية ملف يُعرض صراحة، والسجل لا يتغير. */
+    private suspend fun fileError(res: Int, count: Int) {
+        if (count > 0) withContext(Dispatchers.Main) {
+            android.widget.Toast.makeText(ctx, ctx.resources.getQuantityString(res, count, count), android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
     /** سلة المحذوفات: الملف يُنقل إلى مجلد مخفي ويُستعاد منه؛ يُحذف نهائياً بعد ٣٠ يوماً. */
     fun moveToTrash(tasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
-        val bin = StorageDirs.trash().apply { mkdirs() }
-        tasks.forEach { t ->
-            val f = t.filePath?.let(::File) ?: return@forEach
-            if (f.exists()) {
-                val dest = File(bin, "${t.id}_${f.name}")
-                if (f.renameTo(dest)) db.tasks().update(t.copy(filePath = dest.path, trashedAt = System.currentTimeMillis()))
-            } else db.tasks().update(t.copy(trashedAt = System.currentTimeMillis()))
-        }
+        fileError(R.plurals.files_trash_failed, manager.trash(tasks.map { it.id }))
     }
 
+    /** الاستعادة تتحقق من وجود الملف: ملف مفقود لا يعود سجلاً «مكتملاً». */
     fun restore(tasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
+        var failed = 0
         tasks.forEach { t ->
             val f = t.filePath?.let(::File)
+            if (f == null || !f.exists()) { failed++; return@forEach }
             val dir = File(t.dirPath).apply { mkdirs() }
-            if (f != null && f.exists()) {
-                val name = com.tadaffuq.engine.FileNames.uniqueIn(dir, t.fileName)
-                val dest = File(dir, name)
-                if (f.renameTo(dest)) db.tasks().update(t.copy(filePath = dest.path, fileName = name, trashedAt = null))
-            } else db.tasks().update(t.copy(trashedAt = null))
+            val name = com.tadaffuq.engine.FileNames.uniqueIn(dir, t.fileName)
+            val dest = File(dir, name)
+            if (f.renameTo(dest)) db.tasks().update(t.copy(filePath = dest.path, fileName = name, trashedAt = null)) else failed++
         }
+        fileError(R.plurals.files_restore_failed, failed)
     }
 
+    /** الحذف النهائي: يُحذف السجل فقط إن حُذف الملف فعلاً (أو كان غير موجود). */
     fun purge(tasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
-        tasks.forEach { it.filePath?.let(::File)?.delete() }
-        db.tasks().delete(tasks.map { it.id })
+        val (gone, kept) = tasks.partition { t -> t.filePath?.let(::File)?.let { !it.exists() || it.delete() } ?: true }
+        db.tasks().delete(gone.map { it.id })
+        fileError(R.plurals.files_delete_failed, kept.size)
     }
 
     fun purgeOldTrash() = viewModelScope.launch(Dispatchers.IO) {
         val before = System.currentTimeMillis() - 30L * 86_400_000
-        db.tasks().all().filter { (it.trashedAt ?: Long.MAX_VALUE) < before }.forEach { it.filePath?.let(::File)?.delete() }
-        db.tasks().purgeTrash(before)
+        val old = db.tasks().all().filter { (it.trashedAt ?: Long.MAX_VALUE) < before }
+        val gone = old.filter { t -> t.filePath?.let(::File)?.let { !it.exists() || it.delete() } ?: true }
+        db.tasks().delete(gone.map { it.id })
     }
 
     /** إعادة تسمية دون الكتابة فوق ملف موجود. */
@@ -162,7 +168,7 @@ class MainViewModel @Inject constructor(
             rows.forEach { w.write("${it.day},${it.net},${it.bytes}\n") }
             w.write("\nfile,status,bytes,created,completed,average_bps\n")
             tasks.forEach {
-                val name = "\"" + it.fileName.replace("\"", "\"\"") + "\""
+                val name = com.tadaffuq.app.core.Csv.cell(it.fileName)
                 w.write("$name,${it.status},${it.totalBytes},${Fmt.day(it.createdAt)},${it.completedAt?.let(Fmt::day).orEmpty()},${it.averageBps}\n")
             }
         }

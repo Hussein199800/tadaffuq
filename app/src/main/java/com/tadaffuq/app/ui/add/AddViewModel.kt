@@ -214,9 +214,9 @@ class AddViewModel @Inject constructor(
             val toAdd = s.items.filter { it.selected && !it.probing && it.probe != null }.mapNotNull { item ->
                 if (item.duplicates.isNotEmpty()) when (s.duplicatePolicy) {
                     DuplicatePolicy.SKIP -> return@mapNotNull null
-                    // الاستبدال يتم بموافقة صريحة فقط: يحذف المهمة القديمة وملفها
-                    DuplicatePolicy.REPLACE -> manager.delete(item.duplicates.map { it.id }, withFiles = true)
-                    DuplicatePolicy.RENAME -> Unit // الاسم الفريد يُختار عند الاكتمال
+                    // الاستبدال بموافقة صريحة: القديم يُنقل إلى السلة (قابل للاستعادة) لا يُحذف، فلا يضيع إن فشل الجديد
+                    DuplicatePolicy.REPLACE -> manager.trash(item.duplicates.map { it.id })
+                    DuplicatePolicy.RENAME -> Unit // الاسم الفريد يُحجز عند الإضافة
                 }
                 val name = FileNames.sanitize(item.name.ifBlank { item.probe?.fileName ?: "download" })
                 // قواعد التنظيم: أول قاعدة مطابقة تحدد المجلد والأولوية والسرعة والفك

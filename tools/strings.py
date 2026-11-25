@@ -358,7 +358,13 @@ S = {
 "about_build": ("البناء", "Build"),
 }
 PLURALS = {"notif_running": ({"zero":"لا تنزيلات","one":"يجري تنزيل ملف واحد","two":"يجري تنزيل ملفين","few":"يجري تنزيل %d ملفات","many":"يجري تنزيل %d ملفاً","other":"يجري تنزيل %d ملف"},
-                             {"one":"Downloading %d file","other":"Downloading %d files"})}
+                             {"one":"Downloading %d file","other":"Downloading %d files"}),
+"files_trash_failed": ({"zero":"","one":"تعذّر نقل ملف إلى السلة؛ بقي في مكانه","two":"تعذّر نقل ملفين إلى السلة؛ بقيا في مكانهما","few":"تعذّر نقل %d ملفات إلى السلة؛ بقيت في مكانها","many":"تعذّر نقل %d ملفاً إلى السلة","other":"تعذّر نقل %d ملف إلى السلة"},
+                       {"one":"Couldn't move %d file to the trash; it stays in place","other":"Couldn't move %d files to the trash; they stay in place"}),
+"files_restore_failed": ({"zero":"","one":"تعذّرت استعادة ملف (غير موجود أو لا يمكن نقله)","two":"تعذّرت استعادة ملفين","few":"تعذّرت استعادة %d ملفات","many":"تعذّرت استعادة %d ملفاً","other":"تعذّرت استعادة %d ملف"},
+                         {"one":"Couldn't restore %d file (missing or can't be moved)","other":"Couldn't restore %d files (missing or can't be moved)"}),
+"files_delete_failed": ({"zero":"","one":"تعذّر حذف ملف؛ أُبقي سجله","two":"تعذّر حذف ملفين؛ أُبقي سجلاهما","few":"تعذّر حذف %d ملفات؛ أُبقيت سجلاتها","many":"تعذّر حذف %d ملفاً","other":"تعذّر حذف %d ملف"},
+                        {"one":"Couldn't delete %d file; its record was kept","other":"Couldn't delete %d files; their records were kept"})}
 
 def esc(s):
     s = s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'", "\\'").replace('"','\\"')

@@ -163,5 +163,5 @@ enum class NetFail {
     }
 }
 
-class DownloadException(val error: DownloadError, cause: Throwable? = null) :
+class DownloadException(val error: DownloadError, cause: Throwable? = null, val retryAfterMs: Long? = null) :
     Exception(error.toString(), cause)

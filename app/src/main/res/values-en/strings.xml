@@ -628,4 +628,16 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
         <item quantity="one">Downloading %d file</item>
         <item quantity="other">Downloading %d files</item>
     </plurals>
+    <plurals name="files_trash_failed">
+        <item quantity="one">Couldn\'t move %d file to the trash; it stays in place</item>
+        <item quantity="other">Couldn\'t move %d files to the trash; they stay in place</item>
+    </plurals>
+    <plurals name="files_restore_failed">
+        <item quantity="one">Couldn\'t restore %d file (missing or can\'t be moved)</item>
+        <item quantity="other">Couldn\'t restore %d files (missing or can\'t be moved)</item>
+    </plurals>
+    <plurals name="files_delete_failed">
+        <item quantity="one">Couldn\'t delete %d file; its record was kept</item>
+        <item quantity="other">Couldn\'t delete %d files; their records were kept</item>
+    </plurals>
 </resources>

@@ -31,7 +31,6 @@ data class Settings(
     val language: String = "",
     val suggestClipboard: Boolean = false,
     val notifyOnComplete: Boolean = true,
-    val autoVerifyHash: Boolean = true,
     val sortByCategory: Boolean = true,
     val pauseOnLowBattery: Int = 15,
     val onlyWhileCharging: Boolean = false,
@@ -119,7 +118,6 @@ class SettingsRepository(private val context: Context) {
         val language = stringPreferencesKey("language")
         val clipboard = booleanPreferencesKey("suggestClipboard")
         val notify = booleanPreferencesKey("notifyOnComplete")
-        val verify = booleanPreferencesKey("autoVerifyHash")
         val byCategory = booleanPreferencesKey("sortByCategory")
         val lowBattery = intPreferencesKey("pauseOnLowBattery")
         val charging = booleanPreferencesKey("onlyWhileCharging")
@@ -191,7 +189,6 @@ class SettingsRepository(private val context: Context) {
             p[K.language] = s.language
             p[K.clipboard] = s.suggestClipboard
             p[K.notify] = s.notifyOnComplete
-            p[K.verify] = s.autoVerifyHash
             p[K.byCategory] = s.sortByCategory
             p[K.lowBattery] = s.pauseOnLowBattery.coerceIn(0, 50)
             p[K.charging] = s.onlyWhileCharging
@@ -257,7 +254,6 @@ class SettingsRepository(private val context: Context) {
             language = p[K.language] ?: d.language,
             suggestClipboard = p[K.clipboard] ?: d.suggestClipboard,
             notifyOnComplete = p[K.notify] ?: d.notifyOnComplete,
-            autoVerifyHash = p[K.verify] ?: d.autoVerifyHash,
             sortByCategory = p[K.byCategory] ?: d.sortByCategory,
             pauseOnLowBattery = p[K.lowBattery] ?: d.pauseOnLowBattery,
             onlyWhileCharging = p[K.charging] ?: d.onlyWhileCharging,

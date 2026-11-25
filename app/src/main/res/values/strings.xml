@@ -632,4 +632,28 @@
         <item quantity="many">يجري تنزيل %d ملفاً</item>
         <item quantity="other">يجري تنزيل %d ملف</item>
     </plurals>
+    <plurals name="files_trash_failed">
+        <item quantity="zero"></item>
+        <item quantity="one">تعذّر نقل ملف إلى السلة؛ بقي في مكانه</item>
+        <item quantity="two">تعذّر نقل ملفين إلى السلة؛ بقيا في مكانهما</item>
+        <item quantity="few">تعذّر نقل %d ملفات إلى السلة؛ بقيت في مكانها</item>
+        <item quantity="many">تعذّر نقل %d ملفاً إلى السلة</item>
+        <item quantity="other">تعذّر نقل %d ملف إلى السلة</item>
+    </plurals>
+    <plurals name="files_restore_failed">
+        <item quantity="zero"></item>
+        <item quantity="one">تعذّرت استعادة ملف (غير موجود أو لا يمكن نقله)</item>
+        <item quantity="two">تعذّرت استعادة ملفين</item>
+        <item quantity="few">تعذّرت استعادة %d ملفات</item>
+        <item quantity="many">تعذّرت استعادة %d ملفاً</item>
+        <item quantity="other">تعذّرت استعادة %d ملف</item>
+    </plurals>
+    <plurals name="files_delete_failed">
+        <item quantity="zero"></item>
+        <item quantity="one">تعذّر حذف ملف؛ أُبقي سجله</item>
+        <item quantity="two">تعذّر حذف ملفين؛ أُبقي سجلاهما</item>
+        <item quantity="few">تعذّر حذف %d ملفات؛ أُبقيت سجلاتها</item>
+        <item quantity="many">تعذّر حذف %d ملفاً</item>
+        <item quantity="other">تعذّر حذف %d ملف</item>
+    </plurals>
 </resources>

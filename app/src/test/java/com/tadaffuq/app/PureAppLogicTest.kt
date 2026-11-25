@@ -94,4 +94,13 @@ class PureAppLogicTest {
         assertFalse(com.tadaffuq.app.ui.add.SessionScope.applies(o, "https://cdn.other/b.zip", 3))
         assertFalse(com.tadaffuq.app.ui.add.SessionScope.applies(o, "http://site.example/b.zip", 3)) // منفذ/بروتوكول آخر
     }
+
+    /** P1: خلايا CSV لا تُنفَّذ صيغاً في برامج الجداول. */
+    @Test fun csvCellsAreSafe() {
+        assertEquals("\"'=HYPERLINK(1)\"", com.tadaffuq.app.core.Csv.cell("=HYPERLINK(1)"))
+        assertEquals("\"'+1\"", com.tadaffuq.app.core.Csv.cell("+1"))
+        assertEquals("\"'@x\"", com.tadaffuq.app.core.Csv.cell("@x"))
+        assertEquals("\"a \"\"b\"\".zip\"", com.tadaffuq.app.core.Csv.cell("a \"b\".zip"))
+        assertEquals("\"ملف.zip\"", com.tadaffuq.app.core.Csv.cell("ملف.zip"))
+    }
 }

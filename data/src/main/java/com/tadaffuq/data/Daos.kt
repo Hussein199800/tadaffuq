@@ -55,8 +55,16 @@ interface TaskDao {
     @Query("UPDATE tasks SET status = :to WHERE status IN (:from)")
     suspend fun moveStatus(from: List<TaskStatus>, to: TaskStatus)
 
-    @Query("UPDATE tasks SET downloadedBytes = :downloaded, totalBytes = :total, averageBps = :avg, maxBps = MAX(maxBps, :max) WHERE id = :id")
-    suspend fun progress(id: Long, downloaded: Long, total: Long, avg: Long, max: Long)
+    /** قياسات لحظية فقط؛ أرقام التقدم تُكتب مع نقطة الحفظ في [saveProgress] ولا ترجع للخلف. */
+    @Query("UPDATE tasks SET averageBps = :avg, maxBps = MAX(maxBps, :max) WHERE id = :id")
+    suspend fun stats(id: Long, avg: Long, max: Long)
+
+    /** تحديث الرابط وحده (لا نسخة قديمة من المهمة): بيانات الاستئناف تبقى والمحرك يتحقق من تطابق المحتوى. */
+    @Query("UPDATE tasks SET url = :url, finalUrl = NULL, status = 'QUEUED', errorCode = NULL, errorDetail = NULL WHERE id = :id")
+    suspend fun setUrl(id: Long, url: String)
+
+    @Query("UPDATE tasks SET retries = :r, networkRetries = :n, serverRetries = :s WHERE id = :id")
+    suspend fun setRetries(id: Long, r: Int, n: Int, s: Int)
 
     @Query("UPDATE tasks SET priority = :priority WHERE id = :id") suspend fun setPriority(id: Long, priority: Int)
     @Query("UPDATE tasks SET speedLimitBps = :bps WHERE id = :id") suspend fun setSpeedLimit(id: Long, bps: Long)
