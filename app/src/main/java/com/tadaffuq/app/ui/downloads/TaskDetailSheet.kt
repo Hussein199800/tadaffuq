@@ -132,6 +132,8 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
                 Text(t.finalUrl.orEmpty(), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
             }
             Text(sr(R.string.saved_in, Fmt.iso(t.filePath ?: t.dirPath)), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(top = 4.dp))
+            if (t.errorCode?.startsWith("HOSTKEY") == true && t.errorDetail != null)
+                Text(sr(R.string.hostkey_new_text, t.errorDetail), style = MaterialTheme.typography.bodySmall, color = T.extra.warning, modifier = Modifier.padding(top = 4.dp))
             t.actualHash?.let { Text("SHA/MD5: ${Fmt.iso(it)}", style = MaterialTheme.typography.bodySmall, color = if (t.hashOk == false) T.extra.danger else T.extra.secondaryText) }
 
             // طبيب التحميل: قواعد ثابتة على قراءات المهمة الحقيقية
@@ -164,6 +166,12 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
                 when (t.status) {
                     TaskStatus.RUNNING, TaskStatus.QUEUED, TaskStatus.WAITING_NETWORK ->
                         Action(Icons.Rounded.Pause, stringResource(R.string.action_pause)) { vm.pause(listOf(t.id)) }
+                    TaskStatus.FAILED.takeIf { t.errorCode == "HOSTKEY_NEW" && t.errorDetail != null } -> {
+                        Action(Icons.Rounded.PlayArrow, stringResource(R.string.hostkey_trust)) {
+                            com.tadaffuq.engine.RemoteTarget.parse(t.url)?.let { r -> vm.manager.credentials.trustHostKey(r.host, r.port, t.errorDetail!!) }
+                            vm.resume(listOf(t.id))
+                        }
+                    }
                     TaskStatus.PAUSED, TaskStatus.FAILED ->
                         Action(Icons.Rounded.PlayArrow, stringResource(if (t.status == TaskStatus.FAILED) R.string.action_retry else R.string.action_resume)) { vm.resume(listOf(t.id)) }
                     else -> Unit
@@ -230,7 +238,7 @@ private fun UrlDialog(current: String, onDismiss: () -> Unit, onSet: (String) ->
                 OutlinedTextField(text, { text = it.trim() }, maxLines = 5)
             }
         },
-        confirmButton = { TextButton(onClick = { onSet(text) }, enabled = com.tadaffuq.engine.LinkTools.isSupported(text)) { Text(stringResource(R.string.save)) } },
+        confirmButton = { TextButton(onClick = { onSet(text) }, enabled = com.tadaffuq.engine.Protocols.isSupported(text)) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

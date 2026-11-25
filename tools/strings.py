@@ -229,6 +229,16 @@ S = {
 "proxy_password": ("كلمة المرور", "Password"), "secret_saved": ("محفوظة ومشفّرة. اكتب جديدة لاستبدالها.", "Saved and encrypted. Type a new one to replace it."),
 "secret_desc": ("تُشفَّر بمفتاح داخل Android Keystore ولا تدخل النسخ الاحتياطي", "Encrypted with an Android Keystore key and never backed up"),
 "socks_note": ("مع SOCKS5 يُحوَّل اسم الخادم عبر الوكيل نفسه.", "With SOCKS5, host names are resolved by the proxy."),
+"remote_password": ("كلمة مرور FTP/SFTP", "FTP/SFTP password"),
+"err_auth": ("اسم المستخدم أو كلمة المرور مرفوضة", "Username or password rejected"),
+"err_hostkey_new": ("مفتاح خادم SSH جديد يحتاج موافقتك", "New SSH server key needs your approval"),
+"err_hostkey_changed": ("مفتاح خادم SSH تغيّر: رُفض الاتصال", "SSH server key changed: connection refused"),
+"hostkey_new_text": ("بصمة الخادم: %1$s. قارنها بما يعطيك مدير الخادم قبل الموافقة.", "Server fingerprint: %1$s. Compare it with what the server admin gives you before trusting."),
+"hostkey_trust": ("أثق بهذا الخادم", "Trust this server"),
+"dr_auth": ("بيانات الدخول مرفوضة", "Credentials rejected"),
+"dr_auth_fix": ("أدخل كلمة المرور الصحيحة ثم أعد المحاولة. تُحفظ مشفّرة على جهازك فقط.", "Enter the correct password and retry. It's stored encrypted on your device only."),
+"dr_hostkey_new_fix": ("أول اتصال بهذا الخادم. وافق فقط إن طابقت البصمة ما يعطيك مدير الخادم.", "First connection to this server. Approve only if the fingerprint matches what the admin gives you."),
+"dr_hostkey_changed_fix": ("قد يكون أحد يعترض الاتصال، أو أُعيد تثبيت الخادم. تحقق من مدير الخادم قبل أي شيء.", "Someone may be intercepting the connection, or the server was reinstalled. Check with the server admin first."),
 }
 PLURALS = {"notif_running": ({"zero":"لا تنزيلات","one":"يجري تنزيل ملف واحد","two":"يجري تنزيل ملفين","few":"يجري تنزيل %d ملفات","many":"يجري تنزيل %d ملفاً","other":"يجري تنزيل %d ملف"},
                              {"one":"Downloading %d file","other":"Downloading %d files"})}

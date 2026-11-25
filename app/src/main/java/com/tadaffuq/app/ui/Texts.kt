@@ -24,6 +24,9 @@ fun errorText(code: String?): String = when {
     code == "SPACE" -> stringResource(R.string.err_space)
     code == "STORAGE" -> stringResource(R.string.err_storage)
     code == "CHECKSUM" -> stringResource(R.string.err_checksum)
+    code == "AUTH" -> stringResource(R.string.err_auth)
+    code == "HOSTKEY_NEW" -> stringResource(R.string.err_hostkey_new)
+    code == "HOSTKEY_CHANGED" -> stringResource(R.string.err_hostkey_changed)
     else -> stringResource(R.string.err_unknown)
 }
 
@@ -75,5 +78,8 @@ fun doctorText(f: Doctor.Finding): Pair<String, String> = when (f) {
     Doctor.Finding.SERVER_BUSY -> stringResource(R.string.dr_busy) to stringResource(R.string.dr_busy_fix)
     Doctor.Finding.PERMISSION -> stringResource(R.string.dr_permission) to stringResource(R.string.dr_permission_fix)
     Doctor.Finding.BACKGROUND_RESTRICTED -> stringResource(R.string.dr_bg) to stringResource(R.string.dr_bg_fix)
+    Doctor.Finding.AUTH_FAILED -> stringResource(R.string.dr_auth) to stringResource(R.string.dr_auth_fix)
+    Doctor.Finding.HOST_KEY_UNKNOWN -> stringResource(R.string.err_hostkey_new) to stringResource(R.string.dr_hostkey_new_fix)
+    Doctor.Finding.HOST_KEY_CHANGED -> stringResource(R.string.err_hostkey_changed) to stringResource(R.string.dr_hostkey_changed_fix)
     Doctor.Finding.HEALTHY -> stringResource(R.string.dr_healthy) to stringResource(R.string.dr_healthy_fix)
 }

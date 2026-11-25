@@ -20,6 +20,9 @@ object Doctor {
         SERVER_BUSY,          // 429/503: تراجع تلقائي عن الاتصالات
         PERMISSION,           // لا صلاحية للكتابة في المجلد
         BACKGROUND_RESTRICTED, // النظام يقيّد التطبيق في الخلفية
+        AUTH_FAILED,          // اسم المستخدم أو كلمة المرور مرفوضة
+        HOST_KEY_UNKNOWN,     // مفتاح SSH جديد يحتاج موافقة
+        HOST_KEY_CHANGED,     // مفتاح SSH تغيّر: احتمال اعتراض
         SLOW_SERVER,          // السرعة لا تزيد مع الاتصالات: الحد من الخادم
         SINGLE_CONNECTION_CAP, // سرعة الاتصال الواحد منخفضة والمزيد يساعد
         LOW_SPACE,
@@ -60,6 +63,9 @@ object Doctor {
                 NetFail.RESET -> Finding.NETWORK_UNSTABLE
             }
             DownloadError.RangeNotSupported -> out += Finding.NO_RESUME
+            DownloadError.AuthFailed -> out += Finding.AUTH_FAILED
+            is DownloadError.HostKeyUnknown -> out += Finding.HOST_KEY_UNKNOWN
+            is DownloadError.HostKeyChanged -> out += Finding.HOST_KEY_CHANGED
             null -> Unit
         }
         i.probe?.let { p ->

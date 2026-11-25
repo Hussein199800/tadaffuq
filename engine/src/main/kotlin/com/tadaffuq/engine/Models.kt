@@ -119,6 +119,12 @@ sealed class DownloadError(val retryable: Boolean) {
     data class InsufficientSpace(val needed: Long, val available: Long) : DownloadError(false)
     data class Storage(val detail: String) : DownloadError(false)
     data class ChecksumMismatch(val expected: String, val actual: String) : DownloadError(false)
+    /** اسم المستخدم أو كلمة المرور مرفوضة (FTP/SFTP). */
+    data object AuthFailed : DownloadError(false)
+    /** مفتاح خادم SSH غير معروف: يُعرض بصمته ليقرّر المستخدم الثقة به. */
+    data class HostKeyUnknown(val host: String, val fingerprint: String) : DownloadError(false)
+    /** مفتاح خادم SSH تغيّر عن المحفوظ: احتمال اعتراض، يُرفض دائماً. */
+    data class HostKeyChanged(val host: String, val fingerprint: String) : DownloadError(false)
 }
 
 enum class NetFail {

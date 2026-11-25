@@ -398,6 +398,16 @@
     <string name="secret_saved">محفوظة ومشفّرة. اكتب جديدة لاستبدالها.</string>
     <string name="secret_desc">تُشفَّر بمفتاح داخل Android Keystore ولا تدخل النسخ الاحتياطي</string>
     <string name="socks_note">مع SOCKS5 يُحوَّل اسم الخادم عبر الوكيل نفسه.</string>
+    <string name="remote_password">كلمة مرور FTP/SFTP</string>
+    <string name="err_auth">اسم المستخدم أو كلمة المرور مرفوضة</string>
+    <string name="err_hostkey_new">مفتاح خادم SSH جديد يحتاج موافقتك</string>
+    <string name="err_hostkey_changed">مفتاح خادم SSH تغيّر: رُفض الاتصال</string>
+    <string name="hostkey_new_text">بصمة الخادم: %1$s. قارنها بما يعطيك مدير الخادم قبل الموافقة.</string>
+    <string name="hostkey_trust">أثق بهذا الخادم</string>
+    <string name="dr_auth">بيانات الدخول مرفوضة</string>
+    <string name="dr_auth_fix">أدخل كلمة المرور الصحيحة ثم أعد المحاولة. تُحفظ مشفّرة على جهازك فقط.</string>
+    <string name="dr_hostkey_new_fix">أول اتصال بهذا الخادم. وافق فقط إن طابقت البصمة ما يعطيك مدير الخادم.</string>
+    <string name="dr_hostkey_changed_fix">قد يكون أحد يعترض الاتصال، أو أُعيد تثبيت الخادم. تحقق من مدير الخادم قبل أي شيء.</string>
     <plurals name="notif_running">
         <item quantity="zero">لا تنزيلات</item>
         <item quantity="one">يجري تنزيل ملف واحد</item>

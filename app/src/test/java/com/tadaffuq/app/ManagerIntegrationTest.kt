@@ -74,7 +74,7 @@ class ManagerIntegrationTest {
 
     private fun manager(): DownloadManager {
         val conditions = Conditions(ctx)
-        val m = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), conditions, Notifier(ctx))
+        val m = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), com.tadaffuq.app.download.AppCredentials(ctx, com.tadaffuq.app.core.SecretStore(ctx)), conditions, Notifier(ctx))
         m.start()
         conditions.set(DeviceState(connected = true, net = NetKind.WIFI, batteryPercent = 80))
         m.wake()
@@ -150,7 +150,7 @@ class ManagerIntegrationTest {
     @Test fun offlineHoldsQueueAndResumesWhenBack() = runBlocking {
         val dir = tmp.newFolder("out5")
         val conditions = Conditions(ctx)
-        val m = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), conditions, Notifier(ctx))
+        val m = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), com.tadaffuq.app.download.AppCredentials(ctx, com.tadaffuq.app.core.SecretStore(ctx)), conditions, Notifier(ctx))
         m.start()
         conditions.set(DeviceState(connected = false))
         val id = m.enqueue(listOf(NewTask(server.url("/f/e.bin").toString(), "e.bin", dir.path))).single()

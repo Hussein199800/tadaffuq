@@ -21,6 +21,12 @@ junit = "4.13.2"
 robolectric = "4.16"
 
 [libraries]
+commons-net = { module = "commons-net:commons-net", version = "3.12.0" }
+jsch = { module = "com.github.mwiede:jsch", version = "2.27.3" }
+ftpserver-core = { module = "org.apache.ftpserver:ftpserver-core", version = "1.2.1" }
+sshd-core = { module = "org.apache.sshd:sshd-core", version = "2.15.0" }
+sshd-sftp = { module = "org.apache.sshd:sshd-sftp", version = "2.15.0" }
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version = "2.0.17" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }

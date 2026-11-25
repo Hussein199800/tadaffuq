@@ -76,6 +76,7 @@ class DownloadManager @Inject constructor(
     db: AppDatabase,
     private val settingsRepo: SettingsRepository,
     private val clients: ClientProvider,
+    val credentials: AppCredentials,
     val conditions: Conditions,
     private val notifier: Notifier,
 ) {
@@ -292,7 +293,7 @@ class DownloadManager @Inject constructor(
                     val failed = it.copy(
                         status = if (offline) TaskStatus.WAITING_NETWORK else TaskStatus.FAILED,
                         errorCode = ErrorCodes.of(e.error),
-                        errorDetail = (e.error as? DownloadError.Storage)?.detail,
+                        errorDetail = ErrorCodes.detail(e.error),
                         retries = counters[0], networkRetries = counters[1], serverRetries = counters[2],
                     )
                     dao.update(failed)
@@ -317,7 +318,8 @@ class DownloadManager @Inject constructor(
      */
     private suspend fun runWithMirrors(t: TaskEntity, spec: RequestSpec, part: File, cfg: DownloadConfig, saved: ResumeState?, limiter: RateLimiter, listener: DownloadListener): ProbeResult {
         val mirrors = t.mirrors?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() && it != t.url }.orEmpty()
-        if (mirrors.isEmpty()) return HttpDownloader(client, spec, part, cfg, saved, limiter, globalLimiter, listener).run()
+        if (mirrors.isEmpty() || com.tadaffuq.engine.Protocols.isRemote(spec.url))
+            return com.tadaffuq.engine.Protocols.downloader(client, spec, part, cfg, saved, limiter, globalLimiter, listener, credentials).run()
         val ranked = com.tadaffuq.engine.MirrorSelector(client).rank(spec, mirrors).filter { it.matches }.map { it.url }
         val order = ranked.ifEmpty { listOf(t.url) }
         var last: DownloadException? = null
@@ -347,7 +349,7 @@ class DownloadManager @Inject constructor(
 
     suspend fun setMirrors(id: Long, mirrors: String?) { dao.get(id)?.let { dao.update(it.copy(mirrors = mirrors?.trim()?.ifBlank { null })) } }
 
-    suspend fun probe(spec: RequestSpec): ProbeResult = Prober(client).probe(spec.copy(userAgent = spec.userAgent ?: settings.userAgent.ifBlank { null } ?: DEFAULT_UA))
+    suspend fun probe(spec: RequestSpec): ProbeResult = com.tadaffuq.engine.Protocols.probe(client, spec.copy(userAgent = spec.userAgent ?: settings.userAgent.ifBlank { null } ?: DEFAULT_UA), credentials)
 
     suspend fun enqueue(tasks: List<NewTask>): List<Long> {
         val ids = dao.insertAll(tasks.map { n ->
@@ -442,6 +444,17 @@ object ErrorCodes {
         is DownloadError.InsufficientSpace -> "SPACE"
         is DownloadError.Storage -> "STORAGE"
         is DownloadError.ChecksumMismatch -> "CHECKSUM"
+        DownloadError.AuthFailed -> "AUTH"
+        is DownloadError.HostKeyUnknown -> "HOSTKEY_NEW"
+        is DownloadError.HostKeyChanged -> "HOSTKEY_CHANGED"
+    }
+
+    /** تفاصيل تُحفظ مع الرمز (بصمة SSH مثلاً). */
+    fun detail(e: DownloadError): String? = when (e) {
+        is DownloadError.Storage -> e.detail
+        is DownloadError.HostKeyUnknown -> e.fingerprint
+        is DownloadError.HostKeyChanged -> e.fingerprint
+        else -> null
     }
 
     fun toError(code: String?, detail: String? = null): DownloadError? = when {
@@ -456,6 +469,9 @@ object ErrorCodes {
         code == "SPACE" -> DownloadError.InsufficientSpace(0, 0)
         code == "STORAGE" || code == "INTERNAL" -> DownloadError.Storage(detail ?: code)
         code == "CHECKSUM" -> DownloadError.ChecksumMismatch("", "")
+        code == "AUTH" -> DownloadError.AuthFailed
+        code == "HOSTKEY_NEW" -> DownloadError.HostKeyUnknown("", detail.orEmpty())
+        code == "HOSTKEY_CHANGED" -> DownloadError.HostKeyChanged("", detail.orEmpty())
         else -> null
     }
 }

@@ -398,6 +398,16 @@
     <string name="secret_saved">Saved and encrypted. Type a new one to replace it.</string>
     <string name="secret_desc">Encrypted with an Android Keystore key and never backed up</string>
     <string name="socks_note">With SOCKS5, host names are resolved by the proxy.</string>
+    <string name="remote_password">FTP/SFTP password</string>
+    <string name="err_auth">Username or password rejected</string>
+    <string name="err_hostkey_new">New SSH server key needs your approval</string>
+    <string name="err_hostkey_changed">SSH server key changed: connection refused</string>
+    <string name="hostkey_new_text">Server fingerprint: %1$s. Compare it with what the server admin gives you before trusting.</string>
+    <string name="hostkey_trust">Trust this server</string>
+    <string name="dr_auth">Credentials rejected</string>
+    <string name="dr_auth_fix">Enter the correct password and retry. It\'s stored encrypted on your device only.</string>
+    <string name="dr_hostkey_new_fix">First connection to this server. Approve only if the fingerprint matches what the admin gives you.</string>
+    <string name="dr_hostkey_changed_fix">Someone may be intercepting the connection, or the server was reinstalled. Check with the server admin first.</string>
     <plurals name="notif_running">
         <item quantity="one">Downloading %d file</item>
         <item quantity="other">Downloading %d files</item>

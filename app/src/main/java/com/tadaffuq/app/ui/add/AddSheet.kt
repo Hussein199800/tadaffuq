@@ -97,6 +97,16 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, vm: AddViewModel = hilt
                 Text(sr(R.string.add_more_hidden, s.items.size - 500), color = T.extra.secondaryText, modifier = Modifier.padding(20.dp))
             }
 
+            if (s.anyRemote) item {
+                OutlinedTextField(
+                    value = s.remotePassword, onValueChange = { v -> vm.update { it.copy(remotePassword = v) } },
+                    label = { Text(stringResource(R.string.remote_password)) },
+                    supportingText = { Text(stringResource(R.string.secret_desc)) },
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    singleLine = true, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                )
+                TextButton(onClick = vm::reprobe, modifier = Modifier.padding(horizontal = 8.dp)) { Text(stringResource(R.string.add_reprobe)) }
+            }
             if (s.anyDuplicate) item {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -219,6 +229,10 @@ private fun ItemRow(item: Item, single: Boolean, vm: AddViewModel) {
                     Text(errorText(item.errorCode), style = MaterialTheme.typography.bodySmall, color = T.extra.danger)
                 }
             }
+        }
+        if (item.errorCode == "HOSTKEY_NEW" && item.errorDetail != null) {
+            Text(stringResource(R.string.hostkey_new_text, item.errorDetail), style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = { vm.trustHostKey(item) }) { Text(stringResource(R.string.hostkey_trust)) }
         }
         if (item.probe != null && FileNames.isExecutable(item.name)) {
             Text(stringResource(R.string.exe_warning), style = MaterialTheme.typography.bodySmall, color = T.extra.warning, modifier = Modifier.padding(top = 2.dp))

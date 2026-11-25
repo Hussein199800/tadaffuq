@@ -82,7 +82,7 @@ class ScreenshotTest {
             db.usage().add(today, NetKind.CELLULAR, 80_000_000)
         }
         val settings = SettingsRepository(ctx)
-        val manager = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), Conditions(ctx), Notifier(ctx))
+        val manager = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), com.tadaffuq.app.download.AppCredentials(ctx, com.tadaffuq.app.core.SecretStore(ctx)), Conditions(ctx), Notifier(ctx))
         vm = MainViewModel(ctx, db, settings, manager, com.tadaffuq.app.core.SecretStore(ctx))
     }
 

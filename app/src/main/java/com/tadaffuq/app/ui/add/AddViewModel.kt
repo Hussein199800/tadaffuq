@@ -45,6 +45,8 @@ data class Item(
     val probing: Boolean = true,
     val probe: ProbeResult? = null,
     val errorCode: String? = null,
+    /** بصمة مفتاح SSH حين يكون المضيف جديداً. */
+    val errorDetail: String? = null,
     val name: String = "",
     val selected: Boolean = true,
     val duplicates: List<TaskEntity> = emptyList(),
@@ -61,6 +63,8 @@ data class AddState(
     val userAgent: String = "",
     val cookies: String = "",
     val mirrors: String = "",
+    /** كلمة مرور FTP/SFTP: تُحفظ مشفّرة ولا تبقى في الرابط. */
+    val remotePassword: String = "",
     val packageName: String = "",
     val duplicatePolicy: DuplicatePolicy = DuplicatePolicy.RENAME,
     val submitting: Boolean = false,
@@ -69,6 +73,7 @@ data class AddState(
     val single get() = items.size == 1
     val hashValid get() = expectedHash.isBlank() || Hashes.detect(expectedHash) != null
     val anyDuplicate get() = items.any { it.selected && it.duplicates.isNotEmpty() }
+    val anyRemote get() = items.any { com.tadaffuq.engine.Protocols.isRemote(it.url) }
     val canSubmit get() = !submitting && hashValid && items.any { it.selected && !it.probing && it.probe != null }
 }
 
@@ -101,8 +106,16 @@ class AddViewModel @Inject constructor(
         parseJob = viewModelScope.launch {
             if (!immediate) delay(500)
             val text = _state.value.input
-            val urls = LinkTools.extract(text).flatMap { if (LinkTools.hasSequence(it)) LinkTools.expandSequence(it) else listOf(it) }
-                .filter(LinkTools::isSupported).distinct().take(LinkTools.MAX_GENERATED)
+            val raw = LinkTools.extract(text).flatMap { if (LinkTools.hasSequence(it)) LinkTools.expandSequence(it) else listOf(it) }
+                .filter(com.tadaffuq.engine.Protocols::isSupported)
+            // كلمة مرور داخل رابط FTP/SFTP تُنقل إلى المخزن المشفّر وتُحذف من الرابط
+            raw.forEach { u ->
+                com.tadaffuq.engine.RemoteTarget.passwordInUrl(u)?.let { pw ->
+                    com.tadaffuq.engine.RemoteTarget.parse(u)?.let { manager.credentials.setPassword(it, pw) }
+                    _state.update { st -> st.copy(remotePassword = pw) }
+                }
+            }
+            val urls = raw.map(com.tadaffuq.engine.RemoteTarget::stripPassword).distinct().take(LinkTools.MAX_GENERATED)
             _state.update { s -> s.copy(items = urls.map { u -> s.items.firstOrNull { it.url == u } ?: Item(u) }) }
             probeAll()
         }
@@ -118,8 +131,9 @@ class AddViewModel @Inject constructor(
                     sem.withPermit {
                         val result = runCatching { manager.probe(spec(item.url)) }
                         val probe = result.getOrNull()
-                        val code = (result.exceptionOrNull() as? DownloadException)?.error?.let(ErrorCodes::of)
-                            ?: result.exceptionOrNull()?.let { "NETWORK" }
+                        val err = (result.exceptionOrNull() as? DownloadException)?.error
+                        val code = err?.let(ErrorCodes::of) ?: result.exceptionOrNull()?.let { "NETWORK" }
+                        val detail = err?.let(ErrorCodes::detail)
                         val name = when {
                             s.single && request?.suggestedName != null -> FileNames.sanitize(request!!.suggestedName!!)
                             probe != null -> probe.fileName
@@ -129,7 +143,7 @@ class AddViewModel @Inject constructor(
                         val dups = manager.duplicates(item.url, dir, name)
                         _state.update { st ->
                             st.copy(items = st.items.map {
-                                if (it.url == item.url) it.copy(probing = false, probe = probe, errorCode = code, name = name, duplicates = dups) else it
+                                if (it.url == item.url) it.copy(probing = false, probe = probe, errorCode = code, errorDetail = detail, name = name, duplicates = dups) else it
                             })
                         }
                     }
@@ -143,7 +157,16 @@ class AddViewModel @Inject constructor(
         return RequestSpec(url, referer = s.referer.ifBlank { null }, userAgent = s.userAgent.ifBlank { null }, cookies = s.cookies.ifBlank { null })
     }
 
+    /** المستخدم وافق على بصمة مفتاح الخادم بعد مقارنتها. */
+    fun trustHostKey(item: Item) {
+        val t = com.tadaffuq.engine.RemoteTarget.parse(item.url) ?: return
+        item.errorDetail?.let { manager.credentials.trustHostKey(t.host, t.port, it) }
+        reprobe()
+    }
+
     fun reprobe() {
+        val pw = _state.value.remotePassword
+        if (pw.isNotEmpty()) _state.value.items.forEach { i -> com.tadaffuq.engine.RemoteTarget.parse(i.url)?.let { manager.credentials.setPassword(it, pw) } }
         _state.update { s -> s.copy(items = s.items.map { it.copy(probing = true, errorCode = null) }) }
         viewModelScope.launch { probeAll() }
     }
