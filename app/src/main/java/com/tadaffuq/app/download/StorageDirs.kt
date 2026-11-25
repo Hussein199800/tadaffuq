@@ -36,7 +36,14 @@ object StorageDirs {
     fun dirFor(category: FileCategory, byCategory: Boolean): File =
         if (byCategory) File(root(), folderName(category)) else root()
 
-    fun partFile(dir: String, name: String) = File(dir, name + PART_SUFFIX)
+    /**
+     * ملف جزئي خاص بكل مهمة (المعرّف جزء من الاسم): مهمتان بالاسم نفسه لا تشتركان فيه أبداً.
+     * الاسم مقصوص كي لا يتجاوز حد أنظمة الملفات (255 بايت).
+     */
+    fun partFile(dir: String, name: String, taskId: Long) = File(dir, ".$taskId-${name.take(80)}$PART_SUFFIX")
+
+    /** مسار الإصدارات السابقة (الاسم + ‎.tdq)؛ يُرحَّل مرة واحدة إن لم يكن ملتبساً. */
+    fun legacyPartFile(dir: String, name: String) = File(dir, name + PART_SUFFIX)
 
     fun mime(name: String): String =
         MimeTypeMap.getSingleton().getMimeTypeFromExtension(name.substringAfterLast('.', "").lowercase()) ?: "application/octet-stream"

@@ -85,4 +85,13 @@ class PureAppLogicTest {
             assertEquals(it, ErrorCodes.toError(ErrorCodes.of(it)))
         }
     }
+
+    /** P0-10: في الروابط المتعددة تُطبَّق الكوكيز وReferer على مضيفها فقط. */
+    @Test fun sessionSecretsScopedToHost() {
+        val o = "https://site.example/a.zip"
+        assertTrue(com.tadaffuq.app.ui.add.SessionScope.applies(o, "https://cdn.other/b.zip", 1))
+        assertTrue(com.tadaffuq.app.ui.add.SessionScope.applies(o, "https://SITE.example:443/c.zip", 3))
+        assertFalse(com.tadaffuq.app.ui.add.SessionScope.applies(o, "https://cdn.other/b.zip", 3))
+        assertFalse(com.tadaffuq.app.ui.add.SessionScope.applies(o, "http://site.example/b.zip", 3)) // منفذ/بروتوكول آخر
+    }
 }

@@ -168,7 +168,9 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
     fun completed(t: TaskEntity) {
         if (!canPost()) return
         val file = t.filePath?.let(::File)
-        val open = file?.takeIf { it.exists() }?.let {
+        // البرامج والحزم (apk/exe…) والملف غير المتحقق منه لا تُفتح مباشرة من الإشعار: تُفتح التنزيلات بتحذيرها
+        val risky = file == null || t.hashOk == false || com.tadaffuq.engine.FileNames.category(file.name) == com.tadaffuq.engine.FileCategory.PROGRAMS
+        val open = file?.takeIf { it.exists() && !risky }?.let {
             runCatching {
                 PendingIntent.getActivity(ctx, t.id.toInt(), StorageDirs.openIntent(ctx, it), PendingIntent.FLAG_IMMUTABLE)
             }.getOrNull()

@@ -35,6 +35,13 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE trashedAt IS NULL AND fileName = :name AND dirPath = :dir")
     suspend fun byName(dir: String, name: String): List<TaskEntity>
 
+    /** أسماء محجوزة لمهام غير مكتملة في مجلد (حجز الاسم النهائي). */
+    @Query("SELECT fileName FROM tasks WHERE dirPath = :dir AND status != 'COMPLETED' AND id != :exclude")
+    suspend fun unfinishedNames(dir: String, exclude: Long = -1): List<String>
+
+    @Query("SELECT * FROM tasks WHERE cookies IS NOT NULL AND cookies != ''")
+    suspend fun withCookies(): List<TaskEntity>
+
     @Query("SELECT * FROM tasks WHERE status = 'COMPLETED' AND trashedAt IS NULL AND actualHash = :hash")
     suspend fun byHash(hash: String): List<TaskEntity>
 

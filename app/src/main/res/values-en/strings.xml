@@ -621,6 +621,8 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="subfolder">Folder</string>
     <string name="subfolder_desc">A subfolder inside Download/%1$s; empty = by type and rules</string>
     <string name="default_folder">Download/%1$s</string>
+    <string name="err_hash_invalid">Invalid checksum reference (not SHA-256, SHA-1 or MD5). Retrying finishes the file without verification.</string>
+    <string name="err_checksum_kept">The file wasn\'t published because it doesn\'t match the checksum. Retrying downloads it again.</string>
     <plurals name="notif_running">
         <item quantity="one">Downloading %d file</item>
         <item quantity="other">Downloading %d files</item>

@@ -29,6 +29,13 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import javax.inject.Inject
 
+/** قاعدة نطاق أسرار الجلسة؛ منطق خالص قابل للاختبار. */
+object SessionScope {
+    /** رابط واحد: كما التُقط (المحرك يحصرها في مضيفه عند التحويل). عدة روابط: المضيف والمنفذ نفسهما فقط. */
+    fun applies(origin: String, url: String, count: Int): Boolean =
+        count <= 1 || RequestSpec.authorityOf(origin) == RequestSpec.authorityOf(url)
+}
+
 /** ما يصل من المشاركة أو المتصفح أو الحافظة. */
 data class AddRequest(
     val text: String,
@@ -165,7 +172,15 @@ class AddViewModel @Inject constructor(
 
     private fun spec(url: String): RequestSpec {
         val s = _state.value
-        return RequestSpec(url, referer = s.referer.ifBlank { null }, userAgent = s.userAgent.ifBlank { null }, cookies = s.cookies.ifBlank { null })
+        val own = sessionApplies(url)
+        return RequestSpec(url, referer = s.referer.ifBlank { null }?.takeIf { own }, userAgent = s.userAgent.ifBlank { null }, cookies = s.cookies.ifBlank { null }?.takeIf { own })
+    }
+
+    /** الكوكيز وReferer تخص الرابط الذي التُقطت معه؛ في الروابط المتعددة تُطبَّق على المضيف نفسه فقط. */
+    private fun sessionApplies(url: String): Boolean {
+        val s = _state.value
+        val origin = request?.text?.let { LinkTools.extract(it).firstOrNull() } ?: s.items.firstOrNull()?.url ?: return true
+        return SessionScope.applies(origin, url, s.items.size)
     }
 
     /** المستخدم وافق على بصمة مفتاح الخادم بعد مقارنتها. */
@@ -221,8 +236,8 @@ class AddViewModel @Inject constructor(
                     connections = s.connections,
                     expectedHash = if (s.single) s.expectedHash.ifBlank { null } else null,
                     userAgent = s.userAgent.ifBlank { null },
-                    referer = s.referer.ifBlank { null },
-                    cookies = s.cookies.ifBlank { null },
+                    referer = s.referer.ifBlank { null }?.takeIf { sessionApplies(item.url) },
+                    cookies = s.cookies.ifBlank { null }?.takeIf { sessionApplies(item.url) },
                     packageId = packageId,
                     wifiOnly = s.wifiOnly,
                     startPaused = s.startPaused,

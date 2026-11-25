@@ -353,6 +353,8 @@ S = {
 "qp_live": ("يُطبَّق فوراً على التنزيلات الجارية", "Applies immediately to running downloads"), "qp_now": ("السرعة الإجمالية الآن: %1$s", "Total speed now: %1$s"),
 "subfolder": ("المجلد", "Folder"), "subfolder_desc": ("مجلد فرعي داخل التنزيلات/%1$s، فارغ = حسب النوع والقواعد", "A subfolder inside Download/%1$s; empty = by type and rules"),
 "default_folder": ("التنزيلات/%1$s", "Download/%1$s"),
+"err_hash_invalid": ("مرجع البصمة غير صالح (ليس SHA-256 أو SHA-1 أو MD5). إعادة المحاولة تكمل الملف دون تحقق.", "Invalid checksum reference (not SHA-256, SHA-1 or MD5). Retrying finishes the file without verification."),
+"err_checksum_kept": ("لم يُنشر الملف لأنه لا يطابق البصمة. إعادة المحاولة تنزّله من جديد.", "The file wasn't published because it doesn't match the checksum. Retrying downloads it again."),
 }
 PLURALS = {"notif_running": ({"zero":"لا تنزيلات","one":"يجري تنزيل ملف واحد","two":"يجري تنزيل ملفين","few":"يجري تنزيل %d ملفات","many":"يجري تنزيل %d ملفاً","other":"يجري تنزيل %d ملف"},
                              {"one":"Downloading %d file","other":"Downloading %d files"})}
