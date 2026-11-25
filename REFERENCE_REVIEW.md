@@ -28,3 +28,16 @@
 | RFC 9110 | Range وContent-Range وIf-Range وETag القوي/الضعيف طُبّقت في `Prober`/`HttpDownloader` |
 | Android background work | Foreground Service (dataSync) أثناء العمل، وWorkManager للاستئناف بعد الإقلاع/عودة الشبكة، مع `onTimeout` لأندرويد 15 |
 | OWASP MASVS | لا نسخ احتياطي سحابي، TLS النظام فقط، لا مخططات غير http(s) في المتصفح، لا تسجيل للكوكيز |
+
+## قرارات المكتبات النهائية (المرحلة الثانية)
+| الحاجة | المختار | الترخيص | البدائل والسبب |
+|---|---|---|---|
+| HTTP | OkHttp 4.12 | Apache-2.0 | ناضج على Android، إعادة استخدام الاتصالات، Proxy/SOCKS، يحذف Authorization عند تحويل المضيف |
+| FTP/FTPS | Apache Commons Net 3.12 | Apache-2.0 | المرجع المعتاد؛ REST للاستئناف. (يحوي أداة «قبول كل الشهادات» لا نستعملها) |
+| SFTP | JSch (mwiede) 2.27 | BSD | أخف من sshj على Android ومصان؛ ثقة عند أول استعمال بالبصمة |
+| تورنت | libtorrent4j 2.1.0-39 | MIT (libtorrent BSD) | ربط Java لـ libtorrent الذي طلبته المواصفات؛ مكتبات أصلية بمحاذاة 16KB. خلل: تمرير الأقران في `download()` يسبب انهياراً → `connect_peer` |
+| أرشيفات | Commons Compress 1.28 + XZ + junrar 7.5 | Apache-2.0 / Public Domain / UnRAR | junrar للفك فقط (يدعم RAR4)؛ لا بديل مفتوح يدعم RAR5 في Java |
+| واجهة | Compose + Material 3 + Glance | Apache-2.0 | — |
+| SBOM | CycloneDX Gradle | Apache-2.0 | — |
+
+لم تُدمج aria2 (GPL، C++) ولا okdownload (غير مصان). Ghost Downloader 3 (GPL-3.0): أفكار التقسيم والتسريع فقط، دون نسخ.

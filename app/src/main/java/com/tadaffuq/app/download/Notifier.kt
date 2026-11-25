@@ -21,6 +21,15 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * رمز عشوائي خاص بالتطبيق يُرفق بإجراءات الإشعارات التي تغيّر الحالة: MainActivity مصدَّر
+ * (للمشاركة وفتح الروابط)، فلا يُنفَّذ إجراء داخلي كـ«استئناف الكل» إلا إذا حمل هذا الرمز.
+ */
+fun internalNonce(ctx: Context): String {
+    val p = ctx.getSharedPreferences("internal", Context.MODE_PRIVATE)
+    return p.getString("nonce", null) ?: java.util.UUID.randomUUID().toString().also { p.edit().putString("nonce", it).apply() }
+}
+
 @Singleton
 class Notifier @Inject constructor(@ApplicationContext private val ctx: Context) {
     private val nm = ctx.getSystemService(NotificationManager::class.java)
@@ -57,7 +66,8 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
     private fun openApp(action: String? = null, requestCode: Int = 0): PendingIntent =
         PendingIntent.getActivity(
             ctx, requestCode,
-            Intent(ctx, MainActivity::class.java).setAction(action ?: MainActivity.ACTION_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            Intent(ctx, MainActivity::class.java).setAction(action ?: MainActivity.ACTION_DOWNLOADS).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                .putExtra(MainActivity.EXTRA_NONCE, internalNonce(ctx)),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 

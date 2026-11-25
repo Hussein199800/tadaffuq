@@ -133,7 +133,10 @@ class MainActivity : AppCompatActivity() {
             }
             ACTION_ADD -> add(AddRequest(""))
             ACTION_DOWNLOADS -> jumpTo = "downloads"
-            ACTION_RESUME_ALL -> { jumpTo = "downloads"; lifecycleScope.launch { manager.resumeAll() } }
+            ACTION_RESUME_ALL -> {
+                jumpTo = "downloads"
+                if (intent.getStringExtra(EXTRA_NONCE) == com.tadaffuq.app.download.internalNonce(this)) lifecycleScope.launch { manager.resumeAll() }
+            }
         }
     }
 
@@ -254,5 +257,6 @@ class MainActivity : AppCompatActivity() {
         const val ACTION_ADD = "com.tadaffuq.app.ADD"
         const val ACTION_DOWNLOADS = "com.tadaffuq.app.DOWNLOADS"
         const val ACTION_RESUME_ALL = "com.tadaffuq.app.RESUME_ALL_UI"
+        const val EXTRA_NONCE = "nonce"
     }
 }

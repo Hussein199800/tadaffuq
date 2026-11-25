@@ -157,7 +157,7 @@ class MainViewModel @Inject constructor(
         val dir = File(ctx.cacheDir, "share").apply { mkdirs() }
         val f = File(dir, "tadaffuq-report-${Fmt.day(System.currentTimeMillis())}.csv")
         f.bufferedWriter().use { w ->
-            w.write("﻿") // ليفتحه Excel بترميز UTF-8
+            w.write("\uFEFF") // ليفتحه Excel بترميز UTF-8
             w.write("day,network,bytes\n")
             rows.forEach { w.write("${it.day},${it.net},${it.bytes}\n") }
             w.write("\nfile,status,bytes,created,completed,average_bps\n")

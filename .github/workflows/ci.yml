@@ -15,8 +15,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - name: Engine tests
-        run: chmod +x gradlew && ./gradlew :engine:test --no-daemon
+      - name: Engine, torrent and data tests
+        run: chmod +x gradlew && ./gradlew :engine:test :torrent:test :data:testDebugUnitTest --no-daemon
       - name: App tests (Robolectric)
         run: ./gradlew :app:testDebugUnitTest --no-daemon
       - name: Build APKs

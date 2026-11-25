@@ -9,8 +9,8 @@ import java.util.Locale
  * وكل رقم مع وحدته معزول اتجاهياً حتى لا ينقلب ترتيبه داخل نص عربي.
  */
 object Fmt {
-    private const val LRI = "⁦"
-    private const val PDI = "⁩"
+    private const val LRI = "\u2066"
+    private const val PDI = "\u2069"
 
     val arabic: Boolean get() = Locale.getDefault().language == "ar"
 

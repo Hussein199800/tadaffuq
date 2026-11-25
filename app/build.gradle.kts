@@ -17,14 +17,15 @@ android {
         applicationId = "com.tadaffuq.app"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "1.0.0-rc1"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
     }
     // APK لكل معمارية + APK شامل؛ وحزمة AAB تقسّم تلقائياً في Play
     splits {
         abi {
-            isEnable = true
+            // AAB يقسّم المعماريات بنفسه في Play، وAGP لا يسمح بالتقسيم أثناء بناء الحزمة (issuetracker 402800800)
+            isEnable = gradle.startParameter.taskNames.none { it.contains("bundle", ignoreCase = true) }
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86_64")
             isUniversalApk = true
