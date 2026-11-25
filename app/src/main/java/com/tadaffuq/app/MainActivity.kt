@@ -12,6 +12,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBars
@@ -166,10 +173,31 @@ class MainActivity : AppCompatActivity() {
         }
         LaunchedEffect(jumpTo) { jumpTo?.let { go(it); jumpTo = null } }
 
+        // الشاشات الكبيرة والأجهزة اللوحية: شريط تنقل جانبي ومحتوى بعرض مريح للقراءة
+        val wide = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp >= 600
+        Row(Modifier.fillMaxSize()) {
+        if (wide) androidx.compose.material3.NavigationRail(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
+            header = {
+                androidx.compose.material3.FloatingActionButton(onClick = { add(AddRequest("")) }, containerColor = MaterialTheme.colorScheme.primary) {
+                    Icon(Icons.Rounded.Add, stringResource(R.string.add_title))
+                }
+            },
+        ) {
+            tabs.forEach { t ->
+                androidx.compose.material3.NavigationRailItem(
+                    selected = tabRoute == t.route, onClick = { go(t.route) },
+                    icon = { Icon(t.icon, null) },
+                    label = { Text(stringResource(t.label), style = MaterialTheme.typography.labelSmall) },
+                )
+            }
+        }
         Scaffold(
+            modifier = Modifier.weight(1f),
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                if (!wide) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                     tabs.forEach { t ->
                         NavigationBarItem(
                             selected = tabRoute == t.route,
@@ -181,7 +209,7 @@ class MainActivity : AppCompatActivity() {
                 }
             },
             floatingActionButton = {
-                if (tabRoute == "home" || tabRoute == "downloads") ExtendedFloatingActionButton(
+                if (!wide && (tabRoute == "home" || tabRoute == "downloads")) ExtendedFloatingActionButton(
                     onClick = { add(AddRequest("")) },
                     icon = { Icon(Icons.Rounded.Add, null) },
                     text = { Text(stringResource(R.string.add_short)) },
@@ -191,7 +219,8 @@ class MainActivity : AppCompatActivity() {
             },
         ) { inner ->
             val padding = PaddingValues(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(), bottom = inner.calculateBottomPadding())
-            NavHost(nav, startDestination = "home", modifier = Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            NavHost(nav, startDestination = "home", modifier = Modifier.fillMaxSize().then(if (wide && route != "browser") Modifier.widthIn(max = 840.dp) else Modifier)) {
                 composable("home") {
                     HomeScreen(vm, clipboardLink, onAdd = { link -> clipboardLink = null; add(AddRequest(link.orEmpty())) }, onOpenDownloads = { go("downloads") }, padding = padding)
                 }
@@ -214,6 +243,8 @@ class MainActivity : AppCompatActivity() {
                 composable("rpc") { com.tadaffuq.app.ui.more.RpcScreen(vm, padding, { nav.popBackStack() }) }
                 composable("backup") { com.tadaffuq.app.ui.more.BackupScreen(vm, padding) { nav.popBackStack() } }
             }
+        }
+        }
         }
         pending?.let { req -> AddSheet(req, onDismiss = { pending = null }, onTorrent = { m -> pending = null; pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = m) }) }
         pendingTorrent?.let { r -> com.tadaffuq.app.ui.torrent.TorrentAddSheet(r, onDismiss = { pendingTorrent = null }) }

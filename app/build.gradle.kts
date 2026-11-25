@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("org.cyclonedx.bom") version "2.3.1"
 }
 
 android {
@@ -124,4 +125,12 @@ dependencies {
     testImplementation(platform(libs.compose.bom))
     testImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.compose.ui.test.manifest)
+}
+
+// SBOM بصيغة CycloneDX لمكتبات النسخة المنشورة فقط
+tasks.named<org.cyclonedx.gradle.CycloneDxTask>("cyclonedxBom") {
+    setIncludeConfigs(listOf("releaseRuntimeClasspath"))
+    setProjectType("application")
+    setOutputName("tadaffuq-sbom")
+    setOutputFormat("json")
 }
