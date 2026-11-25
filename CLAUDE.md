@@ -1,6 +1,6 @@
 # تدفّق — ملاحظات للمطورين ونماذج الذكاء الاصطناعي
 
-- مشروع Gradle مستقل داخل `tadaffuq/` (وحدات: `engine` Kotlin/JVM خالص، `data` Room+DataStore، `app` Compose+Hilt). لا علاقة له ببناء «سَيْل» في جذر المستودع.
+- مستودع مستقل (وحدات: `engine` Kotlin/JVM خالص، `data` Room+DataStore، `app` Compose+Hilt).
 - الواجهة عربية أولاً (RTL) والإنجليزية اختيارية: `res/values` عربي، `res/values-en` إنجليزي. لكل إعداد سطر شرح.
 - الأرقام لاتينية ومعزولة اتجاهياً: استعمل `sr(R.string.x, args)` بدل `stringResource(id, args)`، و`Fmt.iso()` للمسارات والروابط داخل نص عربي.
 - النص يلتف ولا يُقص (لا `maxLines=1`/Ellipsis للمحتوى).

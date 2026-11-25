@@ -39,7 +39,7 @@
 
 ## البناء والاختبار
 ```bash
-cd tadaffuq
+cd tadaffuq   # جذر المستودع
 ./gradlew :engine:test                 # محرك التنزيل (29 اختباراً)
 ./gradlew :app:testDebugUnitTest       # المدير الحقيقي + المنطق + لقطات (21 اختباراً)
 ./gradlew :app:assembleDebug           # APK قابل للتثبيت
