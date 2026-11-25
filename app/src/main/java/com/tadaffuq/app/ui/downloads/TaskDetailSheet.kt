@@ -132,6 +132,22 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
                 Text(t.finalUrl.orEmpty(), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
             }
             Text(sr(R.string.saved_in, Fmt.iso(t.filePath ?: t.dirPath)), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(top = 4.dp))
+            // وجهة هذه المهمة مثبّتة عند إضافتها؛ تُغيَّر هنا صراحة قبل الاكتمال
+            val ctx2 = androidx.compose.ui.platform.LocalContext.current
+            val pickTree = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()) { uri ->
+                if (uri != null) {
+                    runCatching { ctx2.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+                    vm.setTree(t.id, uri.toString())
+                }
+            }
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                Text(sr(R.string.task_dest, t.treeUri?.let { Fmt.iso(com.tadaffuq.app.download.TaskFiles.treeName(ctx2, it)) } ?: stringResource(R.string.task_dest_default)),
+                    style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.weight(1f))
+                if (t.status != TaskStatus.COMPLETED) {
+                    TextButton(onClick = { pickTree.launch(null) }) { Text(stringResource(R.string.task_dest_change)) }
+                    if (t.treeUri != null) TextButton(onClick = { vm.setTree(t.id, null) }) { Text(stringResource(R.string.reset_default)) }
+                }
+            }
             if (t.errorCode?.startsWith("HOSTKEY") == true && t.errorDetail != null)
                 Text(sr(R.string.hostkey_new_text, t.errorDetail), style = MaterialTheme.typography.bodySmall, color = T.extra.warning, modifier = Modifier.padding(top = 4.dp))
             t.actualHash?.let { Text("SHA/MD5: ${Fmt.iso(it)}", style = MaterialTheme.typography.bodySmall, color = if (t.hashOk == false) T.extra.danger else T.extra.secondaryText) }

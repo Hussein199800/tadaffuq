@@ -63,6 +63,26 @@ interface TaskDao {
     @Query("UPDATE tasks SET url = :url, finalUrl = NULL, status = 'QUEUED', errorCode = NULL, errorDetail = NULL WHERE id = :id")
     suspend fun setUrl(id: Long, url: String)
 
+    /** سجل النشر (انظر Publisher في التطبيق). */
+    @Query("UPDATE tasks SET errorDetail = :detail WHERE id = :id")
+    suspend fun setDetail(id: Long, detail: String?)
+
+    @Query("UPDATE tasks SET treeUri = :tree WHERE id = :id")
+    suspend fun setTree(id: Long, tree: String?)
+
+    @Query("UPDATE tasks SET treeUri = :tree WHERE status != 'COMPLETED' AND treeUri IS NULL")
+    suspend fun adoptTree(tree: String)
+
+    @Query("UPDATE tasks SET publishUri = :uri, publishLocal = :local WHERE id = :id")
+    suspend fun setPublish(id: Long, uri: String?, local: String?)
+
+    /** تثبيت الوجهة: السجل يشير إليها قبل حذف الأصل. */
+    @Query("UPDATE tasks SET filePath = :uri WHERE id = :id")
+    suspend fun commitPublish(id: Long, uri: String)
+
+    @Query("SELECT * FROM tasks WHERE publishUri IS NOT NULL OR publishLocal IS NOT NULL")
+    suspend fun withPublishJournal(): List<TaskEntity>
+
     @Query("UPDATE tasks SET retries = :r, networkRetries = :n, serverRetries = :s WHERE id = :id")
     suspend fun setRetries(id: Long, r: Int, n: Int, s: Int)
 

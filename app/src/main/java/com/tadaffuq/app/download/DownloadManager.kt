@@ -66,6 +66,8 @@ data class NewTask(
     val mirrors: String? = null,
     val postExtract: Boolean = false,
     val scheduledAt: Long? = null,
+    /** مجلد SAF لهذه المهمة؛ null = الإعداد العام وقت الإضافة. */
+    val treeUri: String? = null,
 )
 
 /**
@@ -162,14 +164,32 @@ class DownloadManager @Inject constructor(
      */
     private suspend fun recoverInterrupted(autoResume: Boolean) {
         val back = if (autoResume) TaskStatus.QUEUED else TaskStatus.PAUSED
+        // المهام السابقة لتثبيت الوجهة لكل مهمة تأخذ مجلد SAF الذي كان مختاراً وقت التحديث (مرة واحدة)
+        if (!settings.perTaskTreeMigrated) {
+            settings.moveToTree.ifBlank { null }?.let { dao.adoptTree(it) }
+            settingsRepo.update { it.copy(perTaskTreeMigrated = true) }
+        }
+        // نقل إلى SAF/MediaStore انقطع بموت العملية
+        for (t in dao.withPublishJournal()) {
+            val again = publisher.recover(t, targetFor(t))
+            com.tadaffuq.app.core.TechLog.log("publish recovered #${t.id} again=$again")
+            if (again) t.filePath?.let(::File)?.takeIf { it.isFile }?.let { f -> scope.launch(Dispatchers.IO) { dao.get(t.id)?.let { publishOut(it, f) } } }
+        }
         for (t in dao.withStatus(listOf(TaskStatus.RUNNING, TaskStatus.VERIFYING))) {
             val dest = t.filePath?.let(::File)
             val published = t.status == TaskStatus.VERIFYING && dest != null && dest.isFile &&
-                !StorageDirs.partFile(t.dirPath, t.fileName, t.id).exists() && (t.totalBytes < 0 || dest.length() == t.totalBytes)
+                !StorageDirs.partFile(t.dirPath, t.id).exists() && (t.totalBytes < 0 || dest.length() == t.totalBytes)
             if (published) {
                 dao.clearSegments(t.id)
+                // البصمة حُسبت قبل النشر وحُفظت مع المسار؛ إن غابت (نسخة سابقة) تُحسب الآن من الملف المنشور
+                var hashOk = t.hashOk; var actual = t.actualHash
+                if (!t.expectedHash.isNullOrBlank() && hashOk == null) Hashes.verify(dest!!, t.expectedHash!!)?.let { hashOk = it.first; actual = it.second }
+                if (hashOk == false) {
+                    dao.update(t.copy(status = TaskStatus.FAILED, errorCode = "CHECKSUM", hashOk = false, actualHash = actual, filePath = dest!!.path))
+                    continue
+                }
                 dao.update(t.copy(status = TaskStatus.COMPLETED, fileName = dest!!.name, totalBytes = dest.length(), downloadedBytes = dest.length(),
-                    completedAt = t.completedAt ?: System.currentTimeMillis()))
+                    hashOk = hashOk, actualHash = actual, completedAt = t.completedAt ?: System.currentTimeMillis()))
                 com.tadaffuq.app.core.TechLog.log("recovered finalized #${t.id}")
             } else dao.update(t.copy(status = back, filePath = null))
         }
@@ -302,7 +322,7 @@ class DownloadManager @Inject constructor(
             // الكوكيز والتفويض لمضيف الرابط الأصلي فقط (لا لمرآة أو تحويل إلى مضيف آخر)
             secretsHost = RequestSpec.authorityOf(t.url),
         )
-        val part = StorageDirs.partFile(t.dirPath, t.fileName, t.id)
+        val part = StorageDirs.partFile(t.dirPath, t.id)
         migrateLegacyPart(t, part)
         val listener = object : DownloadListener {
             override fun onProgress(snapshot: Snapshot) {
@@ -402,7 +422,8 @@ class DownloadManager @Inject constructor(
             val others = dao.unfinishedNames(t.dirPath, exclude = t.id).toSet()
             val name = FileNames.uniqueIn(dir, cur.fileName) { it.exists() || it.name in others }
             val dest = File(dir, name)
-            dao.update(cur.copy(fileName = name, filePath = dest.path, status = TaskStatus.VERIFYING))
+            // سجل النشر: المسار ونتيجة البصمة قبل rename، فالاستعادة لا تحتاج إعادة التحقق ولا تفقد نتيجته
+            dao.update(cur.copy(fileName = name, filePath = dest.path, status = TaskStatus.VERIFYING, hashOk = hashOk, actualHash = actual))
             dest
         }
         if (!part.renameTo(dest)) throw FinalizeFailure { it.copy(errorCode = "STORAGE", errorDetail = "rename") }
@@ -436,6 +457,7 @@ class DownloadManager @Inject constructor(
     /** ترحيل ملف جزئي من الإصدارات السابقة إن كان لهذه المهمة وحدها (لا مهمة أخرى غير مكتملة بالاسم نفسه). */
     private suspend fun migrateLegacyPart(t: TaskEntity, part: File) {
         if (part.exists()) return
+        StorageDirs.rc3PartFile(t.dirPath, t.fileName, t.id).takeIf { it.isFile }?.let { if (it.renameTo(part)) return }
         val legacy = StorageDirs.legacyPartFile(t.dirPath, t.fileName)
         if (!legacy.isFile) return
         val ambiguous = nameLock.withLock { t.fileName in dao.unfinishedNames(t.dirPath, exclude = t.id) }
@@ -448,21 +470,47 @@ class DownloadManager @Inject constructor(
      * فشلها لا يُفشل التنزيل؛ يُسجَّل في errorDetail فقط.
      */
     private suspend fun postActions(t: TaskEntity, file: File): TaskEntity {
-        var cur = t
         if ((t.postExtract || settings.autoExtract) && t.hashOk != false && com.tadaffuq.engine.Archives.isArchive(file.name)) {
             val dest = File(file.parentFile, file.name.substringBeforeLast('.').removeSuffix(".tar"))
             runCatching { com.tadaffuq.engine.Archives.extract(file, dest) }
-                .onFailure { e -> cur = cur.copy(errorDetail = "EXTRACT:" + ((e as? com.tadaffuq.engine.ArchiveException)?.reason ?: e.javaClass.simpleName)); dao.update(cur) }
+                .onFailure { e -> dao.setDetail(t.id, "EXTRACT:" + ((e as? com.tadaffuq.engine.ArchiveException)?.reason ?: e.javaClass.simpleName)) }
                 .onSuccess { StorageDirs.scan(ctx, dest) }
         }
-        val tree = settings.moveToTree
-        if (tree.isNotBlank()) {
-            runCatching { TaskFiles.copyToTree(ctx, file, tree) }
-                .onSuccess { uri -> file.delete(); cur = cur.copy(filePath = uri.toString()); dao.update(cur) }
-                .onFailure { cur = cur.copy(errorDetail = "MOVE_FAILED"); dao.update(cur) }
-        }
-        return cur
+        return publishOut(dao.get(t.id) ?: t, file)
     }
+
+    private val publisher by lazy { Publisher(dao) }
+
+    /** وجهة النشر الخارجية للمهمة: مجلد SAF المثبّت عند الإضافة، أو MediaStore إن حُفظت في المجلد الاحتياطي. */
+    private fun targetFor(t: TaskEntity): PublishTarget? = runCatching {
+        when {
+            !t.treeUri.isNullOrBlank() -> SafTarget(ctx, t.treeUri!!)
+            Build.VERSION.SDK_INT >= 29 && StorageDirs.isInAppDir(File(t.dirPath)) ->
+                MediaStoreTarget(ctx, StorageDirs.mediaStorePath(File(t.dirPath)))
+            else -> null
+        }
+    }.getOrNull()
+
+    /** نقل قابل للاستعادة (انظر [Publisher])؛ فشله لا يُفشل التنزيل: يبقى الملف محلياً مع رمز MOVE_FAILED. */
+    private suspend fun publishOut(t: TaskEntity, file: File): TaskEntity {
+        val needs = !t.treeUri.isNullOrBlank() || (Build.VERSION.SDK_INT >= 29 && StorageDirs.isInAppDir(File(t.dirPath)))
+        if (!needs) return t
+        val target = targetFor(t) ?: run { dao.setDetail(t.id, "MOVE_FAILED"); return dao.get(t.id) ?: t }
+        return try { publisher.publish(t, file, target) } catch (e: Publisher.PublishFailed) {
+            com.tadaffuq.app.core.TechLog.log("publish failed #${t.id} ${e.cause?.javaClass?.simpleName}")
+            dao.setDetail(t.id, "MOVE_FAILED"); dao.get(t.id) ?: t
+        }
+    }
+
+    /** نقل يدوي من شاشة الملفات بالسجل نفسه (لا حذف للأصل قبل تثبيت الوجهة). */
+    suspend fun moveToTree(t: TaskEntity, tree: String): TaskEntity = withContext(Dispatchers.IO) {
+        val f = t.filePath?.let(::File)?.takeIf { it.isFile } ?: error("missing")
+        publisher.publish(t, f, SafTarget(ctx, tree))
+    }
+
+    /** تغيير وجهة مهمة لم تكتمل (صراحة من تفاصيلها). */
+    suspend fun setTree(id: Long, tree: String?) = dao.setTree(id, tree?.ifBlank { null })
+
 
     // ===== واجهة الاستخدام =====
 
@@ -535,7 +583,7 @@ class DownloadManager @Inject constructor(
                 expectedHash = n.expectedHash?.trim()?.ifBlank { null }, userAgent = n.userAgent, referer = n.referer,
                 cookies = com.tadaffuq.app.core.FieldCrypt.seal(n.cookies), priority = n.priority, packageId = n.packageId, wifiOnly = n.wifiOnly,
                 speedLimitBps = n.speedLimitBps, mirrors = n.mirrors?.trim()?.ifBlank { null },
-                postExtract = n.postExtract, scheduledAt = n.scheduledAt?.takeIf { it > System.currentTimeMillis() },
+                postExtract = n.postExtract, treeUri = n.treeUri ?: settings.moveToTree.ifBlank { null }, scheduledAt = n.scheduledAt?.takeIf { it > System.currentTimeMillis() },
             )
         })
         wake()
@@ -554,7 +602,7 @@ class DownloadManager @Inject constructor(
             val t = dao.get(id)?.takeIf { it.status == TaskStatus.PAUSED || it.status == TaskStatus.FAILED || it.status == TaskStatus.WAITING_NETWORK } ?: return@forEach
             when (t.errorCode) {
                 // ملف لا يطابق البصمة: إعادة المحاولة = تنزيل جديد (لا يُعاد التحقق من البيانات نفسها)
-                "CHECKSUM" -> { dao.clearSegments(id); StorageDirs.partFile(t.dirPath, t.fileName, t.id).delete()
+                "CHECKSUM" -> { dao.clearSegments(id); StorageDirs.partFile(t.dirPath, t.id).delete()
                     dao.update(t.copy(status = TaskStatus.QUEUED, downloadedBytes = 0, errorCode = null, errorDetail = null, hashOk = null, actualHash = null)) }
                 // مرجع غير صالح: المستخدم رأى الرسالة واختار الإكمال دون تحقق
                 "HASH_INVALID" -> dao.update(t.copy(status = TaskStatus.QUEUED, expectedHash = null, errorCode = null, errorDetail = null))
@@ -569,7 +617,7 @@ class DownloadManager @Inject constructor(
         val t = dao.get(id) ?: return
         jobs[id]?.let { stop(id, TaskStatus.PAUSED); it.join() }
         dao.clearSegments(id)
-        StorageDirs.partFile(t.dirPath, t.fileName, t.id).delete()
+        StorageDirs.partFile(t.dirPath, t.id).delete()
         dao.update(t.copy(status = TaskStatus.QUEUED, downloadedBytes = 0, errorCode = null, errorDetail = null, retries = 0, networkRetries = 0, serverRetries = 0))
         wake()
     }
@@ -586,7 +634,7 @@ class DownloadManager @Inject constructor(
         ids.forEach { id ->
             jobs[id]?.let { stop(id, TaskStatus.PAUSED); it.join() }
             val t = dao.get(id) ?: return@forEach
-            StorageDirs.partFile(t.dirPath, t.fileName, t.id).delete()
+            StorageDirs.partFile(t.dirPath, t.id).delete()
             limiters.remove(id)
             val f = t.filePath?.takeIf { withFiles && t.status == TaskStatus.COMPLETED }?.let(::File)
             if (f == null || !f.exists() || f.delete()) removed += id

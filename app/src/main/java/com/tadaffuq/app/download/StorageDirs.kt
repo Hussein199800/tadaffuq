@@ -44,6 +44,15 @@ object StorageDirs {
         return if (publicOk) pub else fallback
     }
 
+    fun isInAppDir(dir: File): Boolean = appDir?.let { dir.absolutePath.startsWith(it.absolutePath) } == true
+
+    /** المسار النسبي المقابل في «التنزيلات» العامة لمجلد داخل المجلد الاحتياطي. */
+    fun mediaStorePath(dir: File): String {
+        val base = appDir ?: return Environment.DIRECTORY_DOWNLOADS + "/" + ROOT
+        val rel = dir.absolutePath.removePrefix(base.absolutePath).trim('/')
+        return listOf(Environment.DIRECTORY_DOWNLOADS, ROOT, rel).filter { it.isNotEmpty() }.joinToString("/") + "/"
+    }
+
     val usingFallback: Boolean get() = appDir != null && root() != publicRoot()
 
     /** مسار مختصر للعرض: من «Download» فما بعد. */
@@ -71,7 +80,10 @@ object StorageDirs {
      * ملف جزئي خاص بكل مهمة (المعرّف جزء من الاسم): مهمتان بالاسم نفسه لا تشتركان فيه أبداً.
      * الاسم مقصوص كي لا يتجاوز حد أنظمة الملفات (255 بايت).
      */
-    fun partFile(dir: String, name: String, taskId: Long) = File(dir, ".$taskId-${name.take(80)}$PART_SUFFIX")
+    fun partFile(dir: String, taskId: Long) = File(dir, ".$taskId$PART_SUFFIX")
+
+    /** مسار rc2/rc3 (المعرّف + الاسم)؛ يُرحَّل إلى [partFile] لأن الاسم قد يتغير عند الإنهاء. */
+    fun rc3PartFile(dir: String, name: String, taskId: Long) = File(dir, ".$taskId-${name.take(80)}$PART_SUFFIX")
 
     /** مسار الإصدارات السابقة (الاسم + ‎.tdq)؛ يُرحَّل مرة واحدة إن لم يكن ملتبساً. */
     fun legacyPartFile(dir: String, name: String) = File(dir, name + PART_SUFFIX)

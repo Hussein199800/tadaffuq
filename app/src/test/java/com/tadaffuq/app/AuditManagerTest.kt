@@ -196,6 +196,42 @@ class AuditManagerTest {
         assertFalse(File(dir, "f (1).bin").exists())
     }
 
+    private fun sha256(b: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
+
+    /** rc3: موت قبل rename بعد تغيير الاسم في Room (تعارض) مع بصمة متوقعة: الجزئي يُعثر عليه بمعرّفه ويكتمل مع البصمة. */
+    @Test fun rc3_deathBeforeRenameAfterNameChange() = runBlocking {
+        val dir = tmp.newFolder("ren")
+        val data = contents.getValue("a")
+        File(dir, "f.bin").writeText("someone else's file")
+        val id = db.tasks().insertAll(listOf(TaskEntity(url = server.url("/a/f.bin").toString(), fileName = "f (1).bin", dirPath = dir.path, status = TaskStatus.VERIFYING,
+            totalBytes = data.size.toLong(), acceptRanges = true, etag = "\"a\"", downloadedBytes = data.size.toLong(), expectedHash = sha256(data),
+            filePath = File(dir, "f (1).bin").path))).single()
+        StorageDirs.partFile(dir.path, id).writeBytes(data)
+        db.tasks().saveProgress(id, listOf(com.tadaffuq.data.SegmentEntity(id, 0, 0, data.size - 1L, data.size.toLong())), data.size.toLong(), data.size.toLong(), "\"a\"", null, true, server.url("/a/f.bin").toString())
+        manager()
+        val t = waitFor(id, TaskStatus.COMPLETED, TaskStatus.FAILED)
+        assertEquals(t.errorCode, TaskStatus.COMPLETED, t.status)
+        assertEquals(true, t.hashOk)
+        assertArrayEquals(data, File(t.filePath!!).readBytes())
+        assertEquals("someone else's file", File(dir, "f.bin").readText())
+        assertFalse(StorageDirs.partFile(dir.path, id).exists())
+    }
+
+    /** rc3: موت بعد rename: نتيجة البصمة المحفوظة قبل rename تبقى بعد الاستعادة. */
+    @Test fun rc3_deathAfterRenameKeepsHashResult() = runBlocking {
+        val dir = tmp.newFolder("fin2")
+        val data = contents.getValue("a")
+        val dest = File(dir, "g.bin").apply { writeBytes(data) }
+        val id = db.tasks().insertAll(listOf(TaskEntity(url = server.url("/a/g.bin").toString(), fileName = "g.bin", dirPath = dir.path, status = TaskStatus.VERIFYING,
+            totalBytes = data.size.toLong(), expectedHash = sha256(data), hashOk = true, actualHash = sha256(data), filePath = dest.path))).single()
+        manager()
+        val t = waitFor(id, TaskStatus.COMPLETED, TaskStatus.FAILED, timeoutMs = 10_000)
+        assertEquals(TaskStatus.COMPLETED, t.status)
+        assertEquals(true, t.hashOk)
+        assertEquals(sha256(data), t.actualHash)
+        assertEquals(0, requests.get())
+    }
+
     /** P0-08: «Wi-Fi فقط» لكل مهمة يُطبَّق على المهمة العاملة عند التحول إلى بيانات الجوال. */
     @Test fun p0_08_perTaskWifiOnlyStopsOnCellular() = runBlocking {
         throttle = 400

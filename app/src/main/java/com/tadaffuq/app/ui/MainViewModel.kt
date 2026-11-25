@@ -55,9 +55,9 @@ class MainViewModel @Inject constructor(
 
     /** نسخ أو نقل إلى مجلد اختاره المستخدم عبر SAF (بطاقة SD أو USB أو غيرهما). */
     suspend fun copyToTree(t: TaskEntity, tree: android.net.Uri, move: Boolean) = withContext(Dispatchers.IO) {
+        if (move) { manager.moveToTree(t, tree.toString()); return@withContext }
         val f = t.filePath?.let(::File)?.takeIf { it.exists() } ?: error("missing")
-        val uri = com.tadaffuq.app.download.TaskFiles.copyToTree(ctx, f, tree.toString())
-        if (move) { f.delete(); db.tasks().update(t.copy(filePath = uri.toString())) }
+        com.tadaffuq.app.download.TaskFiles.copyToTree(ctx, f, tree.toString())
     }
     private fun <T> StateFlowOf(flow: kotlinx.coroutines.flow.Flow<T>, initial: T): StateFlow<T> =
         flow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initial)
@@ -85,6 +85,7 @@ class MainViewModel @Inject constructor(
     fun setPriority(id: Long, p: Int) = viewModelScope.launch { manager.setPriority(id, p) }
     fun setSpeedLimit(id: Long, bps: Long) = viewModelScope.launch { manager.setSpeedLimit(id, bps) }
     fun updateUrl(id: Long, url: String) = viewModelScope.launch { manager.updateUrl(id, url) }
+    fun setTree(id: Long, tree: String?) = viewModelScope.launch { manager.setTree(id, tree) }
 
     // ===== الملفات =====
 

@@ -62,6 +62,8 @@ data class Settings(
     val autoExtract: Boolean = false,
     /** مجلد SAF يُنقل إليه كل ملف بعد اكتماله (بطاقة SD أو USB أو مجلد آخر)، أو فارغ. */
     val moveToTree: String = "",
+    /** ترحيل لمرة واحدة: المهام غير المكتملة قبل rc4 تأخذ مجلد SAF العام وقت التحديث. */
+    val perTaskTreeMigrated: Boolean = false,
     /** نافذة زمنية يومية للتنزيل (مثلاً الليل). */
     val windowEnabled: Boolean = false,
     val windowStart: Int = 1,
@@ -145,6 +147,7 @@ class SettingsRepository(private val context: Context) {
         val rules = stringPreferencesKey("rulesJson")
         val autoExtract = booleanPreferencesKey("autoExtract")
         val moveTree = stringPreferencesKey("moveToTree")
+        val treeMigrated = booleanPreferencesKey("perTaskTreeMigrated")
         val wEnabled = booleanPreferencesKey("windowEnabled")
         val wStart = intPreferencesKey("windowStart")
         val wEnd = intPreferencesKey("windowEnd")
@@ -216,6 +219,7 @@ class SettingsRepository(private val context: Context) {
             p[K.rules] = s.rulesJson
             p[K.autoExtract] = s.autoExtract
             p[K.moveTree] = s.moveToTree
+            p[K.treeMigrated] = s.perTaskTreeMigrated
             p[K.wEnabled] = s.windowEnabled
             p[K.wStart] = s.windowStart.coerceIn(0, 23)
             p[K.wEnd] = s.windowEnd.coerceIn(0, 23)
@@ -281,6 +285,7 @@ class SettingsRepository(private val context: Context) {
             rulesJson = p[K.rules] ?: d.rulesJson,
             autoExtract = p[K.autoExtract] ?: d.autoExtract,
             moveToTree = p[K.moveTree] ?: d.moveToTree,
+            perTaskTreeMigrated = p[K.treeMigrated] ?: d.perTaskTreeMigrated,
             windowEnabled = p[K.wEnabled] ?: d.windowEnabled,
             windowStart = p[K.wStart] ?: d.windowStart,
             windowEnd = p[K.wEnd] ?: d.windowEnd,

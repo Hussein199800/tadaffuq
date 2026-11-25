@@ -320,7 +320,7 @@ S = {
 "tile_active_n": ("يعمل %1$d · اضغط لإضافة المنسوخ", "%1$d running · tap to add copied"), "tile_add_copied": ("إضافة الرابط المنسوخ", "Add copied link"),
 "clip_empty": ("لا يوجد رابط في الحافظة. انسخ رابطاً ثم اضغط البلاطة، أو الصقه هنا.", "No link on the clipboard. Copy one and tap the tile, or paste it here."),
 "sec_download": ("التحميل", "Downloading"), "save_folder": ("مجلد الحفظ", "Save folder"),
-"save_folder_desc": ("الافتراضي التنزيلات/تدفق. اختر مجلداً آخر (بطاقة SD أو USB) فيُنقل إليه كل ملف بعد اكتماله والتحقق منه.", "Default is Download/Tadaffuq. Pick another folder (SD card or USB) and each file moves there after it finishes and is verified."),
+"save_folder_desc": ("للتنزيلات الجديدة. كل ملف يُنقل إلى المجلد المختار بعد اكتماله؛ وتغييره لا يغيّر وجهة ما أُضيف قبله (تُغيَّر من تفاصيل المهمة).", "For new downloads. Each file moves to the chosen folder after it finishes; changing it doesn't affect downloads already added (change those from the task details)."),
 "reset_default": ("الافتراضي", "Default"),
 "max_connections_live_desc": ("لكل ملف، ويُطبَّق فوراً حتى على الجاري. الخادم قد يقبل أقل.", "Per file, applied immediately even to running ones. The server may accept fewer."),
 "sec_network_basic": ("الشبكة", "Network"),
@@ -365,6 +365,9 @@ S = {
 "tile_add_desc": ("المس البلاطة بعد نسخ رابط فتُفتح نافذة الإضافة. لا تقرأ الحافظة في الخلفية.", "Tap the tile after copying a link to open the add window. The clipboard is never read in the background."),
 "tile_add_done": ("أُضيفت البلاطة", "Tile added"),
 "tile_add_manual": ("اسحب لوحة الإعدادات السريعة للأسفل مرتين، واضغط «تعديل» (القلم)، ثم اسحب بلاطة «تدفّق» إلى اللوحة.", "Pull down Quick Settings twice, tap Edit (pencil), then drag the “Tadaffuq” tile into the panel."),
+"task_dest": ("الوجهة بعد الاكتمال: %1$s", "Destination after completion: %1$s"),
+"task_dest_default": ("التنزيلات/تدفق", "Download/Tadaffuq"),
+"task_dest_change": ("تغيير", "Change"),
 }
 PLURALS = {"notif_running": ({"zero":"لا تنزيلات","one":"يجري تنزيل ملف واحد","two":"يجري تنزيل ملفين","few":"يجري تنزيل %d ملفات","many":"يجري تنزيل %d ملفاً","other":"يجري تنزيل %d ملف"},
                              {"one":"Downloading %d file","other":"Downloading %d files"}),

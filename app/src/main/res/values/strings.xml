@@ -561,7 +561,7 @@
     <string name="clip_empty">لا يوجد رابط في الحافظة. انسخ رابطاً ثم اضغط البلاطة، أو الصقه هنا.</string>
     <string name="sec_download">التحميل</string>
     <string name="save_folder">مجلد الحفظ</string>
-    <string name="save_folder_desc">الافتراضي التنزيلات/تدفق. اختر مجلداً آخر (بطاقة SD أو USB) فيُنقل إليه كل ملف بعد اكتماله والتحقق منه.</string>
+    <string name="save_folder_desc">للتنزيلات الجديدة. كل ملف يُنقل إلى المجلد المختار بعد اكتماله؛ وتغييره لا يغيّر وجهة ما أُضيف قبله (تُغيَّر من تفاصيل المهمة).</string>
     <string name="reset_default">الافتراضي</string>
     <string name="max_connections_live_desc">لكل ملف، ويُطبَّق فوراً حتى على الجاري. الخادم قد يقبل أقل.</string>
     <string name="sec_network_basic">الشبكة</string>
@@ -633,6 +633,9 @@
     <string name="tile_add_desc">المس البلاطة بعد نسخ رابط فتُفتح نافذة الإضافة. لا تقرأ الحافظة في الخلفية.</string>
     <string name="tile_add_done">أُضيفت البلاطة</string>
     <string name="tile_add_manual">اسحب لوحة الإعدادات السريعة للأسفل مرتين، واضغط «تعديل» (القلم)، ثم اسحب بلاطة «تدفّق» إلى اللوحة.</string>
+    <string name="task_dest">الوجهة بعد الاكتمال: %1$s</string>
+    <string name="task_dest_default">التنزيلات/تدفق</string>
+    <string name="task_dest_change">تغيير</string>
     <plurals name="notif_running">
         <item quantity="zero">لا تنزيلات</item>
         <item quantity="one">يجري تنزيل ملف واحد</item>

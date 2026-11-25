@@ -561,7 +561,7 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="clip_empty">No link on the clipboard. Copy one and tap the tile, or paste it here.</string>
     <string name="sec_download">Downloading</string>
     <string name="save_folder">Save folder</string>
-    <string name="save_folder_desc">Default is Download/Tadaffuq. Pick another folder (SD card or USB) and each file moves there after it finishes and is verified.</string>
+    <string name="save_folder_desc">For new downloads. Each file moves to the chosen folder after it finishes; changing it doesn\'t affect downloads already added (change those from the task details).</string>
     <string name="reset_default">Default</string>
     <string name="max_connections_live_desc">Per file, applied immediately even to running ones. The server may accept fewer.</string>
     <string name="sec_network_basic">Network</string>
@@ -633,6 +633,9 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="tile_add_desc">Tap the tile after copying a link to open the add window. The clipboard is never read in the background.</string>
     <string name="tile_add_done">Tile added</string>
     <string name="tile_add_manual">Pull down Quick Settings twice, tap Edit (pencil), then drag the “Tadaffuq” tile into the panel.</string>
+    <string name="task_dest">Destination after completion: %1$s</string>
+    <string name="task_dest_default">Download/Tadaffuq</string>
+    <string name="task_dest_change">Change</string>
     <plurals name="notif_running">
         <item quantity="one">Downloading %d file</item>
         <item quantity="other">Downloading %d files</item>
