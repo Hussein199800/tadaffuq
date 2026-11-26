@@ -158,7 +158,7 @@ fun AdvancedSettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: ()
 
 /** صفحة «حول» بنمط سَيْل: الأيقونة والاسم والإصدار والوصف، وبطاقة المطوّر، وجدول المعلومات. */
 @Composable
-fun AboutScreen(padding: PaddingValues, onBack: () -> Unit) {
+fun AboutScreen(padding: PaddingValues, updates: @Composable () -> Unit = {}, onBack: () -> Unit) {
     val ctx = LocalContext.current
     val accent = T.extra.chartLine
     LazyColumn(contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp)) {
@@ -209,6 +209,7 @@ fun AboutScreen(padding: PaddingValues, onBack: () -> Unit) {
                 })
             }
         }
+        item { updates() }
         item { SectionHeader(stringResource(R.string.privacy)) }
         item { Card { Text(stringResource(R.string.privacy_text), style = MaterialTheme.typography.bodyMedium) } }
         item { SectionHeader(stringResource(R.string.licenses)) }

@@ -13,8 +13,8 @@ plugins {
 val gitSha: String = (System.getenv("GITHUB_SHA")?.take(7) ?: runCatching {
     providers.exec { commandLine("git", "rev-parse", "--short=7", "HEAD") }.standardOutput.asText.get().trim()
 }.getOrNull())?.ifBlank { null } ?: "local"
-val appVersionCode = 9
-val appVersionName = "1.0.1"
+val appVersionCode = 10
+val appVersionName = "1.1.0"
 base { archivesName.set("tadaffuq-$appVersionName-$appVersionCode-$gitSha") }
 
 android {
@@ -29,6 +29,19 @@ android {
         versionName = appVersionName
         buildConfigField("String", "GIT_SHA", "\"$gitSha\"")
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
+    }
+    // نسختان من الشيفرة نفسها: GitHub (فيها التحديث من داخل التطبيق وإذن التثبيت) وPlay (بدونهما:
+    // سياسة Google Play تمنع التحديث الذاتي خارج المتجر وإذن REQUEST_INSTALL_PACKAGES لهذا الغرض)
+    flavorDimensions += "dist"
+    productFlavors {
+        create("github") {
+            dimension = "dist"
+            buildConfigField("boolean", "SELF_UPDATE", "true")
+        }
+        create("play") {
+            dimension = "dist"
+            buildConfigField("boolean", "SELF_UPDATE", "false")
+        }
     }
     // APK لكل معمارية + APK شامل؛ وحزمة AAB تقسّم تلقائياً في Play
     splits {
@@ -139,7 +152,7 @@ dependencies {
 
 // SBOM بصيغة CycloneDX لمكتبات النسخة المنشورة فقط
 tasks.named<org.cyclonedx.gradle.CycloneDxTask>("cyclonedxBom") {
-    setIncludeConfigs(listOf("releaseRuntimeClasspath"))
+    setIncludeConfigs(listOf("githubReleaseRuntimeClasspath"))
     setProjectType("application")
     setOutputName("tadaffuq-sbom")
     setOutputFormat("json")

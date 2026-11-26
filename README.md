@@ -16,12 +16,12 @@
 
 ## البناء والاختبار
 ```bash
-./gradlew :engine:test :torrent:test :data:testDebugUnitTest :app:testDebugUnitTest   # 150 اختباراً
-./gradlew :app:assembleDebug                      # APK لكل معمارية + شامل
-./gradlew :app:assembleRelease                    # مصغّر بـ R8، موقّع إن وُجد المفتاح
-./gradlew :app:bundleRelease                      # AAB لـ Google Play (أمر منفصل)
+./gradlew :engine:test :torrent:test :data:testDebugUnitTest :app:testGithubDebugUnitTest
+./gradlew :app:assembleGithubDebug                # APK لكل معمارية + شامل (نسخة GitHub)
+./gradlew :app:assembleGithubRelease              # مصغّر بـ R8، موقّع إن وُجد المفتاح، بالتحديث من داخل التطبيق
+./gradlew :app:bundlePlayRelease                  # AAB لـ Google Play (بلا تحديث ذاتي؛ أمر منفصل)
 ./gradlew :app:cyclonedxBom                       # SBOM
-TADAFFUQ_SHOTS=$PWD/build/shots ./gradlew :app:testDebugUnitTest --tests '*ScreenshotTest*'
+TADAFFUQ_SHOTS=$PWD/build/shots ./gradlew :app:testGithubDebugUnitTest --tests '*ScreenshotTest*'
 ```
 يحتاج JDK 17+ وAndroid SDK 36 (`local.properties` → `sdk.dir`).
 

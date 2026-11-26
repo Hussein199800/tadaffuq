@@ -1,9 +1,17 @@
 name: تدفّق — حزم الإصدار
 
-# يدوي فقط: يبني APK وAAB موقّعين مع بصماتهما كملفات Artifacts.
-# لا ينشر في المتجر ولا ينشئ إصداراً على GitHub؛ ذلك بموافقة صاحب المشروع.
+# يدوي فقط: يبني APK (نسخة GitHub بالتحديث من داخل التطبيق) وAAB (نسخة Play) موقّعين مع بصماتهما.
+# لا ينشر في المتجر أبداً. إنشاء إصدار على GitHub (يقرؤه التحديث داخل التطبيق) فقط إن اختار صاحب المشروع «publish».
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "أنشئ إصدار GitHub بالوسم v<الإصدار> وأرفق الحزم (يصل التحديث للمستخدمين)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
   release:
@@ -15,7 +23,7 @@ jobs:
           distribution: temurin
           java-version: 21
       - name: Tests (quality gate)
-        run: chmod +x gradlew && ./gradlew :engine:test :torrent:test :data:testDebugUnitTest :app:testDebugUnitTest --no-daemon
+        run: chmod +x gradlew && ./gradlew :engine:test :torrent:test :data:testDebugUnitTest :app:testGithubDebugUnitTest --no-daemon
       - name: Prepare signing key
         id: sign
         env:
@@ -30,16 +38,26 @@ jobs:
           TADAFFUQ_KEYSTORE_PASSWORD: ${{ secrets.TADAFFUQ_KEYSTORE_PASSWORD }}
           TADAFFUQ_KEY_ALIAS: tadaffuq
         run: |
-          ./gradlew :app:assembleRelease :app:cyclonedxBom --no-daemon
-          ./gradlew :app:bundleRelease --no-daemon
+          ./gradlew :app:assembleGithubRelease :app:cyclonedxBom --no-daemon
+          ./gradlew :app:bundlePlayRelease --no-daemon
       - name: Collect and checksum
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/release/*.apk dist/
-          cp app/build/outputs/bundle/release/*.aab dist/
+          cp app/build/outputs/apk/github/release/*.apk dist/
+          cp app/build/outputs/bundle/playRelease/*.aab dist/
           cp app/build/reports/tadaffuq-sbom.json dist/
           cd dist && sha256sum * > SHA256SUMS && cat SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: tadaffuq-release
           path: dist/
+      - name: Publish GitHub release
+        if: ${{ inputs.publish }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(grep -oP 'val appVersionName = "\K[^"]+' app/build.gradle.kts)
+          TAG="v$VERSION"
+          NOTES=$(awk "/^## $VERSION /{f=1;next} /^## /{f=0} f" CHANGELOG.md)
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "::error::الإصدار $TAG موجود؛ ارفع رقم الإصدار أولاً"; exit 1; fi
+          gh release create "$TAG" dist/*.apk dist/SHA256SUMS dist/tadaffuq-sbom.json --target "$GITHUB_SHA" --title "تدفّق $VERSION" --notes "${NOTES:-تدفّق $VERSION}"

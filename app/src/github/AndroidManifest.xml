@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- نسخة GitHub فقط: التحديث من داخل التطبيق. نسخة Play لا تحمل هذا الإذن ولا المستقبل. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <application>
+        <receiver android:name=".update.UpdateInstallReceiver" android:exported="false" />
+    </application>
+</manifest>

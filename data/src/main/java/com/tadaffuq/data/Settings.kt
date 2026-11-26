@@ -94,6 +94,11 @@ data class Settings(
     val dynamicSplit: Boolean = true,
     /** الاستئناف التلقائي بعد الانقطاع وإعادة التشغيل. */
     val autoResume: Boolean = true,
+    /** نسخة GitHub: فحص تلقائي للتحديثات كل 12 ساعة عند فتح التطبيق. */
+    val autoUpdateCheck: Boolean = true,
+    val updateCheckedAt: Long = 0,
+    /** versionCode لإصدار أخفى المستخدم تنبيهه («لاحقاً»)؛ لا يُعرض مجدداً تلقائياً. */
+    val updateDismissedCode: Int = 0,
     /** محاولات إعادة الاتصال لكل جزء قبل الفشل، والانتظار الأولي (يتضاعف). */
     val maxRetries: Int = 8,
     val retryDelaySec: Int = 1,
@@ -172,6 +177,9 @@ class SettingsRepository(private val context: Context) {
         val smart = booleanPreferencesKey("smartTuning")
         val split = booleanPreferencesKey("dynamicSplit")
         val autoResume = booleanPreferencesKey("autoResume")
+        val autoUpdate = booleanPreferencesKey("autoUpdateCheck")
+        val updateAt = longPreferencesKey("updateCheckedAt")
+        val updateDismissed = intPreferencesKey("updateDismissedCode")
         val retries = intPreferencesKey("maxRetries")
         val retryDelay = intPreferencesKey("retryDelaySec")
         val sepMobile = booleanPreferencesKey("separateMobile")
@@ -246,6 +254,9 @@ class SettingsRepository(private val context: Context) {
             p[K.smart] = s.smartTuning
             p[K.split] = s.dynamicSplit
             p[K.autoResume] = s.autoResume
+            p[K.autoUpdate] = s.autoUpdateCheck
+            p[K.updateAt] = s.updateCheckedAt
+            p[K.updateDismissed] = s.updateDismissedCode
             p[K.retries] = s.maxRetries.coerceIn(0, 50)
             p[K.retryDelay] = s.retryDelaySec.coerceIn(1, 60)
             p[K.sepMobile] = s.separateMobile
@@ -314,6 +325,9 @@ class SettingsRepository(private val context: Context) {
             smartTuning = p[K.smart] ?: d.smartTuning,
             dynamicSplit = p[K.split] ?: d.dynamicSplit,
             autoResume = p[K.autoResume] ?: d.autoResume,
+            autoUpdateCheck = p[K.autoUpdate] ?: d.autoUpdateCheck,
+            updateCheckedAt = p[K.updateAt] ?: d.updateCheckedAt,
+            updateDismissedCode = p[K.updateDismissed] ?: d.updateDismissedCode,
             maxRetries = p[K.retries] ?: d.maxRetries,
             retryDelaySec = p[K.retryDelay] ?: d.retryDelaySec,
             separateMobile = p[K.sepMobile] ?: d.separateMobile,

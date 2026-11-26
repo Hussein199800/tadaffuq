@@ -11,7 +11,8 @@
 - لا وظائف وسائط متخصصة (بث، تشغيل، تحويل، ضغط).
 - الرخصة GPL-3.0-or-later: لا تُضاف مكتبة برخصة غير متوافقة (مثل UnRAR)؛ لهذا لا فك لـ RAR.
 - مفتاح التوقيع لا يُرفع: `keystore.properties` أو `TADAFFUQ_KEYSTORE`/`TADAFFUQ_KEYSTORE_PASSWORD`/`TADAFFUQ_KEY_ALIAS`.
-- قبل الرفع: `./gradlew :engine:test :app:testDebugUnitTest :app:assembleRelease`. لقطات الشاشة: `TADAFFUQ_SHOTS=$PWD/build/shots ./gradlew :app:testDebugUnitTest --tests '*ScreenshotTest*'` وراجعها بعينك.
+- نسختان (flavors): `github` (فيها التحديث من داخل التطبيق وإذن REQUEST_INSTALL_PACKAGES في `src/github`) و`play` (بدونهما، سياسة Google Play). لا تضف التحديث الذاتي أو الإذن إلى `main`.
+- قبل الرفع: `./gradlew :engine:test :torrent:test :app:testGithubDebugUnitTest :app:assembleGithubRelease :app:bundlePlayRelease`. لقطات الشاشة: `TADAFFUQ_SHOTS=$PWD/build/shots ./gradlew :app:testGithubDebugUnitTest --tests '*ScreenshotTest*'` وراجعها بعينك.
 - Maven Central يرد أحياناً بـ 429؛ مرآة Google مضافة أولاً في `settings.gradle.kts`.
 
 ## Working preferences

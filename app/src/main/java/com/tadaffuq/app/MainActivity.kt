@@ -44,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -78,6 +79,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     @Inject lateinit var manager: DownloadManager
+    @Inject lateinit var updater: com.tadaffuq.app.update.AppUpdater
     private val vm: MainViewModel by viewModels()
     private var pending by mutableStateOf<AddRequest?>(null)
     private var pendingTorrent by mutableStateOf<com.tadaffuq.app.ui.torrent.TorrentRequest?>(null)
@@ -121,6 +123,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // عاد المستخدم من إعداد «تثبيت التطبيقات غير المعروفة»: يكمل التثبيت تلقائياً إن سمح
+        (updater.state.value as? com.tadaffuq.app.update.UpdateState.NeedsPermission)?.let { updater.install(it.c, it.file) }
         // اقتراح الرابط المنسوخ فقط إن فعّله المستخدم؛ Android 10+ يسمح بقراءة الحافظة والتطبيق في المقدمة.
         if (vm.settings.value.suggestClipboard) window.decorView.post {
             val text = runCatching { getSystemService(ClipboardManager::class.java).primaryClip?.getItemAt(0)?.coerceToText(this)?.toString() }.getOrNull()
@@ -166,6 +170,26 @@ class MainActivity : AppCompatActivity() {
 
     /** لكل تبويب لونه: أيقونة مشبعة دائماً، وخلفية باستيل للمختار (لا كحلي ورمادي فقط). */
     private data class Tab(val route: String, val label: Int, val icon: ImageVector, val tint: com.tadaffuq.app.ui.components.Tint)
+
+    @Composable
+    private fun UpdateHost(dismissedCode: Int) {
+        if (!updater.enabled) return
+        val upd by updater.state.collectAsState()
+        // فحص تلقائي هادئ عند الفتح (كل 12 ساعة، ويحترم إعداد الإيقاف)
+        LaunchedEffect(Unit) { updater.check(manual = false) }
+        var closed by remember { mutableStateOf(false) }
+        val code = when (val s = upd) {
+            is com.tadaffuq.app.update.UpdateState.Available -> s.c.versionCode
+            is com.tadaffuq.app.update.UpdateState.Downloading, is com.tadaffuq.app.update.UpdateState.Verifying,
+            is com.tadaffuq.app.update.UpdateState.NeedsPermission, is com.tadaffuq.app.update.UpdateState.Installing,
+            is com.tadaffuq.app.update.UpdateState.Failed -> -1
+            else -> null
+        }
+        LaunchedEffect(upd) { if (upd is com.tadaffuq.app.update.UpdateState.Checking) closed = false }
+        // يظهر لكل إصدار جديد مرة، ودائماً بعد فحص يدوي أو أثناء التنزيل والتثبيت
+        val show = !closed && code != null && (code == -1 || code != dismissedCode || updater.lastCheckManual)
+        if (show) com.tadaffuq.app.update.UpdateDialog(updater) { closed = true }
+    }
 
     @Composable
     private fun App() {
@@ -269,7 +293,11 @@ class MainActivity : AppCompatActivity() {
                 composable("reports") { ReportsScreen(vm, padding) { nav.popBackStack() } }
                 composable("links") { LinksScreen(vm, padding, { nav.popBackStack() }) { add(it) } }
                 composable("trash") { TrashScreen(vm, padding) { nav.popBackStack() } }
-                composable("about") { AboutScreen(padding) { nav.popBackStack() } }
+                composable("about") {
+                    AboutScreen(padding, updates = {
+                        com.tadaffuq.app.update.UpdateCard(updater, settings) { v -> vm.updateSettings { it.copy(autoUpdateCheck = v) } }
+                    }) { nav.popBackStack() }
+                }
                 composable("rules") { com.tadaffuq.app.ui.more.RulesScreen(vm, padding) { nav.popBackStack() } }
                 composable("vault") { com.tadaffuq.app.ui.more.VaultScreen(vm, padding) { nav.popBackStack() } }
                 composable("dev") { com.tadaffuq.app.ui.more.DevScreen(padding, { nav.popBackStack() }) }
@@ -279,6 +307,7 @@ class MainActivity : AppCompatActivity() {
         }
         }
         }
+        UpdateHost(settings.updateDismissedCode)
         pending?.let { req -> AddSheet(req, onDismiss = { pending = null }, onTorrent = { m -> pending = null; pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = m) }) }
         pendingTorrent?.let { r -> com.tadaffuq.app.ui.torrent.TorrentAddSheet(r, onDismiss = { pendingTorrent = null }) }
     }
