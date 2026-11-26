@@ -130,7 +130,8 @@ fun FilesScreen(vm: MainViewModel, padding: PaddingValues) {
                 Chip(stringResource(R.string.f_all), category == null, { category = null })
                 FileCategory.entries.forEach { c ->
                     val n = files.count { FileNames.category(it.fileName) == c }
-                    if (n > 0) Chip(stringResource(categoryLabel(c)), category == c, { category = c }, n)
+                    if (n > 0) Chip(stringResource(categoryLabel(c)), category == c, { category = c }, n,
+                        tint = com.tadaffuq.app.ui.downloads.categoryTint(c).let { if (com.tadaffuq.app.ui.components.isDark()) it.dark else it.light })
                 }
             }
         }

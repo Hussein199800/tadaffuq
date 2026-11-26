@@ -16,6 +16,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.HourglassTop
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material.icons.rounded.Archive
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Description
@@ -60,6 +65,28 @@ fun categoryIcon(name: String): ImageVector = when (FileNames.category(name)) {
     FileCategory.OTHER -> Icons.Rounded.InsertDriveFile
 }
 
+/** لون الفئة: خلفية باستيل وأيقونة مشبعة تميّز نوع الملف بنظرة. */
+fun categoryTint(name: String): com.tadaffuq.app.ui.components.Tint = categoryTint(FileNames.category(name))
+
+fun categoryTint(c: FileCategory): com.tadaffuq.app.ui.components.Tint = when (c) {
+    FileCategory.COMPRESSED -> com.tadaffuq.app.ui.components.Tint.AMBER
+    FileCategory.DOCUMENTS -> com.tadaffuq.app.ui.components.Tint.BLUE
+    FileCategory.PROGRAMS -> com.tadaffuq.app.ui.components.Tint.VIOLET
+    FileCategory.DISK_IMAGES -> com.tadaffuq.app.ui.components.Tint.SLATE
+    FileCategory.MODELS -> com.tadaffuq.app.ui.components.Tint.CORAL
+    FileCategory.OTHER -> com.tadaffuq.app.ui.components.Tint.MINT
+}
+
+fun statusIcon(s: TaskStatus): ImageVector = when (s) {
+    TaskStatus.RUNNING -> Icons.Rounded.ArrowDownward
+    TaskStatus.VERIFYING -> Icons.Rounded.VerifiedUser
+    TaskStatus.COMPLETED -> Icons.Rounded.CheckCircle
+    TaskStatus.FAILED -> Icons.Rounded.ErrorOutline
+    TaskStatus.PAUSED -> Icons.Rounded.Pause
+    TaskStatus.WAITING_NETWORK -> Icons.Rounded.HourglassTop
+    TaskStatus.QUEUED -> Icons.Rounded.Schedule
+}
+
 @Composable
 fun statusColor(s: TaskStatus): Color = when (s) {
     TaskStatus.RUNNING, TaskStatus.VERIFYING -> T.extra.chartLine
@@ -91,31 +118,32 @@ fun TaskCard(
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else T.extra.card,
     ) {
         Column(
-            Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick, role = Role.Button).padding(if (compact) 10.dp else 14.dp),
+            Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick, role = Role.Button).padding(horizontal = if (compact) 10.dp else 12.dp, vertical = if (compact) 8.dp else 10.dp),
         ) {
-            Row(verticalAlignment = Alignment.Top) {
-                if (!compact) Box(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
-                    Icon(if (task.status == TaskStatus.COMPLETED) Icons.Rounded.CheckCircle else categoryIcon(task.fileName), null, tint = if (task.status == TaskStatus.COMPLETED) T.extra.success else MaterialTheme.colorScheme.onSecondaryContainer)
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (!compact) com.tadaffuq.app.ui.components.TintIcon(categoryIcon(task.fileName), categoryTint(task.fileName))
                 if (!compact) Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(task.fileName, style = MaterialTheme.typography.titleSmall)
-                    Spacer(Modifier.height(2.dp))
                     Text(subtitle(task, live, downloaded, total), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
                 }
                 if (!selectionMode) PrimaryAction(task.status, onPrimary)
             }
+            Spacer(Modifier.height(8.dp))
             if (task.status != TaskStatus.COMPLETED) {
-                Spacer(Modifier.height(10.dp))
                 val fraction = if (total > 0) downloaded.toFloat() / total else if (task.status == TaskStatus.RUNNING) null else 0f
                 if (showSegments && live != null && live.total > 0) com.tadaffuq.app.ui.components.SegmentMap(live.segments, live.total, color, com.tadaffuq.app.core.pr(R.plurals.segments_a11y, live.segments.size, live.segments.size))
                 else ProgressLine(fraction, color)
                 Spacer(Modifier.height(6.dp))
-                Row {
-                    Text(statusText(task.status), style = MaterialTheme.typography.labelMedium, color = color, modifier = Modifier.weight(1f))
-                    Text(Fmt.percent(downloaded, total), style = MaterialTheme.typography.labelMedium, color = T.extra.secondaryText)
-                }
-                if (task.status == TaskStatus.FAILED) Text(if (task.errorCode == "SPACE" && task.errorDetail == "COPY") stringResource(R.string.err_space_copy) else errorText(task.errorCode), style = MaterialTheme.typography.bodySmall, color = T.extra.danger)
+            }
+            // الحالة برمز ونص ولون معاً، والنسبة في الطرف المقابل
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                com.tadaffuq.app.ui.components.StatusChip(statusIcon(task.status), statusText(task.status), color)
+                Spacer(Modifier.weight(1f))
+                if (task.status != TaskStatus.COMPLETED && total > 0) Text(Fmt.percent(downloaded, total), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+            }
+            if (task.status != TaskStatus.COMPLETED) {
+                if (task.status == TaskStatus.FAILED) Text(if (task.errorCode == "SPACE" && task.errorDetail == "COPY") stringResource(R.string.err_space_copy) else errorText(task.errorCode), style = MaterialTheme.typography.bodySmall, color = T.extra.danger, modifier = Modifier.padding(top = 4.dp))
                 task.scheduledAt?.takeIf { it > System.currentTimeMillis() && task.status.isWaiting }?.let {
                     Text(com.tadaffuq.app.core.sr(R.string.schedule_at, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                 }

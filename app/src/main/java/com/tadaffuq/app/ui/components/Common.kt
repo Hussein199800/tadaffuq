@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.rounded.Dns
+import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -106,6 +109,7 @@ fun SettingRow(
     icon: ImageVector? = null,
     onClick: (() -> Unit)? = null,
     value: String? = null,
+    tint: Tint? = null,
     trailing: @Composable (() -> Unit)? = null,
 ) {
     Row(
@@ -114,7 +118,10 @@ fun SettingRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null) {
+        if (icon != null && tint != null) {
+            TintIcon(icon, tint)
+            Spacer(Modifier.width(12.dp))
+        } else if (icon != null) {
             Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(MaterialTheme.colorScheme.secondaryContainer), contentAlignment = Alignment.Center) {
                 Icon(icon, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
             }
@@ -180,9 +187,15 @@ fun EmptyState(icon: ImageVector, title: String, text: String, action: String? =
 fun ProgressLine(fraction: Float?, color: Color, modifier: Modifier = Modifier) {
     val track = MaterialTheme.colorScheme.surfaceVariant
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val anim = rememberInfiniteTransition(label = "indeterminate")
     val reduce = LocalReduceMotion.current
-    val shift by anim.animateFloat(0f, 1f, infiniteRepeatable(tween(1200, easing = LinearEasing)), label = "shift")
+    // حركة لا نهائية فقط لتقدم غير معروف؛ التقدم المعروف ينتقل بنعومة ثم يسكن (لا رسم في كل إطار)
+    val shift = if (fraction == null && !reduce) {
+        val anim = rememberInfiniteTransition(label = "indeterminate")
+        anim.animateFloat(0f, 1f, infiniteRepeatable(tween(1200, easing = LinearEasing)), label = "shift").value
+    } else 0f
+    val shown = if (fraction != null && !reduce)
+        androidx.compose.animation.core.animateFloatAsState(fraction.coerceIn(0f, 1f), tween(450), label = "progress").value
+    else (fraction ?: 0f).coerceIn(0f, 1f)
     Canvas(modifier.fillMaxWidth().height(6.dp)) {
         val r = CornerRadius(size.height / 2)
         drawRoundRect(track, cornerRadius = r)
@@ -193,7 +206,7 @@ fun ProgressLine(fraction: Float?, color: Color, modifier: Modifier = Modifier) 
             val x = (size.width + w) * shift - w
             drawRoundRect(color, topLeft = Offset(if (rtl) size.width - x - w else x, 0f), size = Size(w, size.height), cornerRadius = r)
         } else {
-            val w = size.width * (fraction ?: 0f).coerceIn(0f, 1f)
+            val w = size.width * shown
             if (w > 0) drawRoundRect(color, topLeft = Offset(if (rtl) size.width - w else 0f, 0f), size = Size(w, size.height), cornerRadius = r)
         }
     }
@@ -225,7 +238,7 @@ fun SpeedChart(history: List<Long>, modifier: Modifier = Modifier, description: 
     val fill = T.extra.chartFill
     val grid = T.extra.hairline
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    Canvas(modifier.fillMaxWidth().height(110.dp).semantics { contentDescription = description }) {
+    Canvas(modifier.fillMaxWidth().height(84.dp).semantics { contentDescription = description }) {
         val maxV = max(history.maxOrNull() ?: 0L, 1L).toFloat() * 1.15f
         for (i in 1..3) {
             val y = size.height * i / 4
@@ -257,51 +270,103 @@ fun SpeedChart(history: List<Long>, modifier: Modifier = Modifier, description: 
  */
 @Composable
 fun LiveScene(speedBps: Long, connections: Int, description: String, modifier: Modifier = Modifier) {
-    val active = speedBps > 0 && !LocalReduceMotion.current
-    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    // من 2.5 ثانية للعبور (بطيء) إلى 0.6 ثانية (سريع جداً)، بمقياس لوغاريتمي
+    val reduce = LocalReduceMotion.current
+    val flowing = speedBps > 0
+    val active = flowing && !reduce
+    // زمن عبور الجسيم: 2.6 ث (بطيء) حتى 0.7 ث (سريع جداً) بمقياس لوغاريتمي للسرعة الحقيقية
     val mbps = speedBps / 1_048_576.0
-    val period = if (!active) 0 else (2500 - (kotlin.math.ln(1 + mbps) / kotlin.math.ln(101.0) * 1900)).toInt().coerceIn(600, 2500)
-    val anim = rememberInfiniteTransition(label = "scene")
-    val t by anim.animateFloat(0f, 1f, infiniteRepeatable(tween(if (active) period else 1_000_000, easing = LinearEasing), RepeatMode.Restart), label = "flow")
+    val period = (2600 - (kotlin.math.ln(1 + mbps) / kotlin.math.ln(101.0) * 1900)).toInt().coerceIn(700, 2600)
+    // الحركة موجودة فقط أثناء تدفق بيانات فعلي؛ عند التوقف لا إطارات ولا رسم متكرر
+    val t = if (active) {
+        val anim = rememberInfiniteTransition(label = "scene")
+        anim.animateFloat(0f, 1f, infiniteRepeatable(tween(period, easing = LinearEasing), RepeatMode.Restart), label = "flow").value
+    } else 0f
+    val lanes = if (flowing) connections.coerceIn(1, 8) else 3
     val primary = MaterialTheme.colorScheme.primary
     val accent = T.extra.chartLine
     val idle = T.extra.hairline
-    Canvas(modifier.fillMaxWidth().height(64.dp).semantics { contentDescription = description }) {
-        val cy = size.height / 2
-        val margin = 28.dp.toPx()
-        val from = if (rtl) size.width - margin else margin
-        val to = if (rtl) margin else size.width - margin
-        // الخادم: ثلاث خانات
-        for (i in -1..1) drawRoundRect(primary, topLeft = Offset(from - 12.dp.toPx(), cy + i * 9.dp.toPx() - 3.5.dp.toPx()), size = Size(24.dp.toPx(), 7.dp.toPx()), cornerRadius = CornerRadius(2.dp.toPx()))
-        // الهاتف
-        drawRoundRect(primary, topLeft = Offset(to - 9.dp.toPx(), cy - 15.dp.toPx()), size = Size(18.dp.toPx(), 30.dp.toPx()), cornerRadius = CornerRadius(4.dp.toPx()), style = Stroke(2.dp.toPx()))
-        val start = from + (if (rtl) -1 else 1) * 20.dp.toPx()
-        val end = to - (if (rtl) -1 else 1) * 16.dp.toPx()
-        drawLine(idle, Offset(start, cy), Offset(end, cy), strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
-        if (!active) return@Canvas
-        val lanes = connections.coerceIn(1, 8)
-        val dots = 4
-        for (lane in 0 until lanes) {
-            val laneY = cy + (lane - (lanes - 1) / 2f) * 4.dp.toPx()
-            for (d in 0 until dots) {
-                val p = ((t + d.toFloat() / dots + lane * 0.13f) % 1f)
-                val x = start + (end - start) * p
-                drawCircle(accent.copy(alpha = 0.35f + 0.65f * (1 - kotlin.math.abs(p - 0.5f) * 2)), radius = 2.6.dp.toPx(), center = Offset(x, laneY))
+    val dark = isDark()
+    Row(modifier.fillMaxWidth().height(88.dp).semantics(mergeDescendants = true) { contentDescription = description }, verticalAlignment = Alignment.CenterVertically) {
+        // في RTL يكون الخادم يميناً والهاتف يساراً: البيانات «تتدفق» باتجاه القراءة
+        SceneNode(androidx.compose.material.icons.Icons.Rounded.Dns, primary, dark)
+        Canvas(Modifier.weight(1f).fillMaxSize()) {
+            val y0 = size.height / 2
+            val spread = minOf(size.height * 0.42f, 34.dp.toPx())
+            fun lanePoint(lane: Int, p: Float): Offset {
+                // منحنى تربيعي ينحني بعيداً عن المنتصف حسب ترتيب المسار
+                val k = if (lanes == 1) 0f else (lane - (lanes - 1) / 2f) / ((lanes - 1) / 2f)
+                val cy = y0 + k * spread
+                val x = size.width * p
+                val y = (1 - p) * (1 - p) * y0 + 2 * (1 - p) * p * cy + p * p * y0
+                return Offset(x, y)
+            }
+            for (lane in 0 until lanes) {
+                val path = Path()
+                for (i in 0..24) { val o = lanePoint(lane, i / 24f); if (i == 0) path.moveTo(o.x, o.y) else path.lineTo(o.x, o.y) }
+                drawPath(path, if (flowing) Brush.horizontalGradient(listOf(accent.copy(alpha = 0.35f), primary.copy(alpha = 0.35f))) else Brush.horizontalGradient(listOf(idle, idle)),
+                    style = Stroke(if (flowing) 2.dp.toPx() else 1.5.dp.toPx(), cap = StrokeCap.Round))
+            }
+            if (!active) {
+                // تقليل الحركة: تدفق ظاهر بنقاط ثابتة بلا حركة؛ والتوقف: لا شيء
+                if (flowing) for (lane in 0 until lanes) drawCircle(accent, 3.dp.toPx(), lanePoint(lane, 0.5f))
+                return@Canvas
+            }
+            for (lane in 0 until lanes) for (d in 0 until 3) {
+                val p = (t + d / 3f + lane * 0.137f) % 1f
+                // من الخادم إلى الهاتف: في LTR من اليسار، وفي RTL من اليمين (Canvas لا يُعكس تلقائياً)
+                val o = lanePoint(lane, if (layoutDirection == LayoutDirection.Rtl) 1f - p else p)
+                val fade = 1f - kotlin.math.abs(p - 0.5f) * 1.6f
+                drawCircle(accent.copy(alpha = 0.18f * fade), 7.dp.toPx(), o)
+                drawCircle(accent.copy(alpha = 0.5f + 0.5f * fade), 3.dp.toPx(), o)
             }
         }
+        SceneNode(androidx.compose.material.icons.Icons.Rounded.PhoneAndroid, accent, dark)
     }
 }
 
 @Composable
-fun Chip(text: String, selected: Boolean, onClick: () -> Unit, count: Int? = null) {
-    val bg = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-    val fg = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+private fun SceneNode(icon: ImageVector, c: Color, dark: Boolean) {
+    Box(Modifier.size(48.dp).clip(CircleShape).background(c.copy(alpha = if (dark) 0.18f else 0.12f)), contentAlignment = Alignment.Center) {
+        Icon(icon, null, tint = c, modifier = Modifier.size(24.dp))
+    }
+}
+
+/** قراءة بنظرة واحدة (بروح «طاقتي»): أيقونة بلون القسم، الرقم كبيراً، والتسمية خفيفة. */
+@Composable
+fun Kpi(icon: ImageVector, tint: Tint, label: String, value: String, modifier: Modifier = Modifier, emphasize: Boolean = false) {
+    val c = if (isDark()) tint.dark else tint.light
+    Column(modifier.clip(RoundedCornerShape(16.dp)).background(c.copy(alpha = if (isDark()) 0.12f else 0.07f)).padding(horizontal = 12.dp, vertical = 10.dp)) {
+        Icon(icon, null, tint = c, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.height(4.dp))
+        Text(value, style = if (emphasize) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium, color = if (emphasize) c else MaterialTheme.colorScheme.onSurface, maxLines = 1)
+        Text(label, style = MaterialTheme.typography.labelMedium, color = T.extra.secondaryText)
+    }
+}
+
+/** شارة حالة: رمز + نص + لون (لا يعتمد اللون وحده). */
+@Composable
+fun StatusChip(icon: ImageVector, text: String, color: Color) {
+    Row(
+        Modifier.clip(RoundedCornerShape(10.dp)).background(color.copy(alpha = if (isDark()) 0.16f else 0.10f)).padding(horizontal = 8.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(4.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium, color = color)
+    }
+}
+
+@Composable
+fun Chip(text: String, selected: Boolean, onClick: () -> Unit, count: Int? = null, tint: Color? = null) {
+    // بلون الحالة/الفئة: نقطة ملونة دائماً، وخلفية باستيل بلونها عند الاختيار
+    val bg = when { selected && tint != null -> tint.copy(alpha = if (isDark()) 0.22f else 0.14f); selected -> MaterialTheme.colorScheme.primary; else -> MaterialTheme.colorScheme.surfaceVariant }
+    val fg = when { selected && tint != null -> tint; selected -> MaterialTheme.colorScheme.onPrimary; else -> MaterialTheme.colorScheme.onSurface }
     Row(
         Modifier.heightIn(min = 40.dp).clip(RoundedCornerShape(20.dp)).background(bg).clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        if (tint != null) Box(Modifier.size(8.dp).clip(CircleShape).background(tint))
         Text(text, style = MaterialTheme.typography.labelLarge, color = fg)
         if (count != null && count > 0) Text(com.tadaffuq.app.core.Fmt.iso(count.toString()), style = MaterialTheme.typography.labelMedium, color = fg.copy(alpha = 0.75f), fontWeight = FontWeight.SemiBold)
     }
@@ -318,7 +383,7 @@ enum class Tint(val light: Color, val dark: Color) {
 }
 
 @Composable
-private fun isDark() = MaterialTheme.colorScheme.background.let { (it.red + it.green + it.blue) / 3f < 0.5f }
+fun isDark() = MaterialTheme.colorScheme.background.let { (it.red + it.green + it.blue) / 3f < 0.5f }
 
 /** أيقونة في مربع باستيل؛ ثابتة الحجم 40dp ومنطقة اللمس للصف كله. */
 @Composable

@@ -1,5 +1,13 @@
 package com.tadaffuq.app.ui.home
 
+import com.tadaffuq.app.ui.components.Tint
+import com.tadaffuq.app.ui.components.Kpi
+import androidx.compose.material.icons.rounded.SignalCellularAlt
+import androidx.compose.material.icons.rounded.Wifi
+import androidx.compose.material.icons.rounded.DataUsage
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Downloading
+import androidx.compose.material.icons.rounded.Speed
 import com.tadaffuq.app.core.sr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -79,29 +87,30 @@ fun HomeScreen(vm: MainViewModel, clipboardLink: String?, onAdd: (String?) -> Un
         }
         item {
             Card {
-                Row(Modifier.fillMaxWidth()) {
-                    StatTile(stringResource(R.string.speed_now), Fmt.speed(speed), Modifier.weight(1f), accent = MaterialTheme.colorScheme.secondary)
-                    StatTile(stringResource(R.string.active_n), Fmt.iso(running.size.toString()), Modifier.weight(0.7f))
-                    StatTile(stringResource(R.string.waiting_n), Fmt.iso(waiting.toString()), Modifier.weight(0.7f))
+                // ثلاث قراءات حقيقية بنظرة واحدة، والسرعة أبرزها
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Kpi(Icons.Rounded.Speed, Tint.BLUE, stringResource(R.string.speed_now), Fmt.speed(speed), Modifier.weight(1.4f), emphasize = true)
+                    Kpi(Icons.Rounded.Downloading, Tint.MINT, stringResource(R.string.active_n), Fmt.iso(running.size.toString()), Modifier.weight(1f))
+                    Kpi(Icons.Rounded.Schedule, Tint.AMBER, stringResource(R.string.waiting_n), Fmt.iso(waiting.toString()), Modifier.weight(1f))
                 }
-                hold?.let { Text(holdText(it), style = MaterialTheme.typography.bodySmall, color = T.extra.warning, modifier = Modifier.padding(top = 4.dp)) }
-                Spacer(Modifier.height(10.dp))
-                SpeedChart(history, description = sr(R.string.chart_a11y, Fmt.speed(speed)))
-                Text(stringResource(R.string.chart_caption), style = MaterialTheme.typography.labelSmall, color = T.extra.secondaryText)
+                hold?.let { Text(holdText(it), style = MaterialTheme.typography.bodySmall, color = T.extra.warning, modifier = Modifier.padding(top = 8.dp)) }
                 if (settings.showLiveScene) {
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
                     LiveScene(speed, connections, com.tadaffuq.app.core.pr(R.plurals.scene_a11y, connections, connections))
                 }
+                Spacer(Modifier.height(6.dp))
+                SpeedChart(history, description = sr(R.string.chart_a11y, Fmt.speed(speed)))
+                Text(stringResource(R.string.chart_caption), style = MaterialTheme.typography.labelSmall, color = T.extra.secondaryText)
             }
         }
         item {
             Card {
                 Text(stringResource(R.string.today_usage), style = MaterialTheme.typography.titleSmall)
-                Spacer(Modifier.height(6.dp))
-                Row(Modifier.fillMaxWidth()) {
-                    StatTile(stringResource(R.string.total), Fmt.bytes(todayRows.sumOf { it.bytes }), Modifier.weight(1f))
-                    StatTile("Wi-Fi", Fmt.bytes(todayRows.filter { it.net == NetKind.WIFI }.sumOf { it.bytes }), Modifier.weight(1f))
-                    StatTile(stringResource(R.string.mobile_data), Fmt.bytes(todayRows.filter { it.net == NetKind.CELLULAR }.sumOf { it.bytes }), Modifier.weight(1f))
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Kpi(Icons.Rounded.DataUsage, Tint.SLATE, stringResource(R.string.total), Fmt.bytes(todayRows.sumOf { it.bytes }), Modifier.weight(1f))
+                    Kpi(Icons.Rounded.Wifi, Tint.MINT, "Wi-Fi", Fmt.bytes(todayRows.filter { it.net == NetKind.WIFI }.sumOf { it.bytes }), Modifier.weight(1f))
+                    Kpi(Icons.Rounded.SignalCellularAlt, Tint.CORAL, stringResource(R.string.mobile_data), Fmt.bytes(todayRows.filter { it.net == NetKind.CELLULAR }.sumOf { it.bytes }), Modifier.weight(1f))
                 }
             }
         }

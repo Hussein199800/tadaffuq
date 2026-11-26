@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
@@ -162,18 +164,19 @@ class MainActivity : AppCompatActivity() {
         pending = req
     }
 
-    private data class Tab(val route: String, val label: Int, val icon: ImageVector)
+    /** لكل تبويب لونه: أيقونة مشبعة دائماً، وخلفية باستيل للمختار (لا كحلي ورمادي فقط). */
+    private data class Tab(val route: String, val label: Int, val icon: ImageVector, val tint: com.tadaffuq.app.ui.components.Tint)
 
     @Composable
     private fun App() {
         val nav = rememberNavController()
         val settings by vm.settings.collectAsState()
         val tabs = listOf(
-            Tab("home", R.string.tab_home, Icons.Rounded.Home),
-            Tab("browser", R.string.tab_browser, Icons.Rounded.Language),
-            Tab("downloads", R.string.tab_downloads, Icons.Rounded.Download),
-            Tab("files", R.string.tab_files, Icons.Rounded.Folder),
-            Tab("more", R.string.tab_more, Icons.Rounded.MoreHoriz),
+            Tab("home", R.string.tab_home, Icons.Rounded.Home, com.tadaffuq.app.ui.components.Tint.BLUE),
+            Tab("browser", R.string.tab_browser, Icons.Rounded.Language, com.tadaffuq.app.ui.components.Tint.VIOLET),
+            Tab("downloads", R.string.tab_downloads, Icons.Rounded.Download, com.tadaffuq.app.ui.components.Tint.MINT),
+            Tab("files", R.string.tab_files, Icons.Rounded.Folder, com.tadaffuq.app.ui.components.Tint.AMBER),
+            Tab("more", R.string.tab_more, Icons.Rounded.MoreHoriz, com.tadaffuq.app.ui.components.Tint.CORAL),
         )
         val entry by nav.currentBackStackEntryAsState()
         val route = entry?.destination?.route
@@ -198,10 +201,15 @@ class MainActivity : AppCompatActivity() {
             },
         ) {
             tabs.forEach { t ->
+                val c = if (com.tadaffuq.app.ui.components.isDark()) t.tint.dark else t.tint.light
                 androidx.compose.material3.NavigationRailItem(
                     selected = tabRoute == t.route, onClick = { go(t.route) },
                     icon = { Icon(t.icon, null) },
                     label = { Text(stringResource(t.label), style = MaterialTheme.typography.labelSmall) },
+                    colors = androidx.compose.material3.NavigationRailItemDefaults.colors(
+                        selectedIconColor = c, selectedTextColor = c, indicatorColor = c.copy(alpha = 0.16f),
+                        unselectedIconColor = c.copy(alpha = 0.72f), unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
                 )
             }
         }
@@ -211,11 +219,16 @@ class MainActivity : AppCompatActivity() {
             bottomBar = {
                 if (!wide) NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
                     tabs.forEach { t ->
+                        val c = if (com.tadaffuq.app.ui.components.isDark()) t.tint.dark else t.tint.light
                         NavigationBarItem(
                             selected = tabRoute == t.route,
                             onClick = { go(t.route) },
                             icon = { Icon(t.icon, null) },
                             label = { Text(stringResource(t.label), style = MaterialTheme.typography.labelSmall) },
+                            colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                                selectedIconColor = c, selectedTextColor = c, indicatorColor = c.copy(alpha = 0.16f),
+                                unselectedIconColor = c.copy(alpha = 0.72f), unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                         )
                     }
                 }
@@ -230,9 +243,17 @@ class MainActivity : AppCompatActivity() {
                 )
             },
         ) { inner ->
-            val padding = PaddingValues(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(), bottom = inner.calculateBottomPadding())
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-            NavHost(nav, startDestination = "home", modifier = Modifier.fillMaxSize().then(if (wide && route != "browser") Modifier.widthIn(max = 840.dp) else Modifier)) {
+            // الحاوية نفسها تبتعد عن شريط الحالة وفتحة الكاميرا (الأفقي)، فلا يمرّ المحتوى تحتها عند التمرير
+            val padding = PaddingValues(top = 0.dp, bottom = inner.calculateBottomPadding())
+            Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.only(androidx.compose.foundation.layout.WindowInsetsSides.Top + androidx.compose.foundation.layout.WindowInsetsSides.Horizontal)), contentAlignment = Alignment.TopCenter) {
+            val motion = !com.tadaffuq.app.ui.components.LocalReduceMotion.current
+            NavHost(nav, startDestination = "home", modifier = Modifier.fillMaxSize().then(if (wide && route != "browser") Modifier.widthIn(max = 840.dp) else Modifier),
+                // انتقالات قصيرة (≤220 ملّي ث) لا تؤخر الاستجابة؛ تختفي مع «تقليل الحركة»
+                enterTransition = { if (motion) androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(200)) + androidx.compose.animation.scaleIn(androidx.compose.animation.core.tween(220), initialScale = 0.97f) else androidx.compose.animation.EnterTransition.None },
+                exitTransition = { if (motion) androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120)) else androidx.compose.animation.ExitTransition.None },
+                popEnterTransition = { if (motion) androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(200)) + androidx.compose.animation.scaleIn(androidx.compose.animation.core.tween(220), initialScale = 1.03f) else androidx.compose.animation.EnterTransition.None },
+                popExitTransition = { if (motion) androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(120)) else androidx.compose.animation.ExitTransition.None },
+            ) {
                 composable("home") {
                     HomeScreen(vm, clipboardLink, onAdd = { link -> clipboardLink = null; add(AddRequest(link.orEmpty())) }, onOpenDownloads = { go("downloads") }, padding = padding)
                 }

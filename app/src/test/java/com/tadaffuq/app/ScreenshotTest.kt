@@ -38,6 +38,9 @@ import com.tadaffuq.engine.Snapshot
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -149,4 +152,31 @@ class ScreenshotTest {
         val segs = (0 until 8).map { i -> SegmentState(i, i * total / 8, (i + 1) * total / 8 - 1, (total / 8) * (8 - i) / 9) }
         com.tadaffuq.app.ui.downloads.TaskDetailContent(t, Snapshot(segs.sumOf { it.downloaded }, total, 7_400_000, 6_100_000, 9_800_000, 412, 8, segs), vm) {}
     }
+
+    // مصفوفة الصقل النهائي: الثيمات الأربعة × فاتح/داكن، وأفقي وخط كبير وإنجليزي، والمشهد الحي نشطاً وخاملاً
+    @Test fun m_home_navy_mint_light() = shoot("m_home_navy_mint_light", true, false, palette = com.tadaffuq.data.Palette.NAVY_MINT) { HomeScreen(vm, null, {}, {}, pad) }
+    @Test fun m_downloads_navy_mint_light() = shoot("m_downloads_navy_mint_light", true, false, palette = com.tadaffuq.data.Palette.NAVY_MINT) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_home_navy_mint_dark() = shoot("m_home_navy_mint_dark", true, true, palette = com.tadaffuq.data.Palette.NAVY_MINT) { HomeScreen(vm, null, {}, {}, pad) }
+    @Test fun m_downloads_navy_mint_dark() = shoot("m_downloads_navy_mint_dark", true, true, palette = com.tadaffuq.data.Palette.NAVY_MINT) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_home_green_gold_light() = shoot("m_home_green_gold_light", true, false, palette = com.tadaffuq.data.Palette.GREEN_GOLD) { HomeScreen(vm, null, {}, {}, pad) }
+    @Test fun m_downloads_green_gold_light() = shoot("m_downloads_green_gold_light", true, false, palette = com.tadaffuq.data.Palette.GREEN_GOLD) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_home_green_gold_dark() = shoot("m_home_green_gold_dark", true, true, palette = com.tadaffuq.data.Palette.GREEN_GOLD) { HomeScreen(vm, null, {}, {}, pad) }
+    @Test fun m_downloads_green_gold_dark() = shoot("m_downloads_green_gold_dark", true, true, palette = com.tadaffuq.data.Palette.GREEN_GOLD) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_home_orange_violet_light() = shoot("m_home_orange_violet_light", true, false, palette = com.tadaffuq.data.Palette.ORANGE_VIOLET) { HomeScreen(vm, null, {}, {}, pad) }
+    @Test fun m_downloads_orange_violet_light() = shoot("m_downloads_orange_violet_light", true, false, palette = com.tadaffuq.data.Palette.ORANGE_VIOLET) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_home_orange_violet_dark() = shoot("m_home_orange_violet_dark", true, true, palette = com.tadaffuq.data.Palette.ORANGE_VIOLET) { HomeScreen(vm, null, {}, {}, pad) }
+    @Test fun m_downloads_orange_violet_dark() = shoot("m_downloads_orange_violet_dark", true, true, palette = com.tadaffuq.data.Palette.ORANGE_VIOLET) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_home_ivory_black_light() = shoot("m_home_ivory_black_light", true, false, palette = com.tadaffuq.data.Palette.IVORY_BLACK) { HomeScreen(vm, null, {}, {}, pad) }
+    @Test fun m_downloads_ivory_black_light() = shoot("m_downloads_ivory_black_light", true, false, palette = com.tadaffuq.data.Palette.IVORY_BLACK) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_home_ivory_black_dark() = shoot("m_home_ivory_black_dark", true, true, palette = com.tadaffuq.data.Palette.IVORY_BLACK) { HomeScreen(vm, null, {}, {}, pad) }
+    @Test fun m_downloads_ivory_black_dark() = shoot("m_downloads_ivory_black_dark", true, true, palette = com.tadaffuq.data.Palette.IVORY_BLACK) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_files_light() = shoot("m_files_light", true, false) { FilesScreen(vm, pad) }
+    @Test fun m_more_light() = shoot("m_more_light", true, false) { MoreScreen(pad) {} }
+    @Test fun m_scene_light() = shoot("m_scene_light", true, false) { androidx.compose.foundation.layout.Column(Modifier.padding(16.dp)) { com.tadaffuq.app.ui.components.LiveScene(7_400_000, 8, "scene"); androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp)); com.tadaffuq.app.ui.components.LiveScene(0, 0, "idle") } }
+    @Test fun m_files_dark() = shoot("m_files_dark", true, true) { FilesScreen(vm, pad) }
+    @Test fun m_more_dark() = shoot("m_more_dark", true, true) { MoreScreen(pad) {} }
+    @Test fun m_scene_dark() = shoot("m_scene_dark", true, true) { androidx.compose.foundation.layout.Column(Modifier.padding(16.dp)) { com.tadaffuq.app.ui.components.LiveScene(7_400_000, 8, "scene"); androidx.compose.foundation.layout.Spacer(Modifier.height(16.dp)); com.tadaffuq.app.ui.components.LiveScene(0, 0, "idle") } }
+    @Test @org.robolectric.annotation.Config(qualifiers = "w891dp-h411dp-xxhdpi") fun m_downloads_land() = shoot("m_downloads_land", true, false) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_downloads_large() = shoot("m_downloads_large", true, false, textSize = com.tadaffuq.data.TextSize.LARGE) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun m_downloads_en_light() = shoot("m_downloads_en_light", false, false) { DownloadsScreen(vm, {}, pad, tvm) }
 }

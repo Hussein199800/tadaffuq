@@ -99,7 +99,16 @@ fun DownloadsScreen(vm: MainViewModel, onAdd: () -> Unit, padding: PaddingValues
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Filter.entries.forEach { f ->
                     if (f == Filter.TORRENT && torrents.isEmpty()) return@forEach
-                    Chip(stringResource(f.label), filter == f, { filter = f }, count = (if (f == Filter.TORRENT) torrents.size else tasks.count { f.match(it.status) }).takeIf { f != Filter.ALL })
+                    Chip(stringResource(f.label), filter == f, { filter = f }, count = (if (f == Filter.TORRENT) torrents.size else tasks.count { f.match(it.status) }).takeIf { f != Filter.ALL },
+                        tint = when (f) {
+                            Filter.ALL -> null
+                            Filter.ACTIVE -> statusColor(TaskStatus.RUNNING)
+                            Filter.WAITING -> statusColor(TaskStatus.WAITING_NETWORK)
+                            Filter.COMPLETED -> statusColor(TaskStatus.COMPLETED)
+                            Filter.PAUSED -> statusColor(TaskStatus.PAUSED)
+                            Filter.FAILED -> statusColor(TaskStatus.FAILED)
+                            Filter.TORRENT -> if (com.tadaffuq.app.ui.components.isDark()) com.tadaffuq.app.ui.components.Tint.VIOLET.dark else com.tadaffuq.app.ui.components.Tint.VIOLET.light
+                        })
                 }
             }
         }

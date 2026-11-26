@@ -92,7 +92,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
             if (s != null && s.etaSeconds >= 0) append(" · ").append(ctx.getString(R.string.eta, Fmt.duration(s.etaSeconds)))
         }
         return NotificationCompat.Builder(ctx, CH_ACTIVE)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_notification).setColor(BRAND_COLOR)
             .setContentTitle(title)
             .setContentText("$line1 · $line2")
             .setStyle(NotificationCompat.BigTextStyle().bigText("$line1\n$line2"))
@@ -111,7 +111,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         if (!canPost()) return
         val pct = if (t.totalBytes > 0) (t.downloadedBytes * 100 / t.totalBytes).toInt() else 0
         nm.notify(taskId(t.id), NotificationCompat.Builder(ctx, CH_ACTIVE)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_notification).setColor(BRAND_COLOR)
             .setContentTitle(t.fileName)
             .setContentText(ctx.getString(R.string.st_paused) + " · " + Fmt.bytes(t.downloadedBytes) + " / " + Fmt.bytes(t.totalBytes))
             .setProgress(100, pct, false)
@@ -150,7 +150,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
             if (hold != null) append(" · ").append(ctx.getString(R.string.notif_held))
         }
         return NotificationCompat.Builder(ctx, CH_ACTIVE)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_notification).setColor(BRAND_COLOR)
             .setContentTitle(title)
             .setContentText(text)
             .setOnlyAlertOnce(true)
@@ -181,7 +181,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         nm.notify(
             (DONE_BASE + t.id).toInt(),
             NotificationCompat.Builder(ctx, doneChannel)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(R.drawable.ic_notification).setColor(BRAND_COLOR)
                 .setContentTitle(ctx.getString(R.string.notif_done, t.fileName))
                 .setContentText(text)
                 .setAutoCancel(true)
@@ -196,7 +196,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         nm.notify(
             (DONE_BASE + 500_000 + name.hashCode() % 100_000).toInt(),
             NotificationCompat.Builder(ctx, doneChannel)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(R.drawable.ic_notification).setColor(BRAND_COLOR)
                 .setContentTitle(ctx.getString(R.string.notif_done, name))
                 .setContentText(ctx.getString(R.string.torrent_done_text))
                 .setAutoCancel(true)
@@ -210,7 +210,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         nm.notify(
             (DONE_BASE + t.id).toInt(),
             NotificationCompat.Builder(ctx, doneChannel)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(R.drawable.ic_notification).setColor(BRAND_COLOR)
                 .setContentTitle(ctx.getString(R.string.notif_failed, t.fileName))
                 .setContentText(ctx.getString(R.string.notif_failed_text))
                 .setAutoCancel(true)
@@ -226,7 +226,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         nm.notify(
             RESUME_ID,
             NotificationCompat.Builder(ctx, doneChannel)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(R.drawable.ic_notification).setColor(BRAND_COLOR)
                 .setContentTitle(ctx.getString(R.string.notif_tap_resume))
                 .setContentText(ctx.getString(R.string.notif_tap_resume_text))
                 .setAutoCancel(true)
@@ -240,7 +240,7 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
         nm.notify(
             RESUME_ID,
             NotificationCompat.Builder(ctx, doneChannel)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(R.drawable.ic_notification).setColor(BRAND_COLOR)
                 .setContentTitle(ctx.getString(R.string.notif_timeout))
                 .setContentText(ctx.getString(R.string.notif_tap_resume_text))
                 .setAutoCancel(true)
@@ -250,6 +250,8 @@ class Notifier @Inject constructor(@ApplicationContext private val ctx: Context)
     }
 
     companion object {
+        /** لون هوية تدفّق (النعناعي الغامق) لأيقونة الإشعار وشريطه؛ مقروء على الفاتح والداكن. */
+        const val BRAND_COLOR = 0xFF0B7F63.toInt()
         const val CH_ACTIVE = "active"
         const val CH_DONE = "done"
         const val FG_ID = 1

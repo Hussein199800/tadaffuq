@@ -87,25 +87,25 @@ fun MoreScreen(padding: PaddingValues, open: (String) -> Unit) {
         item { LargeTitle(stringResource(R.string.tab_more)) }
         item {
             Card(padding = PaddingValues(vertical = 4.dp)) {
-                SettingRow(stringResource(R.string.settings), stringResource(R.string.settings_desc), Icons.Rounded.Settings, onClick = { open("settings") })
+                SettingRow(stringResource(R.string.settings), stringResource(R.string.settings_desc), Icons.Rounded.Settings, tint = com.tadaffuq.app.ui.components.Tint.BLUE, onClick = { open("settings") })
                 Hairline()
-                SettingRow(stringResource(R.string.reports), stringResource(R.string.reports_desc), Icons.Rounded.BarChart, onClick = { open("reports") })
+                SettingRow(stringResource(R.string.reports), stringResource(R.string.reports_desc), Icons.Rounded.BarChart, tint = com.tadaffuq.app.ui.components.Tint.VIOLET, onClick = { open("reports") })
                 Hairline()
-                SettingRow(stringResource(R.string.link_hub), stringResource(R.string.link_hub_desc), Icons.Rounded.Link, onClick = { open("links") })
+                SettingRow(stringResource(R.string.link_hub), stringResource(R.string.link_hub_desc), Icons.Rounded.Link, tint = com.tadaffuq.app.ui.components.Tint.MINT, onClick = { open("links") })
                 Hairline()
-                SettingRow(stringResource(R.string.rules), stringResource(R.string.rules_desc), Icons.Rounded.Rule, onClick = { open("rules") })
+                SettingRow(stringResource(R.string.rules), stringResource(R.string.rules_desc), Icons.Rounded.Rule, tint = com.tadaffuq.app.ui.components.Tint.AMBER, onClick = { open("rules") })
                 Hairline()
-                SettingRow(stringResource(R.string.vault), stringResource(R.string.vault_desc), Icons.Rounded.Lock, onClick = { open("vault") })
+                SettingRow(stringResource(R.string.vault), stringResource(R.string.vault_desc), Icons.Rounded.Lock, tint = com.tadaffuq.app.ui.components.Tint.CORAL, onClick = { open("vault") })
                 Hairline()
-                SettingRow(stringResource(R.string.backup), stringResource(R.string.backup_desc), Icons.Rounded.Backup, onClick = { open("backup") })
+                SettingRow(stringResource(R.string.backup), stringResource(R.string.backup_desc), Icons.Rounded.Backup, tint = com.tadaffuq.app.ui.components.Tint.BLUE, onClick = { open("backup") })
                 Hairline()
-                SettingRow(stringResource(R.string.dev), stringResource(R.string.dev_desc), Icons.Rounded.Code, onClick = { open("dev") })
+                SettingRow(stringResource(R.string.dev), stringResource(R.string.dev_desc), Icons.Rounded.Code, tint = com.tadaffuq.app.ui.components.Tint.SLATE, onClick = { open("dev") })
                 Hairline()
-                SettingRow(stringResource(R.string.rpc), stringResource(R.string.rpc_desc), Icons.Rounded.Lan, onClick = { open("rpc") })
+                SettingRow(stringResource(R.string.rpc), stringResource(R.string.rpc_desc), Icons.Rounded.Lan, tint = com.tadaffuq.app.ui.components.Tint.VIOLET, onClick = { open("rpc") })
                 Hairline()
-                SettingRow(stringResource(R.string.trash), stringResource(R.string.trash_desc), Icons.Rounded.DeleteOutline, onClick = { open("trash") })
+                SettingRow(stringResource(R.string.trash), stringResource(R.string.trash_desc), Icons.Rounded.DeleteOutline, tint = com.tadaffuq.app.ui.components.Tint.AMBER, onClick = { open("trash") })
                 Hairline()
-                SettingRow(stringResource(R.string.about), stringResource(R.string.about_desc), Icons.Rounded.Info, onClick = { open("about") })
+                SettingRow(stringResource(R.string.about), stringResource(R.string.about_desc), Icons.Rounded.Info, tint = com.tadaffuq.app.ui.components.Tint.MINT, onClick = { open("about") })
             }
         }
     }
