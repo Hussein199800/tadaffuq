@@ -138,3 +138,74 @@ class UsageMeterTest {
         db.close()
     }
 }
+
+/** RC4: سحب إذن مجلد SAF أو نسخة منشورة لا تطابق البصمة: لا حذف للأصل ولا سجل مضلل. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], application = android.app.Application::class)
+class PublishSafetyTest {
+    @get:Rule val tmp = TemporaryFolder()
+    private val ctx: Context = ApplicationProvider.getApplicationContext()
+    private val data = Random(31).nextBytes(80_000)
+
+    private fun task(db: AppDatabase, local: File, hash: String? = null) = runBlocking {
+        db.tasks().get(db.tasks().insertAll(listOf(TaskEntity(url = "https://x/a.bin", fileName = local.name, dirPath = local.parent, status = TaskStatus.COMPLETED,
+            filePath = local.path, totalBytes = data.size.toLong(), expectedHash = hash))).single())!!
+    }
+
+    @Test fun revokedFolderKeepsOriginal() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
+        val local = File(tmp.newFolder(), "a.bin").apply { writeBytes(data) }
+        val t = task(db, local)
+        val revoked = object : PublishTarget {
+            override fun create(name: String, mime: String): String = throw SecurityException("Permission Denial: no persistable grant")
+            override fun write(id: String, src: File) = Unit
+            override fun length(id: String) = 0L
+            override fun delete(id: String) = true
+        }
+        try { Publisher(db.tasks()).publish(t, local, revoked); fail() } catch (e: Publisher.PublishFailed) { assertTrue(e.cause is SecurityException) }
+        val after = db.tasks().get(t.id)!!
+        assertEquals(local.path, after.filePath); assertNull(after.publishUri); assertArrayEquals(data, local.readBytes())
+        db.close()
+    }
+
+    /** النسخة المنشورة تُقرأ وتُطابق بالبصمة قبل حذف الأصل؛ نسخة تالفة بالحجم نفسه تُرفض. */
+    @Test fun corruptedPublishedCopyIsRejected() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
+        val local = File(tmp.newFolder(), "b.bin").apply { writeBytes(data) }
+        val sha = java.security.MessageDigest.getInstance("SHA-256").digest(data).joinToString("") { "%02x".format(it) }
+        val t = task(db, local, sha)
+        val dir = tmp.newFolder()
+        val corrupting = object : PublishTarget {
+            override fun create(name: String, mime: String) = File(dir, name).apply { createNewFile() }.path
+            override fun write(id: String, src: File) { File(id).writeBytes(src.readBytes().also { it[100] = (it[100] + 1).toByte() }) }
+            override fun length(id: String) = File(id).length()
+            override fun delete(id: String) = File(id).delete()
+            override fun open(id: String) = File(id).inputStream()
+        }
+        try { Publisher(db.tasks()).publish(t, local, corrupting); fail("corrupted copy accepted") } catch (e: Publisher.PublishFailed) { }
+        assertTrue(local.exists()); assertTrue(dir.listFiles()!!.isEmpty())
+        assertEquals(local.path, db.tasks().get(t.id)!!.filePath)
+        db.close()
+    }
+
+    /** الوجهة تعرف مسارها الحقيقي (MediaStore): السجل يشير إلى المسار والاسم الفعلي بعد إعادة التسمية التلقائية. */
+    @Test fun resolvedPathIsRecorded() = runBlocking {
+        val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
+        val local = File(tmp.newFolder(), "c.bin").apply { writeBytes(data) }
+        val t = task(db, local)
+        val dir = tmp.newFolder()
+        val ms = object : PublishTarget {
+            override fun create(name: String, mime: String) = "content://media/external/downloads/42"
+            override fun write(id: String, src: File) { File(dir, "c (1).bin").writeBytes(src.readBytes()) }
+            override fun length(id: String) = File(dir, "c (1).bin").length()
+            override fun delete(id: String) = File(dir, "c (1).bin").delete()
+            override fun resolvedPath(id: String) = File(dir, "c (1).bin").path
+        }
+        val done = Publisher(db.tasks()).publish(t, local, ms)
+        assertEquals(File(dir, "c (1).bin").path, done.filePath)
+        assertEquals("c (1).bin", done.fileName)
+        assertFalse(local.exists())
+        assertNull(done.publishUri)
+        db.close()
+    }
+}

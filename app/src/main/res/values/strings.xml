@@ -649,6 +649,9 @@
     <string name="orphans_done">حُذف %1$s</string>
     <string name="files_at_once_n">%1$d معاً</string>
     <string name="all_networks">كل الشبكات</string>
+    <string name="err_space_copy">المساحة لا تكفي للتنزيل ثم النشر في «التنزيلات» (يلزم مِثلا حجم الملف مؤقتاً). حرّر مساحة أو اختر مجلداً على بطاقة SD.</string>
+    <string name="move_space">اكتمل الملف لكن المساحة لا تكفي لنشره في «التنزيلات»؛ بقي في مجلد التطبيق.</string>
+    <string name="move_failed_kept">اكتمل الملف لكن نقله إلى المجلد المختار تعذّر (ربما سُحب إذن المجلد)؛ بقي سليماً في مكانه.</string>
     <plurals name="notif_running">
         <item quantity="zero">لا تنزيلات</item>
         <item quantity="one">يجري تنزيل ملف واحد</item>

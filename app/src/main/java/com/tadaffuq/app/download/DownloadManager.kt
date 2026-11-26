@@ -333,6 +333,21 @@ class DownloadManager @Inject constructor(
         )
         val part = StorageDirs.partFile(t.dirPath, t.id)
         migrateLegacyPart(t, part)
+        // النشر عبر MediaStore ينسخ الملف على وحدة التخزين نفسها: يلزم المتبقي + نسخة كاملة.
+        // إن تعذّر القياس (‎-1) لا يُعلن نقص المساحة؛ والمحرك يحجز المتبقي فقط فلا يُحتسب مرتين.
+        if (needsSameVolumeCopy(t) && t.totalBytes > 0) {
+            val dir = File(t.dirPath).apply { mkdirs() }
+            val free = runCatching { dir.usableSpace }.getOrDefault(-1L)
+            val remaining = t.totalBytes - segs.sumOf { it.downloaded }.coerceAtMost(t.totalBytes)
+            val need = remaining + t.totalBytes
+            if (free in 0 until need) {
+                withContext(NonCancellable) {
+                    dao.get(t.id)?.let { dao.update(it.copy(status = TaskStatus.FAILED, errorCode = "SPACE", errorDetail = "COPY")) }
+                }
+                com.tadaffuq.app.core.TechLog.log("space #${t.id} need=$need free=$free (download + publish copy)")
+                return
+            }
+        }
         val listener = object : DownloadListener {
             override fun onProgress(snapshot: Snapshot) {
                 last = snapshot
@@ -500,10 +515,17 @@ class DownloadManager @Inject constructor(
         }
     }.getOrNull()
 
+    private fun needsSameVolumeCopy(t: TaskEntity) =
+        t.treeUri.isNullOrBlank() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && StorageDirs.isInAppDir(File(t.dirPath))
+
     /** نقل قابل للاستعادة (انظر [Publisher])؛ فشله لا يُفشل التنزيل: يبقى الملف محلياً مع رمز MOVE_FAILED. */
     private suspend fun publishOut(t: TaskEntity, file: File): TaskEntity {
         val needs = !t.treeUri.isNullOrBlank() || (Build.VERSION.SDK_INT >= 29 && StorageDirs.isInAppDir(File(t.dirPath)))
         if (!needs) return t
+        if (needsSameVolumeCopy(t)) {
+            val free = runCatching { file.parentFile!!.usableSpace }.getOrDefault(-1L)
+            if (free in 0 until file.length()) { dao.setDetail(t.id, "MOVE_SPACE"); return dao.get(t.id) ?: t }
+        }
         val target = targetFor(t) ?: run { dao.setDetail(t.id, "MOVE_FAILED"); return dao.get(t.id) ?: t }
         return try { publisher.publish(t, file, target) } catch (e: Publisher.PublishFailed) {
             com.tadaffuq.app.core.TechLog.log("publish failed #${t.id} ${e.cause?.javaClass?.simpleName}")
@@ -668,8 +690,8 @@ class DownloadManager @Inject constructor(
             val t = dao.get(id) ?: return@forEach
             StorageDirs.partFile(t.dirPath, t.id).delete()
             limiters.remove(id)
-            val f = t.filePath?.takeIf { withFiles && t.status == TaskStatus.COMPLETED }?.let(::File)
-            if (f == null || !f.exists() || f.delete()) removed += id
+            val path = t.filePath?.takeIf { withFiles && t.status == TaskStatus.COMPLETED }
+            if (path == null || TaskFiles.delete(ctx, path)) removed += id
         }
         dao.delete(removed)
         return ids.size - removed.size

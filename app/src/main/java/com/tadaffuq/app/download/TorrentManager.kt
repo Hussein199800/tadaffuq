@@ -172,7 +172,7 @@ class TorrentManager @Inject constructor(
     fun parse(raw: ByteArray): TorrentMeta = run { engine; TorrentEngine.parse(raw) }
 
     suspend fun add(meta: TorrentMeta, wanted: Set<Int>, seedAfter: Boolean, ratio: Float, magnet: String?) = withContext(Dispatchers.IO) {
-        val dir = File(StorageDirs.root(), "تورنت")
+        val dir = File(StorageDirs.directRoot(), "تورنت") // libtorrent يكتب في مكانه النهائي مباشرة
         val wantedSize = meta.files.filter { it.index in wanted }.sumOf { it.size }
         dao.upsert(TorrentEntity(meta.infoHash, meta.name, dir.path, meta.raw, wanted.joinToString(","), meta.totalSize, wantedSize,
             seedAfter = seedAfter, ratioLimit = ratio, magnet = magnet))

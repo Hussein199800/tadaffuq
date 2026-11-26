@@ -117,7 +117,7 @@ class MainViewModel @Inject constructor(
 
     /** الحذف النهائي: يُحذف السجل فقط إن حُذف الملف فعلاً (أو كان غير موجود). */
     fun purge(tasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
-        val (gone, kept) = tasks.partition { t -> t.filePath?.let(::File)?.let { !it.exists() || it.delete() } ?: true }
+        val (gone, kept) = tasks.partition { t -> t.filePath?.let { com.tadaffuq.app.download.TaskFiles.delete(ctx, it) } ?: true }
         db.tasks().delete(gone.map { it.id })
         fileError(R.plurals.files_delete_failed, kept.size)
     }
@@ -125,7 +125,7 @@ class MainViewModel @Inject constructor(
     fun purgeOldTrash() = viewModelScope.launch(Dispatchers.IO) {
         val before = System.currentTimeMillis() - 30L * 86_400_000
         val old = db.tasks().all().filter { (it.trashedAt ?: Long.MAX_VALUE) < before }
-        val gone = old.filter { t -> t.filePath?.let(::File)?.let { !it.exists() || it.delete() } ?: true }
+        val gone = old.filter { t -> t.filePath?.let { com.tadaffuq.app.download.TaskFiles.delete(ctx, it) } ?: true }
         db.tasks().delete(gone.map { it.id })
     }
 

@@ -115,12 +115,18 @@ fun TaskCard(
                     Text(statusText(task.status), style = MaterialTheme.typography.labelMedium, color = color, modifier = Modifier.weight(1f))
                     Text(Fmt.percent(downloaded, total), style = MaterialTheme.typography.labelMedium, color = T.extra.secondaryText)
                 }
-                if (task.status == TaskStatus.FAILED) Text(errorText(task.errorCode), style = MaterialTheme.typography.bodySmall, color = T.extra.danger)
+                if (task.status == TaskStatus.FAILED) Text(if (task.errorCode == "SPACE" && task.errorDetail == "COPY") stringResource(R.string.err_space_copy) else errorText(task.errorCode), style = MaterialTheme.typography.bodySmall, color = T.extra.danger)
                 task.scheduledAt?.takeIf { it > System.currentTimeMillis() && task.status.isWaiting }?.let {
                     Text(com.tadaffuq.app.core.sr(R.string.schedule_at, Fmt.date(it)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                 }
             }
             if (task.hashOk == false) Text(stringResource(R.string.err_checksum), style = MaterialTheme.typography.bodySmall, color = T.extra.danger)
+            // اكتمل لكن النقل/النشر لم يتم: الملف سليم في مكانه، والسبب ظاهر
+            if (task.status == TaskStatus.COMPLETED) when (task.errorDetail) {
+                "MOVE_SPACE" -> stringResource(R.string.move_space)
+                "MOVE_FAILED" -> stringResource(R.string.move_failed_kept)
+                else -> null
+            }?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = T.extra.warning) }
         }
     }
 }

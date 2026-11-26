@@ -61,6 +61,17 @@ class ResumeWorker @AssistedInject constructor(
                 setForeground(foregroundInfo())
                 delay(2_000)
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // أوقف النظام العامل (انتهاء حصة dataSync في Android 15+، أو قيود أخرى): لا يبقى تنزيل بلا مالك
+            // لدورة حياته. يُوقف كل العمل بأمان (التقدم محفوظ) ويُشرح السبب مع استئناف بلمسة.
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                if (manager.hasWork()) {
+                    manager.pauseAll()
+                    val timeout = stopReason == androidx.work.WorkInfo.STOP_REASON_FOREGROUND_SERVICE_TIMEOUT || stopReason == androidx.work.WorkInfo.STOP_REASON_TIMEOUT
+                    if (timeout) notifier.timedOut() else notifier.tapToResume()
+                }
+            }
+            throw e
         } finally {
             DownloadService.workerInForeground = false
         }
@@ -94,6 +105,10 @@ class ResumeWorker @AssistedInject constructor(
     }
 }
 
+/**
+ * بعد الإقلاع لا تُطلق خدمة dataSync مباشرة (Android 15 يمنعها من BOOT_COMPLETED). يُجدول عامل
+ * ينتظر الشبكة؛ إن رفض النظام تشغيله في المقدمة يظهر إشعار «اضغط للاستئناف» بدل الادعاء بالعمل.
+ */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED || intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {

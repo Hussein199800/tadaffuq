@@ -183,7 +183,7 @@ fun VaultScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit) {
                         }) { Text(stringResource(R.string.action_open)) }
                         TextButton(onClick = {
                             scope.launch {
-                                runCatching { withContext(Dispatchers.IO) { val d = java.io.File(StorageDirs.root(), it2.name).let { f -> java.io.File(f.parentFile, com.tadaffuq.engine.FileNames.uniqueIn(f.parentFile!!.apply { mkdirs() }, f.name)) }; vault.export(it2, d); d } }
+                                runCatching { withContext(Dispatchers.IO) { val d = java.io.File(StorageDirs.directRoot(), it2.name).let { f -> java.io.File(f.parentFile, com.tadaffuq.engine.FileNames.uniqueIn(f.parentFile!!.apply { mkdirs() }, f.name)) }; vault.export(it2, d); d } }
                                     .onSuccess { Toast.makeText(ctx, ctx.getString(R.string.vault_exported, it.name), Toast.LENGTH_SHORT).show() }
                                     .onFailure { e -> if (e is android.security.keystore.UserNotAuthenticatedException) unlocked = false else error = e.message }
                             }

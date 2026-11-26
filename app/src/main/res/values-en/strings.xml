@@ -649,6 +649,9 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="orphans_done">Removed %1$s</string>
     <string name="files_at_once_n">%1$d at once</string>
     <string name="all_networks">All networks</string>
+    <string name="err_space_copy">Not enough space to download and then publish to Downloads (needs twice the file size temporarily). Free up space or choose a folder on an SD card.</string>
+    <string name="move_space">The file finished but there isn\'t enough space to publish it to Downloads; it stayed in the app folder.</string>
+    <string name="move_failed_kept">The file finished but moving it to the chosen folder failed (folder access may have been revoked); it stayed safely where it was.</string>
     <plurals name="notif_running">
         <item quantity="one">Downloading %d file</item>
         <item quantity="other">Downloading %d files</item>

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
@@ -30,10 +31,19 @@ object StorageDirs {
     fun publicRoot(): File = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), ROOT)
 
     /**
-     * «التنزيلات/تدفق» إن أمكنت الكتابة فيه فعلاً (لا افتراض)، وإلا مجلد التطبيق الخاص
-     * (Android/data/…/Download/تدفق) مع تنبيه في الواجهة. يُعاد الفحص كل 10 ثوانٍ على الأكثر.
+     * أين يُكتب الملف أثناء التنزيل:
+     * - Android 10+: مجلد مرحلي خاص بالتطبيق (Android/data/…/Download/تدفق) ثم يُنشر بعد الاكتمال والتحقق
+     *   في «التنزيلات/تدفق» عبر MediaStore (IS_PENDING) — الوجهة العامة الافتراضية، بلا صلاحية وصول شامل.
+     * - Android 9: الكتابة المباشرة في «التنزيلات/تدفق» (بإذن التخزين)، وإلا المجلد الخاص مع تنبيه.
      */
     fun root(): File {
+        val app = appDir
+        if (app != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return app
+        return directRoot()
+    }
+
+    /** الكتابة المباشرة في «التنزيلات/تدفق» إن أمكنت فعلاً (التورنت وتصدير المجلد الخاص)، وإلا المجلد الخاص. */
+    fun directRoot(): File {
         val pub = publicRoot()
         val fallback = appDir ?: return pub
         val now = System.currentTimeMillis()
@@ -43,6 +53,9 @@ object StorageDirs {
         }
         return if (publicOk) pub else fallback
     }
+
+    /** الملفات لن تصل إلى «التنزيلات» العامة (Android 9 بلا إذن التخزين): تنبيه في الواجهة. */
+    val usingFallback: Boolean get() = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && appDir != null && directRoot() != publicRoot()
 
     fun appRoot(): File? = appDir
 
@@ -55,7 +68,6 @@ object StorageDirs {
         return listOf(Environment.DIRECTORY_DOWNLOADS, ROOT, rel).filter { it.isNotEmpty() }.joinToString("/") + "/"
     }
 
-    val usingFallback: Boolean get() = appDir != null && root() != publicRoot()
 
     /** مسار مختصر للعرض: من «Download» فما بعد. */
     fun display(dir: File): String {

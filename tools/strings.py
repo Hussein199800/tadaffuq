@@ -393,6 +393,9 @@ S = {
 "orphans_done": ("حُذف %1$s", "Removed %1$s"),
 "files_at_once_n": ("%1$d معاً", "%1$d at once"),
 "all_networks": ("كل الشبكات", "All networks"),
+"err_space_copy": ("المساحة لا تكفي للتنزيل ثم النشر في «التنزيلات» (يلزم مِثلا حجم الملف مؤقتاً). حرّر مساحة أو اختر مجلداً على بطاقة SD.", "Not enough space to download and then publish to Downloads (needs twice the file size temporarily). Free up space or choose a folder on an SD card."),
+"move_space": ("اكتمل الملف لكن المساحة لا تكفي لنشره في «التنزيلات»؛ بقي في مجلد التطبيق.", "The file finished but there isn't enough space to publish it to Downloads; it stayed in the app folder."),
+"move_failed_kept": ("اكتمل الملف لكن نقله إلى المجلد المختار تعذّر (ربما سُحب إذن المجلد)؛ بقي سليماً في مكانه.", "The file finished but moving it to the chosen folder failed (folder access may have been revoked); it stayed safely where it was."),
 }
 PLURALS = {"notif_running": ({"zero":"لا تنزيلات","one":"يجري تنزيل ملف واحد","two":"يجري تنزيل ملفين","few":"يجري تنزيل %d ملفات","many":"يجري تنزيل %d ملفاً","other":"يجري تنزيل %d ملف"},
                              {"one":"Downloading %d file","other":"Downloading %d files"}),

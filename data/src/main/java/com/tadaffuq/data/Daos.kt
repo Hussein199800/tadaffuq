@@ -77,8 +77,8 @@ interface TaskDao {
     suspend fun setPublish(id: Long, uri: String?, local: String?)
 
     /** تثبيت الوجهة: السجل يشير إليها قبل حذف الأصل. */
-    @Query("UPDATE tasks SET filePath = :uri WHERE id = :id")
-    suspend fun commitPublish(id: Long, uri: String)
+    @Query("UPDATE tasks SET filePath = :path, fileName = COALESCE(:name, fileName) WHERE id = :id")
+    suspend fun commitPublish(id: Long, path: String, name: String? = null)
 
     @Query("SELECT * FROM tasks WHERE publishUri IS NOT NULL OR publishLocal IS NOT NULL")
     suspend fun withPublishJournal(): List<TaskEntity>

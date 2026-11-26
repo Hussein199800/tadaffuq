@@ -19,6 +19,10 @@ interface PublishTarget {
     /** يجعل المستند مرئياً (IS_PENDING=0 في MediaStore). */
     fun finish(id: String) {}
     fun delete(id: String): Boolean
+    /** قراءة النسخة المنشورة (للتحقق من البصمة قبل حذف الأصل). */
+    fun open(id: String): java.io.InputStream? = null
+    /** المسار الحقيقي للمستند إن كان التطبيق يصل إليه مباشرة (ملف أنشأه في MediaStore)، وإلا null. */
+    fun resolvedPath(id: String): String? = null
 }
 
 /**
@@ -37,6 +41,8 @@ class Publisher(private val dao: TaskDao, private val onStage: (Stage) -> Unit =
 
     /** يعيد المهمة بعد النقل. عند الفشل يبقى الملف المحلي والسجل كما كانا (ويُرمى [PublishFailed]). */
     suspend fun publish(t: TaskEntity, local: File, target: PublishTarget): TaskEntity {
+        // التحقق من سلامة الوجهة: الحجم دائماً، والبصمة أيضاً إن كان للمهمة مرجع صالح
+        val ref = t.expectedHash?.trim()?.takeIf { com.tadaffuq.engine.Hashes.detect(it) != null }
         val id = try { target.create(local.name, StorageDirs.mime(local.name)) } catch (e: Exception) { throw PublishFailed(e) }
         dao.setPublish(t.id, id, local.path)
         onStage(Stage.CREATED)
@@ -44,6 +50,11 @@ class Publisher(private val dao: TaskDao, private val onStage: (Stage) -> Unit =
             target.write(id, local)
             val copied = target.length(id)
             if (copied != local.length()) error("size mismatch $copied != ${local.length()}")
+            if (ref != null) {
+                val algo = com.tadaffuq.engine.Hashes.detect(ref)!!
+                val actual = target.open(id)?.use { com.tadaffuq.engine.Hashes.of(it, algo) }
+                if (actual != null && !actual.equals(ref, ignoreCase = true)) error("published copy hash mismatch")
+            }
             target.finish(id)
         } catch (e: Exception) {
             runCatching { target.delete(id) }
@@ -51,7 +62,9 @@ class Publisher(private val dao: TaskDao, private val onStage: (Stage) -> Unit =
             throw PublishFailed(e)
         }
         onStage(Stage.WRITTEN)
-        dao.commitPublish(t.id, id)
+        // السجل يشير إلى المسار الحقيقي إن أمكن (تبقى عمليات الملفات بالمسار تعمل)، وإلا إلى الرابط
+        val committed = target.resolvedPath(id)?.takeIf { File(it).isFile } ?: id
+        dao.commitPublish(t.id, committed, File(committed).name.takeIf { !committed.startsWith("content://") })
         onStage(Stage.COMMITTED)
         cleanup(t.id, local)
         return dao.get(t.id) ?: t
@@ -69,7 +82,9 @@ class Publisher(private val dao: TaskDao, private val onStage: (Stage) -> Unit =
         val uri = t.publishUri
         val local = t.publishLocal
         if (uri == null && local == null) return false
-        return if (uri != null && t.filePath != uri) {
+        // لم يُثبَّت ما دام السجل يشير إلى الأصل المحلي (أو لا يشير إلى الوجهة)
+        val committed = t.filePath != null && (t.filePath == uri || (local != null && t.filePath != local))
+        return if (uri != null && !committed) {
             // لم يُثبَّت: النسخة ناقصة أو غير متحقق منها → تُحذف والأصل باقٍ
             target?.let { runCatching { it.delete(uri) } }
             dao.setPublish(t.id, null, null)
@@ -103,6 +118,8 @@ class SafTarget(private val ctx: Context, treeUri: String) : PublishTarget {
     override fun length(id: String): Long = DocumentFile.fromSingleUri(ctx, Uri.parse(id))?.length() ?: -1
 
     override fun delete(id: String): Boolean = DocumentFile.fromSingleUri(ctx, Uri.parse(id))?.delete() == true
+
+    override fun open(id: String) = ctx.contentResolver.openInputStream(Uri.parse(id))
 }
 
 /**
@@ -133,4 +150,13 @@ class MediaStoreTarget(private val ctx: Context, private val relativePath: Strin
     }
 
     override fun delete(id: String): Boolean = runCatching { ctx.contentResolver.delete(Uri.parse(id), null, null) > 0 }.getOrDefault(false)
+
+    override fun open(id: String) = ctx.contentResolver.openInputStream(Uri.parse(id))
+
+    @Suppress("DEPRECATION") // DATA للقراءة فقط: مسار ملف أنشأه التطبيق نفسه
+    override fun resolvedPath(id: String): String? = runCatching {
+        ctx.contentResolver.query(Uri.parse(id), arrayOf(MediaStore.MediaColumns.DATA), null, null, null)?.use { c ->
+            if (c.moveToFirst()) c.getString(0) else null
+        }
+    }.getOrNull()
 }

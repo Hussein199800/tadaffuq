@@ -43,6 +43,12 @@ object TaskFiles {
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         else StorageDirs.openIntent(ctx, File(path))
 
+    /** حذف ملف بمسار أو رابط content:// (MediaStore أو SAF). true إن لم يعد موجوداً. */
+    fun delete(ctx: Context, path: String): Boolean = if (isContent(path)) runCatching {
+        val u = Uri.parse(path)
+        DocumentFile.fromSingleUri(ctx, u)?.delete() == true || ctx.contentResolver.delete(u, null, null) > 0 || !exists(ctx, path)
+    }.getOrDefault(false) else File(path).let { !it.exists() || it.delete() }
+
     fun exists(ctx: Context, path: String?): Boolean = when {
         path == null -> false
         isContent(path) -> runCatching { DocumentFile.fromSingleUri(ctx, Uri.parse(path))?.exists() == true }.getOrDefault(false)
