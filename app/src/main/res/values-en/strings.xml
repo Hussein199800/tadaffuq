@@ -338,7 +338,7 @@
     <string name="privacy">Privacy</string>
     <string name="privacy_text">Tadaffuq sends no data anywhere. History, settings and cookies stay on your device, and cloud backup is off. It only connects to the servers you download from.</string>
     <string name="licenses">Licenses</string>
-    <string name="licenses_text">OkHttp and Okio (Apache 2.0) · Jetpack Compose, Room, DataStore, WorkManager and Hilt (Apache 2.0) · Kotlin Coroutines (Apache 2.0) · IBM Plex Sans Arabic font (SIL OFL 1.1). The engine is original code; nothing copied from GPL projects.</string>
+    <string name="licenses_text">Tadaffuq is free software under the GNU GPL version 3: you may use, study, modify and share it under its terms; the source is on GitHub. Libraries: OkHttp, Okio, Jetpack, Kotlin Coroutines, Commons Compress, Commons Net (Apache 2.0) · libtorrent4j (MIT) · JSch (BSD) · IBM Plex Sans Arabic font (SIL OFL 1.1). Full list in docs/THIRD_PARTY_NOTICES.md.</string>
     <string name="err_dns">Couldn\'t find the server (DNS)</string>
     <string name="err_tls">Secure connection failed (TLS)</string>
     <string name="err_timeout">Connection timed out</string>
@@ -476,7 +476,7 @@
     <string name="min_free">Free space floor</string>
     <string name="min_free_desc">The queue pauses if free space drops below this</string>
     <string name="auto_extract">Auto-extract archives</string>
-    <string name="auto_extract_desc">ZIP, 7Z, RAR (v4 and older) and TAR, protected against malicious paths and compression bombs</string>
+    <string name="auto_extract_desc">ZIP, 7Z and TAR, protected against malicious paths and compression bombs (RAR downloads but isn\'t extracted)</string>
     <string name="copy_to_folder">Copy to folder…</string>
     <string name="move_to_folder">Move to folder…</string>
     <string name="copied">Copied</string>

@@ -2,7 +2,7 @@
 
 مولّد من `docs/sbom.json` (CycloneDX، مكتبات نسخة الإصدار فقط). أعد التوليد بـ `./gradlew :app:cyclonedxBom`.
 
-عدد المكونات: 186
+عدد المكونات: 185 (أُزيلت junrar في 1.0.0)
 
 ## ملخص التراخيص
 
@@ -10,18 +10,17 @@
 |---|---|
 | Apache-2.0 | 173 |
 | MIT | 5 |
-| ? | 3 |
+| وحدات تدفّق (GPL-3.0-or-later) | 3 |
 | BSD-3-Clause | 2 |
-| UnRar License | 1 |
 | BSD-3-Clause, BSD-3-Clause, ISC | 1 |
 | 0BSD | 1 |
 
 ## ملاحظات
 
 - **libtorrent4j** (MIT) يضم libtorrent (BSD-3-Clause) وBoost (BSL-1.0) وOpenSSL (Apache-2.0) داخل المكتبات الأصلية.
-- **junrar** بترخيص UnRAR: يسمح بالفك فقط ويمنع استعمال الشيفرة لإنشاء أداة ضغط RAR. تدفّق يفك فقط.
 - **IBM Plex Sans Arabic** بترخيص SIL OFL 1.1 (`FONT_LICENSE_OFL.txt`).
-- لا مكتبات GPL ضمن التطبيق. Ghost Downloader 3 (GPL-3.0) استُعمل مرجعاً للأفكار فقط دون نسخ كود.
+- **تدفّق نفسه** برخصة GNU GPL-3.0-or-later (`LICENSE`). كل المكتبات المضمّنة (Apache-2.0 وMIT وBSD وISC و0BSD) متوافقة معها. junrar (رخصة UnRAR غير المتوافقة مع GPL) أُزيلت، فلا فك لملفات RAR داخل التطبيق.
+- Ghost Downloader 3 (GPL-3.0) استُعمل مرجعاً للأفكار فقط دون نسخ كود.
 
 ## المكونات
 
@@ -174,7 +173,6 @@
 | androidx.webkit | webkit | 1.14.0 | Apache-2.0 |
 | androidx.work | work-runtime | 2.10.5 | Apache-2.0 |
 | androidx.work | work-runtime-ktx | 2.10.5 | Apache-2.0 |
-| com.github.junrar | junrar | 7.6.1 | UnRar License |
 | com.github.mwiede | jsch | 2.27.3 | BSD-3-Clause, BSD-3-Clause, ISC |
 | com.google.code.findbugs | jsr305 | 3.0.2 | Apache-2.0 |
 | com.google.dagger | dagger | 2.57.2 | Apache-2.0 |

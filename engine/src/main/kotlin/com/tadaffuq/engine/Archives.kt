@@ -1,6 +1,5 @@
 package com.tadaffuq.engine
 
-import com.github.junrar.Archive
 import org.apache.commons.compress.archivers.ArchiveEntry
 import org.apache.commons.compress.archivers.ArchiveInputStream
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
@@ -42,7 +41,7 @@ object Archives {
         return when {
             n.endsWith(".zip") || n.endsWith(".jar") || n.endsWith(".apks") || n.endsWith(".xapk") -> "zip"
             n.endsWith(".7z") -> "7z"
-            n.endsWith(".rar") -> "rar"
+            // RAR غير مدعوم للفك: مكتبة junrar برخصة UnRAR غير متوافقة مع GPL-3.0 (يُنزَّل الملف عادياً)
             n.endsWith(".tar") -> "tar"
             n.endsWith(".tar.gz") || n.endsWith(".tgz") -> "tgz"
             n.endsWith(".tar.xz") || n.endsWith(".txz") -> "txz"
@@ -69,17 +68,6 @@ object Archives {
                     if (!e.isAntiItem) guard.entry(e.name, e.isDirectory) { out -> z.getInputStream(e).use { guard.copy(it, out) } }
                     e = z.nextEntry
                 }
-            }
-            "rar" -> try {
-                Archive(archive).use { r ->
-                    if (r.isEncrypted) throw ArchiveException(ArchiveException.Reason.ENCRYPTED)
-                    r.fileHeaders.forEach { h ->
-                        if (h.isEncrypted) throw ArchiveException(ArchiveException.Reason.ENCRYPTED)
-                        guard.entry(h.fileName.replace('\\', '/'), h.isDirectory) { out -> r.getInputStream(h).use { guard.copy(it, out) } }
-                    }
-                }
-            } catch (e: com.github.junrar.exception.RarException) {
-                throw ArchiveException(if (e is com.github.junrar.exception.UnsupportedRarV5Exception) ArchiveException.Reason.UNSUPPORTED else ArchiveException.Reason.CORRUPT, e.message ?: "rar")
             }
             "tar" -> tarStream(archive.inputStream().buffered(), guard)
             "tgz" -> tarStream(GzipCompressorInputStream(archive.inputStream().buffered()), guard)

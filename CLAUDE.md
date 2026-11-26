@@ -9,6 +9,7 @@
 - لا كتابة فوق ملف دون موافقة: `FileNames.uniqueIn` عند الاكتمال.
 - الاستئناف لا يتم إلا إذا تطابق الحجم وETag/Last-Modified (`Prober.sameContent`) وتغطي الأجزاء الملف (`SegmentPlanner.isConsistent`)، وكل طلب جزء يحمل If-Range.
 - لا وظائف وسائط متخصصة (بث، تشغيل، تحويل، ضغط).
+- الرخصة GPL-3.0-or-later: لا تُضاف مكتبة برخصة غير متوافقة (مثل UnRAR)؛ لهذا لا فك لـ RAR.
 - مفتاح التوقيع لا يُرفع: `keystore.properties` أو `TADAFFUQ_KEYSTORE`/`TADAFFUQ_KEYSTORE_PASSWORD`/`TADAFFUQ_KEY_ALIAS`.
 - قبل الرفع: `./gradlew :engine:test :app:testDebugUnitTest :app:assembleRelease`. لقطات الشاشة: `TADAFFUQ_SHOTS=$PWD/build/shots ./gradlew :app:testDebugUnitTest --tests '*ScreenshotTest*'` وراجعها بعينك.
 - Maven Central يرد أحياناً بـ 429؛ مرآة Google مضافة أولاً في `settings.gradle.kts`.

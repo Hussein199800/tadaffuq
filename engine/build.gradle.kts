@@ -10,7 +10,6 @@ dependencies {
     implementation(libs.jsch)
     implementation(libs.commons.compress)
     implementation(libs.xz)
-    implementation(libs.junrar)
     testImplementation(libs.junit)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.coroutines.test)

@@ -338,7 +338,7 @@
     <string name="privacy">الخصوصية</string>
     <string name="privacy_text">لا يرسل تدفّق أي بيانات إلى أي جهة. التاريخ والإعدادات والكوكيز تبقى على جهازك، والنسخ الاحتياطي السحابي معطّل. الاتصال فقط بالخوادم التي تطلب التنزيل منها.</string>
     <string name="licenses">التراخيص</string>
-    <string name="licenses_text">OkHttp وOkio (Apache 2.0) · Jetpack Compose وRoom وDataStore وWorkManager وHilt (Apache 2.0) · Kotlin Coroutines (Apache 2.0) · خط IBM Plex Sans Arabic (SIL OFL 1.1). المحرك مكتوب أصلياً دون نسخ كود من مشاريع GPL.</string>
+    <string name="licenses_text">تدفّق برمجية حرة برخصة GNU GPL الإصدار 3: لك استعمالها ودراستها وتعديلها وتوزيعها بشروط الرخصة، والشيفرة على GitHub. المكتبات: OkHttp وOkio وJetpack وKotlin Coroutines وCommons Compress وCommons Net (Apache 2.0) · libtorrent4j (MIT) · JSch (BSD) · خط IBM Plex Sans Arabic (SIL OFL 1.1). القائمة الكاملة في docs/THIRD_PARTY_NOTICES.md.</string>
     <string name="err_dns">تعذّر العثور على الخادم (DNS)</string>
     <string name="err_tls">فشل الاتصال الآمن (TLS)</string>
     <string name="err_timeout">انتهت مهلة الاتصال</string>
@@ -476,7 +476,7 @@
     <string name="min_free">حد المساحة الحرة</string>
     <string name="min_free_desc">يتوقف الطابور إن قلّت المساحة عن هذا الحد</string>
     <string name="auto_extract">فك الأرشيفات تلقائياً</string>
-    <string name="auto_extract_desc">ZIP و7Z وRAR (4 وما قبله) وTAR، مع حماية من المسارات الخبيثة وقنابل الضغط</string>
+    <string name="auto_extract_desc">ZIP و7Z وTAR، مع حماية من المسارات الخبيثة وقنابل الضغط (RAR يُنزَّل ولا يُفك)</string>
     <string name="copy_to_folder">نسخ إلى مجلد…</string>
     <string name="move_to_folder">نقل إلى مجلد…</string>
     <string name="copied">نُسخ</string>

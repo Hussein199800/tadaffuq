@@ -1,10 +1,10 @@
 {
   "bomFormat" : "CycloneDX",
   "specVersion" : "1.6",
-  "serialNumber" : "urn:uuid:acce922f-e8e7-4996-89d7-19279a58d29c",
+  "serialNumber" : "urn:uuid:87a4fe5a-e84a-497f-a7f5-270abb21d2b2",
   "version" : 1,
   "metadata" : {
-    "timestamp" : "2026-11-26T14:00:28Z",
+    "timestamp" : "2026-11-26T19:52:42Z",
     "tools" : {
       "components" : [
         {
@@ -58,23 +58,23 @@
       "hashes" : [
         {
           "alg" : "MD5",
-          "content" : "1e128379385beec2f6d436564807c9a3"
+          "content" : "495866e23a05c46b6fdc3d14c3f26e45"
         },
         {
           "alg" : "SHA-1",
-          "content" : "ee572d0bfd0229484614ab9f451638be9b22cf9c"
+          "content" : "2351cf9e497376a1ea6117d41c897feacb3bf719"
         },
         {
           "alg" : "SHA-256",
-          "content" : "7f4d1b2b2d27b4fac649af3ed10c7eae28452954549f84320b93dacc41a21238"
+          "content" : "a8d8543e55a4f30f86787545d9621594fb476bab959a022f2a4190bbd1df1f9f"
         },
         {
           "alg" : "SHA-512",
-          "content" : "d8b784025888e9f5b26c9e3e6a5e43b1a3cb1b7e2f3bf1cdc42bdc47987d0f8850eac12bee9314d11537c2b1ef935fdc71fa6573b99c577c0e6956d4a92ab721"
+          "content" : "47a48ba26a91d5efd43d33345f1dc41afb89962f0a138d964bf665b6ece665c38b26523e85aaab6dfcc634cdd9766768eb2079541738969ed5f79115e38b22a6"
         },
         {
           "alg" : "SHA-384",
-          "content" : "f01980720a23ca9dcab9621de2a7c7862d22283a33ff25579fa090b4c48f64715581a4aeeb515549d219bf6e0fe70240"
+          "content" : "eb3bd13914c9ae2d4043f3644ae46a80fa2a7f5d76bc4059e339d61b5f09a495a132311e4e61fa2e40ebd868c8eb78d0"
         }
       ],
       "purl" : "pkg:maven/Tadaffuq/engine@unspecified?project_path=%3Aengine",
@@ -7447,58 +7447,6 @@
     },
     {
       "type" : "library",
-      "bom-ref" : "pkg:maven/com.github.junrar/junrar@7.6.1?type=jar",
-      "group" : "com.github.junrar",
-      "name" : "junrar",
-      "version" : "7.6.1",
-      "description" : "property 'description'",
-      "hashes" : [
-        {
-          "alg" : "MD5",
-          "content" : "eba22885806e9a9f4125a489d0d97dc9"
-        },
-        {
-          "alg" : "SHA-1",
-          "content" : "b92954886ed35d12119ad8c759f238cfcb879e36"
-        },
-        {
-          "alg" : "SHA-256",
-          "content" : "bafdea12be5407898b4b6ba5487d8f9021e8edeae2d6da746f65b8e2f95f021d"
-        },
-        {
-          "alg" : "SHA-512",
-          "content" : "017d919fe1619ac2709d9f65e56eee05f17de0d9861f3732e66aec231ca3e3f5236961b1deaae251a37c988a16dfa7d59c6033b75b2fcd379b752d76cc8c23c1"
-        },
-        {
-          "alg" : "SHA-384",
-          "content" : "0c8d489b80aaf457a2e0a1a81ef25bb635a4219322535023508e0307eae99c808998068ff7bda8c4c402a9e81acc1fb9"
-        }
-      ],
-      "licenses" : [
-        {
-          "license" : {
-            "name" : "UnRar License",
-            "url" : "https://github.com/junrar/junrar/blob/master/LICENSE"
-          }
-        }
-      ],
-      "purl" : "pkg:maven/com.github.junrar/junrar@7.6.1?type=jar",
-      "modified" : false,
-      "externalReferences" : [
-        {
-          "type" : "vcs",
-          "url" : "https://github.com/junrar/junrar.git"
-        }
-      ],
-      "properties" : [
-        {
-          "name" : "cdx:maven:package:test",
-          "value" : "false"
-        }
-      ]
-    },
-    {
-      "type" : "library",
       "bom-ref" : "pkg:maven/com.github.mwiede/jsch@2.27.3?type=jar",
       "group" : "com.github.mwiede",
       "name" : "jsch",
@@ -9485,57 +9433,6 @@
     },
     {
       "type" : "library",
-      "bom-ref" : "pkg:maven/org.slf4j/slf4j-api@2.0.17?type=jar",
-      "group" : "org.slf4j",
-      "name" : "slf4j-api",
-      "version" : "2.0.17",
-      "description" : "The slf4j API",
-      "hashes" : [
-        {
-          "alg" : "MD5",
-          "content" : "b6480d114a23683498ac3f746f959d2f"
-        },
-        {
-          "alg" : "SHA-1",
-          "content" : "d9e58ac9c7779ba3bf8142aff6c830617a7fe60f"
-        },
-        {
-          "alg" : "SHA-256",
-          "content" : "7b751d952061954d5abfed7181c1f645d336091b679891591d63329c622eb832"
-        },
-        {
-          "alg" : "SHA-512",
-          "content" : "9a3e79db6666a6096a3021bb2e1d918f30f589d8de51d6b600f8ebd92515a510ae2d8f87919cc2dfa8365d64f10194cac8dfa0fb950160eef0e9da06f6caaeb9"
-        },
-        {
-          "alg" : "SHA-384",
-          "content" : "6ea24f814a9b6ece428cfd0535e2f3b8927005745ef61006b50fdb5a90126ee5ea05650155382b3b755c5bce38ef3944"
-        }
-      ],
-      "licenses" : [
-        {
-          "license" : {
-            "id" : "MIT",
-            "text" : {
-              "contentType" : "text/plain",
-              "encoding" : "base64",
-              "content" : "TUlUIExpY2Vuc2UKCkNvcHlyaWdodCAoYykgPHllYXI+IDxjb3B5cmlnaHQgaG9sZGVycz4KClBlcm1pc3Npb24gaXMgaGVyZWJ5IGdyYW50ZWQsIGZyZWUgb2YgY2hhcmdlLCB0byBhbnkgcGVyc29uIG9idGFpbmluZyBhIGNvcHkgb2YgdGhpcyBzb2Z0d2FyZSBhbmQgYXNzb2NpYXRlZCBkb2N1bWVudGF0aW9uIGZpbGVzICh0aGUgIlNvZnR3YXJlIiksIHRvIGRlYWwgaW4gdGhlIFNvZnR3YXJlIHdpdGhvdXQgcmVzdHJpY3Rpb24sIGluY2x1ZGluZyB3aXRob3V0IGxpbWl0YXRpb24gdGhlIHJpZ2h0cyB0byB1c2UsIGNvcHksIG1vZGlmeSwgbWVyZ2UsIHB1Ymxpc2gsIGRpc3RyaWJ1dGUsIHN1YmxpY2Vuc2UsIGFuZC9vciBzZWxsIGNvcGllcyBvZiB0aGUgU29mdHdhcmUsIGFuZCB0byBwZXJtaXQgcGVyc29ucyB0byB3aG9tIHRoZSBTb2Z0d2FyZSBpcyBmdXJuaXNoZWQgdG8gZG8gc28sIHN1YmplY3QgdG8gdGhlIGZvbGxvd2luZyBjb25kaXRpb25zOgoKVGhlIGFib3ZlIGNvcHlyaWdodCBub3RpY2UgYW5kIHRoaXMgcGVybWlzc2lvbiBub3RpY2Ugc2hhbGwgYmUgaW5jbHVkZWQgaW4gYWxsIGNvcGllcyBvciBzdWJzdGFudGlhbCBwb3J0aW9ucyBvZiB0aGUgU29mdHdhcmUuCgpUSEUgU09GVFdBUkUgSVMgUFJPVklERUQgIkFTIElTIiwgV0lUSE9VVCBXQVJSQU5UWSBPRiBBTlkgS0lORCwgRVhQUkVTUyBPUiBJTVBMSUVELCBJTkNMVURJTkcgQlVUIE5PVCBMSU1JVEVEIFRPIFRIRSBXQVJSQU5USUVTIE9GIE1FUkNIQU5UQUJJTElUWSwgRklUTkVTUyBGT1IgQSBQQVJUSUNVTEFSIFBVUlBPU0UgQU5EIE5PTklORlJJTkdFTUVOVC4gSU4gTk8gRVZFTlQgU0hBTEwgVEhFIEFVVEhPUlMgT1IgQ09QWVJJR0hUIEhPTERFUlMgQkUgTElBQkxFIEZPUiBBTlkgQ0xBSU0sIERBTUFHRVMgT1IgT1RIRVIgTElBQklMSVRZLCBXSEVUSEVSIElOIEFOIEFDVElPTiBPRiBDT05UUkFDVCwgVE9SVCBPUiBPVEhFUldJU0UsIEFSSVNJTkcgRlJPTSwgT1VUIE9GIE9SIElOIENPTk5FQ1RJT04gV0lUSCBUSEUgU09GVFdBUkUgT1IgVEhFIFVTRSBPUiBPVEhFUiBERUFMSU5HUyBJTiBUSEUgU09GVFdBUkUuCg=="
-            },
-            "url" : "https://opensource.org/license/mit/"
-          }
-        }
-      ],
-      "purl" : "pkg:maven/org.slf4j/slf4j-api@2.0.17?type=jar",
-      "modified" : false,
-      "properties" : [
-        {
-          "name" : "cdx:maven:package:test",
-          "value" : "false"
-        }
-      ]
-    },
-    {
-      "type" : "library",
       "bom-ref" : "pkg:maven/org.tukaani/xz@1.10?type=jar",
       "group" : "org.tukaani",
       "name" : "xz",
@@ -9639,7 +9536,6 @@
     {
       "ref" : "pkg:maven/Tadaffuq/engine@unspecified?project_path=%3Aengine",
       "dependsOn" : [
-        "pkg:maven/com.github.junrar/junrar@7.6.1?type=jar",
         "pkg:maven/com.github.mwiede/jsch@2.27.3?type=jar",
         "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-core@1.10.2?type=pom",
         "pkg:maven/com.squareup.okhttp3/okhttp@4.12.0?type=jar",
@@ -11262,12 +11158,6 @@
       ]
     },
     {
-      "ref" : "pkg:maven/com.github.junrar/junrar@7.6.1?type=jar",
-      "dependsOn" : [
-        "pkg:maven/org.slf4j/slf4j-api@2.0.17?type=jar"
-      ]
-    },
-    {
       "ref" : "pkg:maven/com.github.mwiede/jsch@2.27.3?type=jar",
       "dependsOn" : [ ]
     },
@@ -11492,10 +11382,6 @@
     },
     {
       "ref" : "pkg:maven/org.libtorrent4j/libtorrent4j@2.1.0-39?type=jar",
-      "dependsOn" : [ ]
-    },
-    {
-      "ref" : "pkg:maven/org.slf4j/slf4j-api@2.0.17?type=jar",
       "dependsOn" : [ ]
     },
     {

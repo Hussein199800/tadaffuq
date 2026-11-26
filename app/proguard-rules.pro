@@ -13,5 +13,5 @@
 # libtorrent4j: واجهات JNI تُستدعى من الشيفرة الأصلية بالاسم
 -keep class org.libtorrent4j.swig.** { *; }
 -keep class org.libtorrent4j.** { *; }
-# اعتماديات اختيارية لـ Commons Compress وjunrar غير مستعملة (zstd وbrotli وغيرها)
+# اعتماديات اختيارية لـ Commons Compress غير مستعملة (zstd وbrotli وغيرها)
 -dontwarn com.github.luben.zstd.ZstdInputStream

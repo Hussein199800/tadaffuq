@@ -12,7 +12,7 @@ Tadaffuq is a clean, Arabic-first download manager that speeds up and organizes 
 • **Protocols:** HTTP, HTTPS, FTP, FTPS, SFTP, BitTorrent and magnet links, with HTTP and SOCKS5 proxies.
 • **Full control:** queue and priorities, per-file and global speed limits, Wi-Fi only, while charging, mobile data caps, nightly time window.
 • **Light browser:** tabs, private browsing and capture of file links on a page.
-• **Organized files:** auto-categories, rules, ZIP/7Z/RAR extraction, SHA-256 verification, trash, and an encrypted vault unlocked by fingerprint.
+• **Organized files:** auto-categories, rules, ZIP/7Z/TAR extraction, SHA-256 verification, trash, and an encrypted vault unlocked by fingerprint.
 • **For developers:** GitHub releases matched to your device, and Hugging Face models including split GGUF with checksum verification.
 • **Download doctor:** explains slowdowns and failures and suggests fixes.
 • **Privacy first:** no account, ads or analytics. Everything stays on your device.
