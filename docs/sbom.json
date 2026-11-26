@@ -1,10 +1,10 @@
 {
   "bomFormat" : "CycloneDX",
   "specVersion" : "1.6",
-  "serialNumber" : "urn:uuid:5859fa0d-6df9-40c6-b7c6-20e059ddc9a4",
+  "serialNumber" : "urn:uuid:acce922f-e8e7-4996-89d7-19279a58d29c",
   "version" : 1,
   "metadata" : {
-    "timestamp" : "2026-11-25T19:35:55Z",
+    "timestamp" : "2026-11-26T14:00:28Z",
     "tools" : {
       "components" : [
         {
@@ -58,23 +58,23 @@
       "hashes" : [
         {
           "alg" : "MD5",
-          "content" : "87bbb150e6fd5ccfe89a802472d9fa17"
+          "content" : "1e128379385beec2f6d436564807c9a3"
         },
         {
           "alg" : "SHA-1",
-          "content" : "fbcc4294e7a5afc51ab9eb1515fbf7d8d01cf9d5"
+          "content" : "ee572d0bfd0229484614ab9f451638be9b22cf9c"
         },
         {
           "alg" : "SHA-256",
-          "content" : "24179ba9c7a6a0649b6749942d55da93f91964fec7e6014439ab06b716333747"
+          "content" : "7f4d1b2b2d27b4fac649af3ed10c7eae28452954549f84320b93dacc41a21238"
         },
         {
           "alg" : "SHA-512",
-          "content" : "ea3797ea399705c27352a5b55518582557ee9f420185e70b7f650c07c5419960fbe43929fd6113f5aeff5fe19f018ce4a9162a0f34e12dd492031566c42a91fd"
+          "content" : "d8b784025888e9f5b26c9e3e6a5e43b1a3cb1b7e2f3bf1cdc42bdc47987d0f8850eac12bee9314d11537c2b1ef935fdc71fa6573b99c577c0e6956d4a92ab721"
         },
         {
           "alg" : "SHA-384",
-          "content" : "b710393e8c8e8b2797464e40b4fb15f0023061691048645c39304d02f4e6ec69f4e6534002533ca845267a0962e3ca7e"
+          "content" : "f01980720a23ca9dcab9621de2a7c7862d22283a33ff25579fa090b4c48f64715581a4aeeb515549d219bf6e0fe70240"
         }
       ],
       "purl" : "pkg:maven/Tadaffuq/engine@unspecified?project_path=%3Aengine",
@@ -7447,31 +7447,31 @@
     },
     {
       "type" : "library",
-      "bom-ref" : "pkg:maven/com.github.junrar/junrar@7.5.5?type=jar",
+      "bom-ref" : "pkg:maven/com.github.junrar/junrar@7.6.1?type=jar",
       "group" : "com.github.junrar",
       "name" : "junrar",
-      "version" : "7.5.5",
+      "version" : "7.6.1",
       "description" : "property 'description'",
       "hashes" : [
         {
           "alg" : "MD5",
-          "content" : "c8d3232d2e0b6708cfaa66f376c511b5"
+          "content" : "eba22885806e9a9f4125a489d0d97dc9"
         },
         {
           "alg" : "SHA-1",
-          "content" : "4b1300aa087b8c4e5e9bbb988e609bbaddfda283"
+          "content" : "b92954886ed35d12119ad8c759f238cfcb879e36"
         },
         {
           "alg" : "SHA-256",
-          "content" : "e01b949687e2a5b4c68011c1702aa5d2cc8e6c458656ac2c91658b69cebb1bb3"
+          "content" : "bafdea12be5407898b4b6ba5487d8f9021e8edeae2d6da746f65b8e2f95f021d"
         },
         {
           "alg" : "SHA-512",
-          "content" : "8ab9945069cfb865e3319b0aef99a676d71ea287babbfdc8c27f94e098316b8d5e03893f2d27c211f72637f9dd72b212589a8e01010a24997e84d5b5245f0036"
+          "content" : "017d919fe1619ac2709d9f65e56eee05f17de0d9861f3732e66aec231ca3e3f5236961b1deaae251a37c988a16dfa7d59c6033b75b2fcd379b752d76cc8c23c1"
         },
         {
           "alg" : "SHA-384",
-          "content" : "cd3a2971dd19deeca19d1de25405f348975aa0af809c1b87c179b6877a09c6215400b1ee61fe3b8fae6a3c4d4c0fffe9"
+          "content" : "0c8d489b80aaf457a2e0a1a81ef25bb635a4219322535023508e0307eae99c808998068ff7bda8c4c402a9e81acc1fb9"
         }
       ],
       "licenses" : [
@@ -7482,7 +7482,7 @@
           }
         }
       ],
-      "purl" : "pkg:maven/com.github.junrar/junrar@7.5.5?type=jar",
+      "purl" : "pkg:maven/com.github.junrar/junrar@7.6.1?type=jar",
       "modified" : false,
       "externalReferences" : [
         {
@@ -9485,31 +9485,31 @@
     },
     {
       "type" : "library",
-      "bom-ref" : "pkg:maven/org.slf4j/slf4j-api@1.7.36?type=jar",
+      "bom-ref" : "pkg:maven/org.slf4j/slf4j-api@2.0.17?type=jar",
       "group" : "org.slf4j",
       "name" : "slf4j-api",
-      "version" : "1.7.36",
+      "version" : "2.0.17",
       "description" : "The slf4j API",
       "hashes" : [
         {
           "alg" : "MD5",
-          "content" : "872da51f5de7f3923da4de871d57fd85"
+          "content" : "b6480d114a23683498ac3f746f959d2f"
         },
         {
           "alg" : "SHA-1",
-          "content" : "6c62681a2f655b49963a5983b8b0950a6120ae14"
+          "content" : "d9e58ac9c7779ba3bf8142aff6c830617a7fe60f"
         },
         {
           "alg" : "SHA-256",
-          "content" : "d3ef575e3e4979678dc01bf1dcce51021493b4d11fb7f1be8ad982877c16a1c0"
+          "content" : "7b751d952061954d5abfed7181c1f645d336091b679891591d63329c622eb832"
         },
         {
           "alg" : "SHA-512",
-          "content" : "f9b033fc019a44f98b16048da7e2b59edd4a6a527ba60e358f65ab88e0afae03a9340f1b3e8a543d49fa542290f499c5594259affa1ff3e6e7bf3b428d4c610b"
+          "content" : "9a3e79db6666a6096a3021bb2e1d918f30f589d8de51d6b600f8ebd92515a510ae2d8f87919cc2dfa8365d64f10194cac8dfa0fb950160eef0e9da06f6caaeb9"
         },
         {
           "alg" : "SHA-384",
-          "content" : "2b14ad035877087157e379d3277dcdcd79e58d6bdb147c47d29e377d75ce53ad42cafbf22f5fb7827c7e946ff4876b9a"
+          "content" : "6ea24f814a9b6ece428cfd0535e2f3b8927005745ef61006b50fdb5a90126ee5ea05650155382b3b755c5bce38ef3944"
         }
       ],
       "licenses" : [
@@ -9525,7 +9525,7 @@
           }
         }
       ],
-      "purl" : "pkg:maven/org.slf4j/slf4j-api@1.7.36?type=jar",
+      "purl" : "pkg:maven/org.slf4j/slf4j-api@2.0.17?type=jar",
       "modified" : false,
       "properties" : [
         {
@@ -9639,7 +9639,7 @@
     {
       "ref" : "pkg:maven/Tadaffuq/engine@unspecified?project_path=%3Aengine",
       "dependsOn" : [
-        "pkg:maven/com.github.junrar/junrar@7.5.5?type=jar",
+        "pkg:maven/com.github.junrar/junrar@7.6.1?type=jar",
         "pkg:maven/com.github.mwiede/jsch@2.27.3?type=jar",
         "pkg:maven/org.jetbrains.kotlinx/kotlinx-coroutines-core@1.10.2?type=pom",
         "pkg:maven/com.squareup.okhttp3/okhttp@4.12.0?type=jar",
@@ -11262,9 +11262,9 @@
       ]
     },
     {
-      "ref" : "pkg:maven/com.github.junrar/junrar@7.5.5?type=jar",
+      "ref" : "pkg:maven/com.github.junrar/junrar@7.6.1?type=jar",
       "dependsOn" : [
-        "pkg:maven/org.slf4j/slf4j-api@1.7.36?type=jar"
+        "pkg:maven/org.slf4j/slf4j-api@2.0.17?type=jar"
       ]
     },
     {
@@ -11495,7 +11495,7 @@
       "dependsOn" : [ ]
     },
     {
-      "ref" : "pkg:maven/org.slf4j/slf4j-api@1.7.36?type=jar",
+      "ref" : "pkg:maven/org.slf4j/slf4j-api@2.0.17?type=jar",
       "dependsOn" : [ ]
     },
     {

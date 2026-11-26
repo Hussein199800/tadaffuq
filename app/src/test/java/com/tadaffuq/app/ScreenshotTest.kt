@@ -88,11 +88,12 @@ class ScreenshotTest {
         vm = MainViewModel(ctx, db, settings, manager, com.tadaffuq.app.core.SecretStore(ctx), com.tadaffuq.app.vault.Vault(ctx))
     }
 
-    private fun shoot(name: String, ar: Boolean, dark: Boolean, popup: Boolean = false, content: @Composable () -> Unit) {
+    private fun shoot(name: String, ar: Boolean, dark: Boolean, popup: Boolean = false, palette: com.tadaffuq.data.Palette = com.tadaffuq.data.Palette.NAVY_MINT,
+                      textSize: com.tadaffuq.data.TextSize = com.tadaffuq.data.TextSize.DEFAULT, content: @Composable () -> Unit) {
         RuntimeEnvironment.setQualifiers(if (ar) "+ar" else "+en")
         java.util.Locale.setDefault(java.util.Locale.forLanguageTag(if (ar) "ar" else "en"))
         rule.setContent {
-            TadaffuqTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT) {
+            TadaffuqTheme(if (dark) ThemeMode.DARK else ThemeMode.LIGHT, fontScale = textSize.scale, accent = com.tadaffuq.app.ui.theme.pairedAccent(palette), palette = palette) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { content() }
             }
         }
@@ -125,6 +126,15 @@ class ScreenshotTest {
     @Test fun more_ar_light() = shoot("more_ar_light", true, false) { MoreScreen(pad) {} }
     @Test fun settings_ar_light() = shoot("settings_ar_light", true, false) { SettingsScreen(vm, pad, {}) {} }
     @Test fun settings_en_dark() = shoot("settings_en_dark", false, true) { SettingsScreen(vm, pad, {}) {} }
+    @Test fun set_download_ar_light() = shoot("set_download_ar_light", true, false) { SettingsScreen(vm, pad, {}, "DOWNLOAD") {} }
+    @Test fun set_network_ar_dark() = shoot("set_network_ar_dark", true, true) { SettingsScreen(vm, pad, {}, "NETWORK") {} }
+    @Test fun set_storage_ar_light() = shoot("set_storage_ar_light", true, false) { SettingsScreen(vm, pad, {}, "STORAGE") {} }
+    @Test fun set_notify_ar_light() = shoot("set_notify_ar_light", true, false) { SettingsScreen(vm, pad, {}, "NOTIFY") {} }
+    @Test fun set_look_ar_light() = shoot("set_look_ar_light", true, false) { SettingsScreen(vm, pad, {}, "LOOK") {} }
+    @Test fun set_look_ar_dark_green() = shoot("set_look_ar_dark_green", true, true, palette = com.tadaffuq.data.Palette.GREEN_GOLD) { SettingsScreen(vm, pad, {}, "LOOK") {} }
+    @Test fun downloads_ar_light_orange() = shoot("downloads_ar_light_orange", true, false, palette = com.tadaffuq.data.Palette.ORANGE_VIOLET) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun downloads_ar_dark_ivory() = shoot("downloads_ar_dark_ivory", true, true, palette = com.tadaffuq.data.Palette.IVORY_BLACK) { DownloadsScreen(vm, {}, pad, tvm) }
+    @Test fun home_ar_light_large() = shoot("home_ar_light_large", true, false, textSize = com.tadaffuq.data.TextSize.LARGE) { HomeScreen(vm, null, {}, {}, pad) }
     @Test fun advanced_ar_light() = shoot("advanced_ar_light", true, false) { com.tadaffuq.app.ui.more.AdvancedSettingsScreen(vm, pad) {} }
     @Test fun about_ar_light() = shoot("about_ar_light", true, false) { com.tadaffuq.app.ui.more.AboutScreen(pad) {} }
     @Test fun about_ar_dark() = shoot("about_ar_dark", true, true) { com.tadaffuq.app.ui.more.AboutScreen(pad) {} }

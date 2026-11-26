@@ -18,6 +18,10 @@ enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class ListDensity { COMFORTABLE, COMPACT }
 enum class ProxyMode { NONE, HTTP, SOCKS5 }
 enum class Accent { MINT, BLUE, VIOLET, AMBER, ROSE }
+/** ثيمات جاهزة: الأساس (الخلفية والأسطح والأساسي)؛ لون التمييز فوقها. */
+enum class Palette { NAVY_MINT, GREEN_GOLD, ORANGE_VIOLET, IVORY_BLACK }
+/** حجم خط داخل التطبيق، يُضرب في تكبير خط النظام (لا يلغيه). */
+enum class TextSize(val scale: Float) { SMALL(0.9f), DEFAULT(1f), LARGE(1.15f) }
 
 /** إعدادات التطبيق. القيم الافتراضية بسيطة، والمتقدم اختياري. */
 data class Settings(
@@ -62,6 +66,8 @@ data class Settings(
     val autoExtract: Boolean = false,
     /** مجلد SAF يُنقل إليه كل ملف بعد اكتماله (بطاقة SD أو USB أو مجلد آخر)، أو فارغ. */
     val moveToTree: String = "",
+    /** ترحيل لمرة واحدة: المهام غير المكتملة قبل rc4 تأخذ مجلد SAF العام وقت التحديث. */
+    val perTaskTreeMigrated: Boolean = false,
     /** نافذة زمنية يومية للتنزيل (مثلاً الليل). */
     val windowEnabled: Boolean = false,
     val windowStart: Int = 1,
@@ -75,6 +81,8 @@ data class Settings(
     /** ألوان Material You من خلفية الجهاز (Android 12+). */
     val dynamicColor: Boolean = false,
     val accent: Accent = Accent.MINT,
+    val palette: Palette = Palette.NAVY_MINT,
+    val textSize: TextSize = TextSize.DEFAULT,
     /** إشعار لكل ملف يعمل (تحت الإشعار الإجمالي). */
     val notifyPerTask: Boolean = true,
     val notifyOnFail: Boolean = true,
@@ -145,6 +153,7 @@ class SettingsRepository(private val context: Context) {
         val rules = stringPreferencesKey("rulesJson")
         val autoExtract = booleanPreferencesKey("autoExtract")
         val moveTree = stringPreferencesKey("moveToTree")
+        val treeMigrated = booleanPreferencesKey("perTaskTreeMigrated")
         val wEnabled = booleanPreferencesKey("windowEnabled")
         val wStart = intPreferencesKey("windowStart")
         val wEnd = intPreferencesKey("windowEnd")
@@ -154,6 +163,8 @@ class SettingsRepository(private val context: Context) {
         val rpcPort = intPreferencesKey("rpcPort")
         val dynamic = booleanPreferencesKey("dynamicColor")
         val accent = stringPreferencesKey("accent")
+        val palette = stringPreferencesKey("palette")
+        val textSize = stringPreferencesKey("textSize")
         val nPer = booleanPreferencesKey("notifyPerTask")
         val nFail = booleanPreferencesKey("notifyOnFail")
         val nSound = booleanPreferencesKey("notifySound")
@@ -216,6 +227,7 @@ class SettingsRepository(private val context: Context) {
             p[K.rules] = s.rulesJson
             p[K.autoExtract] = s.autoExtract
             p[K.moveTree] = s.moveToTree
+            p[K.treeMigrated] = s.perTaskTreeMigrated
             p[K.wEnabled] = s.windowEnabled
             p[K.wStart] = s.windowStart.coerceIn(0, 23)
             p[K.wEnd] = s.windowEnd.coerceIn(0, 23)
@@ -225,6 +237,8 @@ class SettingsRepository(private val context: Context) {
             p[K.rpcPort] = s.rpcPort.coerceIn(1024, 65535)
             p[K.dynamic] = s.dynamicColor
             p[K.accent] = s.accent.name
+            p[K.palette] = s.palette.name
+            p[K.textSize] = s.textSize.name
             p[K.nPer] = s.notifyPerTask
             p[K.nFail] = s.notifyOnFail
             p[K.nSound] = s.notifySound
@@ -281,6 +295,7 @@ class SettingsRepository(private val context: Context) {
             rulesJson = p[K.rules] ?: d.rulesJson,
             autoExtract = p[K.autoExtract] ?: d.autoExtract,
             moveToTree = p[K.moveTree] ?: d.moveToTree,
+            perTaskTreeMigrated = p[K.treeMigrated] ?: d.perTaskTreeMigrated,
             windowEnabled = p[K.wEnabled] ?: d.windowEnabled,
             windowStart = p[K.wStart] ?: d.windowStart,
             windowEnd = p[K.wEnd] ?: d.windowEnd,
@@ -290,6 +305,8 @@ class SettingsRepository(private val context: Context) {
             rpcPort = p[K.rpcPort] ?: d.rpcPort,
             dynamicColor = p[K.dynamic] ?: d.dynamicColor,
             accent = p[K.accent]?.let { runCatching { Accent.valueOf(it) }.getOrNull() } ?: d.accent,
+            palette = p[K.palette]?.let { runCatching { Palette.valueOf(it) }.getOrNull() } ?: d.palette,
+            textSize = p[K.textSize]?.let { runCatching { TextSize.valueOf(it) }.getOrNull() } ?: d.textSize,
             notifyPerTask = p[K.nPer] ?: d.notifyPerTask,
             notifyOnFail = p[K.nFail] ?: d.notifyOnFail,
             notifySound = p[K.nSound] ?: d.notifySound,

@@ -65,6 +65,12 @@ data class TaskEntity(
     @androidx.room.ColumnInfo(defaultValue = "0") val postExtract: Boolean = false,
     /** موعد البدء المجدول (ملّي ثانية)، أو null للبدء فوراً. */
     @androidx.room.ColumnInfo(defaultValue = "NULL") val scheduledAt: Long? = null,
+    /** مجلد SAF الوجهة، مثبّت عند الإضافة (لا يتغير بتغيير الإعداد العام أثناء التنزيل). null = التنزيلات. */
+    @androidx.room.ColumnInfo(defaultValue = "NULL") val treeUri: String? = null,
+    /** سجل النشر: مستند الوجهة الذي أُنشئ للنسخ (يُحذف إن لم يكتمل). */
+    @androidx.room.ColumnInfo(defaultValue = "NULL") val publishUri: String? = null,
+    /** سجل النشر: الأصل المحلي الذي ينتظر الحذف بعد تثبيت الوجهة. */
+    @androidx.room.ColumnInfo(defaultValue = "NULL") val publishLocal: String? = null,
 )
 
 @Entity(

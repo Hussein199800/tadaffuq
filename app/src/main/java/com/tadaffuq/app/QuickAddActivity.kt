@@ -41,10 +41,13 @@ class QuickAddActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT <= 28 && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             storage.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        } else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            // البلاطة قد تُستعمل قبل فتح التطبيق: بلا هذا الإذن لا يظهر تقدم التنزيل ولا أزراره
+            storage.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         setContent {
             val s by settings.settings.collectAsState(initial = com.tadaffuq.data.Settings())
-            TadaffuqTheme(s.theme, dynamic = s.dynamicColor, accent = s.accent) {
+            TadaffuqTheme(s.theme, fontScale = s.textSize.scale, dynamic = s.dynamicColor, accent = s.accent, palette = s.palette) {
                 torrent?.let { TorrentAddSheet(it, onDismiss = { finish() }) }
                     ?: request?.let { AddSheet(it, onDismiss = { finish() }, onTorrent = { m -> torrent = TorrentRequest(magnet = m) }) }
             }

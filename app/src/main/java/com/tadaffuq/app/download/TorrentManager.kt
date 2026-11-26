@@ -59,6 +59,12 @@ class TorrentManager @Inject constructor(
     fun start() {
         synchronized(this) { if (started) return; started = true }
         downloads.externalSpeed = { _live.value.values.sumOf { it.downBps.toLong() } }
+        downloads.externalLoad = {
+            val active = _live.value.values.filter { it.state == TorrentState.DOWNLOADING || it.state == TorrentState.METADATA || it.state == TorrentState.CHECKING }
+            ExternalLoad(active.size, _live.value.values.sumOf { it.downBps.toLong() }, active.sumOf { it.wantedDone }, active.sumOf { it.wanted })
+        }
+        downloads.externalPauseAll = { pauseAll() }
+        downloads.externalResumeAll = { resumeAll() }
         downloads.externalWork = { _live.value.values.any { it.state == TorrentState.DOWNLOADING || it.state == TorrentState.METADATA || it.state == TorrentState.SEEDING || it.state == TorrentState.CHECKING } }
         scope.launch { settingsRepo.settings.collect { settings = it; if (engine.running) engine.apply(torrentSettings(it)) } }
         scope.launch {
@@ -68,9 +74,24 @@ class TorrentManager @Inject constructor(
         }
     }
 
-    private fun torrentSettings(s: Settings) = TorrentSettings(
-        dht = s.torrentDht, lsd = s.torrentDht, downloadLimit = s.torrentDownLimit, uploadLimit = s.torrentUpLimit,
+    private fun torrentSettings(s: Settings, down: Int = shareOfGlobal(s)) = TorrentSettings(
+        dht = s.torrentDht, lsd = s.torrentDht, downloadLimit = down, uploadLimit = s.torrentUpLimit,
     )
+
+    @Volatile private var appliedDown = -1
+    @Volatile private var appliedAt = 0L
+
+    /**
+     * حد السرعة العام يشمل التورنت: يأخذ ما تتركه التنزيلات العادية من الحد (بحد أدنى 32 ك.ب/ث كي لا يتجمد)،
+     * ولا يتجاوز حد التورنت الخاص إن وُضع. 0 = بلا حد. هامش موثّق: المجموع قد يزيد عن الحد بـ 32 ك.ب/ث على الأكثر.
+     */
+    internal fun shareOfGlobal(s: Settings, httpBps: Long = downloads.live.value.values.sumOf { it.speedBps }): Int {
+        val global = downloads.globalLimiter.bytesPerSecond
+        val own = s.torrentDownLimit
+        if (global <= 0) return own
+        val rest = (global - httpBps).coerceAtLeast(MIN_SHARE).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        return if (own > 0) minOf(own, rest) else rest
+    }
 
     private fun ensureEngine() { if (!engine.running) engine.start(torrentSettings(settings)) ; engine.onFinished = { h -> scope.launch { finished(h) } } }
 
@@ -81,6 +102,21 @@ class TorrentManager @Inject constructor(
         }
     }
 
+    private val lastTotals = HashMap<String, Long>()
+    private companion object { const val MIN_SHARE = 32L * 1024 }
+
+    /** من «إيقاف الكل» أو انتهاء مهلة الخدمة: يُحفظ PAUSED فلا يعود التورنت للعمل إلا باستئناف صريح. */
+    suspend fun pauseAll() = withContext(Dispatchers.IO) {
+        dao.all().filter { it.state == TorrentRunState.ACTIVE || (it.state == TorrentRunState.COMPLETED && it.seedAfter) }.forEach { t ->
+            if (engine.running) engine.pause(t.infoHash)
+            if (t.state == TorrentRunState.ACTIVE) dao.setState(t.infoHash, TorrentRunState.PAUSED)
+        }
+    }
+
+    suspend fun resumeAll() = withContext(Dispatchers.IO) {
+        dao.all().filter { it.state == TorrentRunState.PAUSED }.forEach { resume(it.infoHash) }
+    }
+
     private suspend fun loop() {
         var tick = 0
         while (true) {
@@ -89,6 +125,13 @@ class TorrentManager @Inject constructor(
             val all = dao.all()
             val snaps = all.mapNotNull { t -> engine.status(t.infoHash)?.let { t.infoHash to it } }.toMap()
             _live.value = snaps
+            // نصيب التورنت من الحد العام يُعاد حسابه، ويُطبَّق فقط عند تغير ملموس (≥15٪) وكل 3 ث على الأكثر
+            val want = shareOfGlobal(settings)
+            val now = System.currentTimeMillis()
+            if (want != appliedDown && now - appliedAt >= 3_000 &&
+                (appliedDown <= 0 || want <= 0 || kotlin.math.abs(want - appliedDown) * 100 / appliedDown >= 15)) {
+                engine.apply(torrentSettings(settings, want)); appliedDown = want; appliedAt = now
+            }
             // شروط الطابور نفسها تنطبق على التورنت
             val hold = downloads.hold.value
             if (hold != null && !engine.sessionPaused) engine.pauseSession()
@@ -100,6 +143,12 @@ class TorrentManager @Inject constructor(
                     engine.pause(t.infoHash)
                     dao.upsert(t.copy(seedAfter = false))
                 }
+            }
+            // البيانات الفعلية (تنزيل + رفع) تدخل حدود البيانات اليومية والشهرية كالتنزيل العادي
+            snaps.forEach { (h, s) ->
+                val now = s.downloaded + s.uploaded
+                val prev = lastTotals.put(h, now)
+                if (prev != null) downloads.recordExternalBytes(if (now >= prev) now - prev else now)
             }
             if (tick++ % 10 == 0) all.forEach { t -> snaps[t.infoHash]?.let { dao.counters(t.infoHash, it.uploaded, it.downloaded) } }
             if (snaps.values.any { it.state == TorrentState.DOWNLOADING || it.state == TorrentState.SEEDING }) DownloadService.ensureRunning(ctx, downloads)
@@ -123,7 +172,7 @@ class TorrentManager @Inject constructor(
     fun parse(raw: ByteArray): TorrentMeta = run { engine; TorrentEngine.parse(raw) }
 
     suspend fun add(meta: TorrentMeta, wanted: Set<Int>, seedAfter: Boolean, ratio: Float, magnet: String?) = withContext(Dispatchers.IO) {
-        val dir = File(StorageDirs.root(), "تورنت")
+        val dir = File(StorageDirs.directRoot(), "تورنت") // libtorrent يكتب في مكانه النهائي مباشرة
         val wantedSize = meta.files.filter { it.index in wanted }.sumOf { it.size }
         dao.upsert(TorrentEntity(meta.infoHash, meta.name, dir.path, meta.raw, wanted.joinToString(","), meta.totalSize, wantedSize,
             seedAfter = seedAfter, ratioLimit = ratio, magnet = magnet))

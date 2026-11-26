@@ -90,7 +90,7 @@ fun HomeScreen(vm: MainViewModel, clipboardLink: String?, onAdd: (String?) -> Un
                 Text(stringResource(R.string.chart_caption), style = MaterialTheme.typography.labelSmall, color = T.extra.secondaryText)
                 if (settings.showLiveScene) {
                     Spacer(Modifier.height(8.dp))
-                    LiveScene(speed, connections, sr(R.string.scene_a11y, connections))
+                    LiveScene(speed, connections, com.tadaffuq.app.core.pr(R.plurals.scene_a11y, connections, connections))
                 }
             }
         }
@@ -110,7 +110,7 @@ fun HomeScreen(vm: MainViewModel, clipboardLink: String?, onAdd: (String?) -> Un
         } else {
             val focus = (running + tasks.filter { it.status.isWaiting || it.status == TaskStatus.PAUSED }).take(4)
             if (focus.isNotEmpty()) {
-                item { SectionHeader(stringResource(R.string.in_progress), stringResource(R.string.see_all), onOpenDownloads) }
+                item { SectionHeader(stringResource(R.string.status_in_progress), stringResource(R.string.see_all), onOpenDownloads) }
                 items(focus, key = { "f" + it.id }) { t ->
                     TaskCard(t, live[t.id], false, false, { detail = t.id }, { detail = t.id }, { primary(vm, t) })
                 }

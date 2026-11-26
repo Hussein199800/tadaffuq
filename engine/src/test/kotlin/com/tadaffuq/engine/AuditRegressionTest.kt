@@ -167,6 +167,28 @@ class AuditRegressionTest {
     }
 }
 
+/** rc3 P0: فشل التهيئة بعد الحجز لا يترك حجزاً عالقاً يمنع تنزيلات لاحقة. */
+class SpaceLeakTest {
+    @get:Rule val tmp = TemporaryFolder()
+
+    @Test fun failedOpenReleasesReservation() = runBlocking {
+        val data = Random(9).nextBytes(300_000)
+        val server = RangeServer(data)
+        try {
+            val dir = tmp.newFolder("leak")
+            val target = File(dir, "x.part").apply { mkdirs() } // مجلد بالاسم نفسه: فتح الملف يفشل بعد الحجز
+            try { HttpDownloader(HttpClients.create(), RequestSpec(server.url()), target).run(); fail() } catch (e: DownloadException) {
+                assertTrue(e.error is DownloadError.Storage)
+            }
+            assertEquals("reservation leaked", 0L, SpaceLedger.reservedOn(dir))
+            val ok = File(dir, "y.part")
+            HttpDownloader(HttpClients.create(), RequestSpec(server.url()), ok).run()
+            assertArrayEquals(data, ok.readBytes())
+            assertEquals(0L, SpaceLedger.reservedOn(dir))
+        } finally { server.close() }
+    }
+}
+
 class CookieScopeTest {
     /** P0-10: الكوكيز لا تنتقل إلى مضيف آخر عبر التحويل، ولا عبر finalUrl أو مرآة. */
     @Test fun cookiesStayWithTheirHost() = runBlocking {

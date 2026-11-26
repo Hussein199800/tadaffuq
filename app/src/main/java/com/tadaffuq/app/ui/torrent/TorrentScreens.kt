@@ -134,7 +134,7 @@ fun TorrentAddSheet(req: TorrentRequest, onDismiss: () -> Unit, vm: TorrentViewM
                     Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
                         Text(m.name, style = MaterialTheme.typography.titleMedium)
                         val wantedSize = m.files.filter { it.index in wanted }.sumOf { it.size }
-                        Text(sr(R.string.torrent_summary, wanted.size, m.files.size, Fmt.bytes(wantedSize)), color = T.extra.secondaryText, style = MaterialTheme.typography.bodySmall)
+                        Text(com.tadaffuq.app.core.pr(R.plurals.torrent_summary, m.files.size, wanted.size, m.files.size, Fmt.bytes(wantedSize)), color = T.extra.secondaryText, style = MaterialTheme.typography.bodySmall)
                         // توضيح استهلاك البيانات والرفع قبل البدء
                         Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(top = 8.dp)) {
                             Text(sr(R.string.torrent_upload_note, Fmt.bytes(wantedSize), if (up > 0) Fmt.speed(up.toLong()) else stringResource(R.string.unlimited)),
@@ -200,7 +200,7 @@ fun TorrentCard(t: TorrentEntity, s: TorrentInfoSnapshot?, onClick: () -> Unit) 
         Row(Modifier.padding(top = 6.dp)) {
             val state = if (t.state == TorrentRunState.PAUSED) TorrentState.PAUSED else if (t.state == TorrentRunState.COMPLETED && s?.state != TorrentState.SEEDING) TorrentState.FINISHED else s?.state
             Text(stringResource(R.string.torrent_badge) + " · " + stringResource(torrentStateText(state)), style = MaterialTheme.typography.labelMedium, color = T.extra.chartLine, modifier = Modifier.weight(1f))
-            if (s != null) Text(sr(R.string.torrent_peers_seeds, s.peers, s.seeds), style = MaterialTheme.typography.labelMedium, color = T.extra.secondaryText)
+            if (s != null) Text(com.tadaffuq.app.core.pr(R.plurals.peers_n, s.peers, s.peers) + " · " + com.tadaffuq.app.core.pr(R.plurals.seeds_n, s.seeds, s.seeds), style = MaterialTheme.typography.labelMedium, color = T.extra.secondaryText)
         }
     }
 }
@@ -232,7 +232,7 @@ fun TorrentDetailSheet(hash: String, onDismiss: () -> Unit, vm: TorrentViewModel
             }
             Row(Modifier.fillMaxWidth()) {
                 StatTile(stringResource(R.string.torrent_uploaded), Fmt.bytes(s?.uploaded ?: t.uploaded), Modifier.weight(1f))
-                StatTile(stringResource(R.string.torrent_peers), sr(R.string.torrent_peers_seeds, s?.peers ?: 0, s?.seeds ?: 0), Modifier.weight(1f))
+                StatTile(stringResource(R.string.torrent_peers), com.tadaffuq.app.core.pr(R.plurals.peers_n, s?.peers ?: 0, s?.peers ?: 0) + " · " + com.tadaffuq.app.core.pr(R.plurals.seeds_n, s?.seeds ?: 0, s?.seeds ?: 0), Modifier.weight(1f))
             }
             s?.error?.let { Text(it, color = T.extra.danger, style = MaterialTheme.typography.bodySmall) }
 

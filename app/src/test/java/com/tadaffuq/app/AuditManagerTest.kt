@@ -196,6 +196,42 @@ class AuditManagerTest {
         assertFalse(File(dir, "f (1).bin").exists())
     }
 
+    private fun sha256(b: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
+
+    /** rc3: موت قبل rename بعد تغيير الاسم في Room (تعارض) مع بصمة متوقعة: الجزئي يُعثر عليه بمعرّفه ويكتمل مع البصمة. */
+    @Test fun rc3_deathBeforeRenameAfterNameChange() = runBlocking {
+        val dir = tmp.newFolder("ren")
+        val data = contents.getValue("a")
+        File(dir, "f.bin").writeText("someone else's file")
+        val id = db.tasks().insertAll(listOf(TaskEntity(url = server.url("/a/f.bin").toString(), fileName = "f (1).bin", dirPath = dir.path, status = TaskStatus.VERIFYING,
+            totalBytes = data.size.toLong(), acceptRanges = true, etag = "\"a\"", downloadedBytes = data.size.toLong(), expectedHash = sha256(data),
+            filePath = File(dir, "f (1).bin").path))).single()
+        StorageDirs.partFile(dir.path, id).writeBytes(data)
+        db.tasks().saveProgress(id, listOf(com.tadaffuq.data.SegmentEntity(id, 0, 0, data.size - 1L, data.size.toLong())), data.size.toLong(), data.size.toLong(), "\"a\"", null, true, server.url("/a/f.bin").toString())
+        manager()
+        val t = waitFor(id, TaskStatus.COMPLETED, TaskStatus.FAILED)
+        assertEquals(t.errorCode, TaskStatus.COMPLETED, t.status)
+        assertEquals(true, t.hashOk)
+        assertArrayEquals(data, File(t.filePath!!).readBytes())
+        assertEquals("someone else's file", File(dir, "f.bin").readText())
+        assertFalse(StorageDirs.partFile(dir.path, id).exists())
+    }
+
+    /** rc3: موت بعد rename: نتيجة البصمة المحفوظة قبل rename تبقى بعد الاستعادة. */
+    @Test fun rc3_deathAfterRenameKeepsHashResult() = runBlocking {
+        val dir = tmp.newFolder("fin2")
+        val data = contents.getValue("a")
+        val dest = File(dir, "g.bin").apply { writeBytes(data) }
+        val id = db.tasks().insertAll(listOf(TaskEntity(url = server.url("/a/g.bin").toString(), fileName = "g.bin", dirPath = dir.path, status = TaskStatus.VERIFYING,
+            totalBytes = data.size.toLong(), expectedHash = sha256(data), hashOk = true, actualHash = sha256(data), filePath = dest.path))).single()
+        manager()
+        val t = waitFor(id, TaskStatus.COMPLETED, TaskStatus.FAILED, timeoutMs = 10_000)
+        assertEquals(TaskStatus.COMPLETED, t.status)
+        assertEquals(true, t.hashOk)
+        assertEquals(sha256(data), t.actualHash)
+        assertEquals(0, requests.get())
+    }
+
     /** P0-08: «Wi-Fi فقط» لكل مهمة يُطبَّق على المهمة العاملة عند التحول إلى بيانات الجوال. */
     @Test fun p0_08_perTaskWifiOnlyStopsOnCellular() = runBlocking {
         throttle = 400
@@ -226,6 +262,31 @@ class AuditManagerTest {
         assertTrue("overshoot ${t.downloadedBytes}", t.downloadedBytes < 600_000 + 400_000)
     }
 
+    /** rc3 P1: بيانات التورنت (تنزيل + رفع) تدخل حدود الجوال وتوقف الطابور. */
+    @Test fun rc3_torrentBytesCountTowardLimit() = runBlocking {
+        settings.update { it.copy(dailyLimitBytes = 500_000) }
+        val dm = manager(NetKind.CELLULAR)
+        delay(300)
+        assertEquals(null, dm.hold.value)
+        dm.recordExternalBytes(600_000)
+        withTimeout(5_000) { while (dm.hold.value == null) delay(50) }
+        assertEquals(com.tadaffuq.app.download.Hold.DAILY_LIMIT, dm.hold.value)
+    }
+
+    /** rc3 P1: التنظيف يحدد اليتيم بمعرّفات المهام، ولا يلمس جزئياً قابلاً للاستئناف ولا ملف المستخدم. */
+    @Test fun rc3_orphanCleanupIsSafe() = runBlocking {
+        val dir = tmp.newFolder("orph")
+        val dm = manager()
+        val id = db.tasks().insertAll(listOf(TaskEntity(url = "https://x/a.bin", fileName = "a.bin", dirPath = dir.path, status = TaskStatus.PAUSED))).single()
+        val live = StorageDirs.partFile(dir.path, id).apply { writeText("resumable") }
+        val orphan = StorageDirs.partFile(dir.path, 9999).apply { writeText("orphan") }
+        val user = File(dir, "notes.txt").apply { writeText("mine") }
+        val found = dm.orphanParts()
+        assertEquals(listOf(orphan.absolutePath), found.map { it.absolutePath })
+        assertEquals(1, dm.cleanOrphans(found))
+        assertTrue(live.exists()); assertTrue(user.exists()); assertFalse(orphan.exists())
+    }
+
     /** P0-10: الكوكيز لا تُرسل لمضيف آخر غير الذي التُقطت منه (روابط متعددة/مرايا). */
     @Test fun p0_10_cookiesAreScopedAndEncrypted() = runBlocking {
         val dir = tmp.newFolder("ck")
@@ -235,5 +296,26 @@ class AuditManagerTest {
         val t = waitFor(id, TaskStatus.COMPLETED, TaskStatus.FAILED)
         assertEquals(TaskStatus.COMPLETED, t.status)
         assertTrue("origin still gets its cookie", cookieHosts.values.all { it == "sid=SECRET" } && cookieHosts.isNotEmpty())
+    }
+}
+
+/** RC4: حد السرعة العام يشمل التورنت (ما تتركه التنزيلات العادية، بحد أدنى موثّق 32 ك.ب/ث). */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], application = android.app.Application::class)
+class TorrentShareTest {
+    @Test fun torrentGetsRemainderOfGlobalLimit() {
+        val ctx: Context = ApplicationProvider.getApplicationContext()
+        val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
+        val settings = SettingsRepository(ctx)
+        val dm = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), com.tadaffuq.app.download.AppCredentials(ctx, com.tadaffuq.app.core.SecretStore(ctx)), Conditions(ctx), Notifier(ctx))
+        val tm = com.tadaffuq.app.download.TorrentManager(ctx, db, settings, dm, Notifier(ctx))
+        val s = com.tadaffuq.data.Settings(torrentDownLimit = 0)
+        dm.globalLimiter.bytesPerSecond = 0
+        assertEquals(0, tm.shareOfGlobal(s, 0))                       // بلا حد عام: حد التورنت الخاص (لا شيء)
+        dm.globalLimiter.bytesPerSecond = 200_000
+        assertEquals(50_000, tm.shareOfGlobal(s, 150_000))            // الباقي من الحد
+        assertEquals(32 * 1024, tm.shareOfGlobal(s, 199_000))         // حد أدنى كي لا يتجمد
+        assertEquals(20_000, tm.shareOfGlobal(s.copy(torrentDownLimit = 20_000), 0)) // الأصغر يغلب
+        db.close()
     }
 }

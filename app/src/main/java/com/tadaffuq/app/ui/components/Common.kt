@@ -35,6 +35,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -301,5 +304,85 @@ fun Chip(text: String, selected: Boolean, onClick: () -> Unit, count: Int? = nul
     ) {
         Text(text, style = MaterialTheme.typography.labelLarge, color = fg)
         if (count != null && count > 0) Text(com.tadaffuq.app.core.Fmt.iso(count.toString()), style = MaterialTheme.typography.labelMedium, color = fg.copy(alpha = 0.75f), fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** لون قسم دلالي: خلفية باستيل خفيفة وأيقونة مشبعة (التحميل أزرق، الشبكة نعناعي، التخزين كهرماني…). */
+enum class Tint(val light: Color, val dark: Color) {
+    BLUE(Color(0xFF1E5FB8), Color(0xFF6CB2FF)),
+    MINT(Color(0xFF0B7F63), Color(0xFF34D6AE)),
+    AMBER(Color(0xFF9A5B00), Color(0xFFFFC266)),
+    CORAL(Color(0xFFB3401E), Color(0xFFFF9B7A)),
+    VIOLET(Color(0xFF5B3FC4), Color(0xFFB39DFF)),
+    SLATE(Color(0xFF4A5563), Color(0xFFAAB4C0)),
+}
+
+@Composable
+private fun isDark() = MaterialTheme.colorScheme.background.let { (it.red + it.green + it.blue) / 3f < 0.5f }
+
+/** أيقونة في مربع باستيل؛ ثابتة الحجم 40dp ومنطقة اللمس للصف كله. */
+@Composable
+fun TintIcon(icon: ImageVector, tint: Tint) {
+    val c = if (isDark()) tint.dark else tint.light
+    Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(c.copy(alpha = if (isDark()) 0.16f else 0.12f)), contentAlignment = Alignment.Center) {
+        Icon(icon, null, tint = c, modifier = Modifier.size(22.dp))
+    }
+}
+
+/** مدخل في مركز الإعدادات: أيقونة ملونة، عنوان، قيمة مختصرة، وسهم. */
+@Composable
+fun HubRow(icon: ImageVector, tint: Tint, title: String, value: String, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).clickable(onClickLabel = title, onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TintIcon(icon, tint)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            Text(value, style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
+        }
+        Icon(androidx.compose.material.icons.Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = T.extra.secondaryText)
+    }
+}
+
+/** اختيار من قيم قليلة بنقرة واحدة (بدل منزلق دقيق): عنوان + قيمة + سطر شرح اختياري. */
+@Composable
+fun <V> ChoiceRow(title: String, description: String?, options: List<Pair<V, String>>, selected: V, onSelect: (V) -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(title, style = MaterialTheme.typography.bodyLarge)
+        if (!description.isNullOrBlank()) Text(description, style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
+        androidx.compose.foundation.layout.FlowRow(
+            Modifier.padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            options.forEach { (v, label) ->
+                val on = v == selected
+                val bg = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest
+                val fg = if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                Box(
+                    Modifier.heightIn(min = 44.dp).clip(RoundedCornerShape(22.dp)).background(bg)
+                        .clickable(role = androidx.compose.ui.semantics.Role.RadioButton, onClickLabel = label) { onSelect(v) }
+                        .semantics { this.selected = on }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) { Text(label, style = MaterialTheme.typography.labelLarge, color = fg) }
+            }
+        }
+    }
+}
+
+/** «كيف يعمل؟»: الشرح الطويل مطوي خلف سطر واحد، لا بجانب كل مفتاح. */
+@Composable
+fun HowItWorks(text: String) {
+    var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        TextButton(onClick = { open = !open }) {
+            Text(androidx.compose.ui.res.stringResource(com.tadaffuq.app.R.string.how_it_works), style = MaterialTheme.typography.labelLarge)
+        }
+        androidx.compose.animation.AnimatedVisibility(open) {
+            Text(text, style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp))
+        }
     }
 }

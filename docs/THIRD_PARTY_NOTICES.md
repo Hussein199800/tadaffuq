@@ -174,7 +174,7 @@
 | androidx.webkit | webkit | 1.14.0 | Apache-2.0 |
 | androidx.work | work-runtime | 2.10.5 | Apache-2.0 |
 | androidx.work | work-runtime-ktx | 2.10.5 | Apache-2.0 |
-| com.github.junrar | junrar | 7.5.5 | UnRar License |
+| com.github.junrar | junrar | 7.6.1 | UnRar License |
 | com.github.mwiede | jsch | 2.27.3 | BSD-3-Clause, BSD-3-Clause, ISC |
 | com.google.code.findbugs | jsr305 | 3.0.2 | Apache-2.0 |
 | com.google.dagger | dagger | 2.57.2 | Apache-2.0 |

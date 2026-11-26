@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <external-path name="downloads" path="Download/" />
+    <!-- المجلد المرحلي (Android 10+): الملف يبقى فيه إن تعذّر نشره، ويجب أن يُفتح ويُشارك -->
+    <external-files-path name="staging" path="Download/" />
     <cache-path name="share" path="share/" />
     <cache-path name="vault" path="vault-open/" />
 </paths>

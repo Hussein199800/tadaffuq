@@ -55,9 +55,9 @@ class MainViewModel @Inject constructor(
 
     /** نسخ أو نقل إلى مجلد اختاره المستخدم عبر SAF (بطاقة SD أو USB أو غيرهما). */
     suspend fun copyToTree(t: TaskEntity, tree: android.net.Uri, move: Boolean) = withContext(Dispatchers.IO) {
+        if (move) { manager.moveToTree(t, tree.toString()); return@withContext }
         val f = t.filePath?.let(::File)?.takeIf { it.exists() } ?: error("missing")
-        val uri = com.tadaffuq.app.download.TaskFiles.copyToTree(ctx, f, tree.toString())
-        if (move) { f.delete(); db.tasks().update(t.copy(filePath = uri.toString())) }
+        com.tadaffuq.app.download.TaskFiles.copyToTree(ctx, f, tree.toString())
     }
     private fun <T> StateFlowOf(flow: kotlinx.coroutines.flow.Flow<T>, initial: T): StateFlow<T> =
         flow.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initial)
@@ -85,6 +85,7 @@ class MainViewModel @Inject constructor(
     fun setPriority(id: Long, p: Int) = viewModelScope.launch { manager.setPriority(id, p) }
     fun setSpeedLimit(id: Long, bps: Long) = viewModelScope.launch { manager.setSpeedLimit(id, bps) }
     fun updateUrl(id: Long, url: String) = viewModelScope.launch { manager.updateUrl(id, url) }
+    fun setTree(id: Long, tree: String?) = viewModelScope.launch { manager.setTree(id, tree) }
 
     // ===== الملفات =====
 
@@ -116,7 +117,7 @@ class MainViewModel @Inject constructor(
 
     /** الحذف النهائي: يُحذف السجل فقط إن حُذف الملف فعلاً (أو كان غير موجود). */
     fun purge(tasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
-        val (gone, kept) = tasks.partition { t -> t.filePath?.let(::File)?.let { !it.exists() || it.delete() } ?: true }
+        val (gone, kept) = tasks.partition { t -> t.filePath?.let { com.tadaffuq.app.download.TaskFiles.delete(ctx, it) } ?: true }
         db.tasks().delete(gone.map { it.id })
         fileError(R.plurals.files_delete_failed, kept.size)
     }
@@ -124,7 +125,7 @@ class MainViewModel @Inject constructor(
     fun purgeOldTrash() = viewModelScope.launch(Dispatchers.IO) {
         val before = System.currentTimeMillis() - 30L * 86_400_000
         val old = db.tasks().all().filter { (it.trashedAt ?: Long.MAX_VALUE) < before }
-        val gone = old.filter { t -> t.filePath?.let(::File)?.let { !it.exists() || it.delete() } ?: true }
+        val gone = old.filter { t -> t.filePath?.let { com.tadaffuq.app.download.TaskFiles.delete(ctx, it) } ?: true }
         db.tasks().delete(gone.map { it.id })
     }
 

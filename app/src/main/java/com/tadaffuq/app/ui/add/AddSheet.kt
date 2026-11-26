@@ -94,7 +94,7 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
             }
             if (s.items.size > 1) item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(sr(R.string.add_found, s.items.size), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f).padding(start = 8.dp))
+                    Text(com.tadaffuq.app.core.pr(R.plurals.add_found, s.items.size, s.items.size), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f).padding(start = 8.dp))
                     TextButton(onClick = { vm.selectAll(s.items.any { !it.selected }) }) {
                         Text(stringResource(if (s.items.any { !it.selected }) R.string.select_all else R.string.select_none))
                     }
@@ -108,7 +108,7 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
             }
             items(s.items.take(500), key = { it.url }) { item -> ItemRow(item, s.single, vm) }
             if (s.items.size > 500) item {
-                Text(sr(R.string.add_more_hidden, s.items.size - 500), color = T.extra.secondaryText, modifier = Modifier.padding(20.dp))
+                Text(com.tadaffuq.app.core.pr(R.plurals.add_more_hidden, s.items.size - 500, s.items.size - 500), color = T.extra.secondaryText, modifier = Modifier.padding(20.dp))
             }
 
             if (s.anyRemote) item {

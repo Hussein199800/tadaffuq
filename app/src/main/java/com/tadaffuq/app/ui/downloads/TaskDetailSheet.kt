@@ -102,7 +102,7 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
             if (segments != null && total > 0) {
                 Text(sr(R.string.segments_title, segments.size), style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(6.dp))
-                SegmentMap(segments, total, T.extra.chartLine, sr(R.string.segments_a11y, segments.size))
+                SegmentMap(segments, total, T.extra.chartLine, com.tadaffuq.app.core.pr(R.plurals.segments_a11y, segments.size, segments.size))
                 Spacer(Modifier.height(12.dp))
             }
 
@@ -132,6 +132,22 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
                 Text(t.finalUrl.orEmpty(), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
             }
             Text(sr(R.string.saved_in, Fmt.iso(t.filePath ?: t.dirPath)), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(top = 4.dp))
+            // وجهة هذه المهمة مثبّتة عند إضافتها؛ تُغيَّر هنا صراحة قبل الاكتمال
+            val ctx2 = androidx.compose.ui.platform.LocalContext.current
+            val pickTree = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()) { uri ->
+                if (uri != null) {
+                    runCatching { ctx2.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION) }
+                    vm.setTree(t.id, uri.toString())
+                }
+            }
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                Text(sr(R.string.task_dest, t.treeUri?.let { Fmt.iso(com.tadaffuq.app.download.TaskFiles.treeName(ctx2, it)) } ?: stringResource(R.string.task_dest_default)),
+                    style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.weight(1f))
+                if (t.status != TaskStatus.COMPLETED) {
+                    TextButton(onClick = { pickTree.launch(null) }) { Text(stringResource(R.string.task_dest_change)) }
+                    if (t.treeUri != null) TextButton(onClick = { vm.setTree(t.id, null) }) { Text(stringResource(R.string.reset_default)) }
+                }
+            }
             if (t.errorCode?.startsWith("HOSTKEY") == true && t.errorDetail != null)
                 Text(sr(R.string.hostkey_new_text, t.errorDetail), style = MaterialTheme.typography.bodySmall, color = T.extra.warning, modifier = Modifier.padding(top = 4.dp))
             t.actualHash?.let { Text("SHA/MD5: ${Fmt.iso(it)}", style = MaterialTheme.typography.bodySmall, color = if (t.hashOk == false) T.extra.danger else T.extra.secondaryText) }
@@ -142,7 +158,7 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
                 Doctor.Input(
                     probe = probe.takeIf { t.finalUrl != null },
                     error = ErrorCodes.toError(t.errorCode, t.errorDetail),
-                    backgroundRestricted = android.os.Build.VERSION.SDK_INT >= 28 && ctx.getSystemService(android.app.ActivityManager::class.java).isBackgroundRestricted,
+                    backgroundRestricted = ctx.getSystemService(android.app.ActivityManager::class.java).isBackgroundRestricted,
                     retries = t.retries, networkRetries = t.networkRetries, serverRetries = t.serverRetries,
                     averageBps = live?.averageBps ?: t.averageBps, connections = live?.connections ?: 0,
                     freeBytes = runCatching { File(t.dirPath).let { if (it.exists()) it else it.parentFile }?.usableSpace ?: -1 }.getOrDefault(-1),

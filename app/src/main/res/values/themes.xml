@@ -15,6 +15,4 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
     <color name="bg">#F5F7FA</color>
-    <color name="navy">#142B4A</color>
-    <color name="mint">#34D6AE</color>
 </resources>

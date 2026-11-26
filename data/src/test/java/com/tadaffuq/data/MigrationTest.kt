@@ -22,9 +22,10 @@ class MigrationTest {
             close()
         }
         val db = helper.runMigrationsAndValidate("m.db", AppDatabase.VERSION, true)
-        db.query("SELECT fileName, downloadedBytes, mirrors FROM tasks").use { c ->
+        db.query("SELECT fileName, downloadedBytes, mirrors, treeUri, publishUri, publishLocal FROM tasks").use { c ->
             c.moveToFirst()
             assertEquals("a.zip", c.getString(0)); assertEquals(40, c.getLong(1)); assertEquals(true, c.isNull(2))
+            assertEquals(true, c.isNull(3)); assertEquals(true, c.isNull(4)); assertEquals(true, c.isNull(5))
         }
         db.query("SELECT COUNT(*) FROM segments").use { c -> c.moveToFirst(); assertEquals(1, c.getInt(0)) }
     }

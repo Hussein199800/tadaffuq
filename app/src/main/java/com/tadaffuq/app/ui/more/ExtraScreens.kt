@@ -45,6 +45,7 @@ import com.tadaffuq.app.R
 import com.tadaffuq.app.core.Backup
 import com.tadaffuq.app.core.Fmt
 import com.tadaffuq.app.core.sr
+import com.tadaffuq.app.core.pr
 import com.tadaffuq.app.download.StorageDirs
 import com.tadaffuq.app.ui.MainViewModel
 import com.tadaffuq.app.ui.components.Card
@@ -183,7 +184,7 @@ fun VaultScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit) {
                         }) { Text(stringResource(R.string.action_open)) }
                         TextButton(onClick = {
                             scope.launch {
-                                runCatching { withContext(Dispatchers.IO) { val d = java.io.File(StorageDirs.root(), it2.name).let { f -> java.io.File(f.parentFile, com.tadaffuq.engine.FileNames.uniqueIn(f.parentFile!!.apply { mkdirs() }, f.name)) }; vault.export(it2, d); d } }
+                                runCatching { withContext(Dispatchers.IO) { val d = java.io.File(StorageDirs.directRoot(), it2.name).let { f -> java.io.File(f.parentFile, com.tadaffuq.engine.FileNames.uniqueIn(f.parentFile!!.apply { mkdirs() }, f.name)) }; vault.export(it2, d); d } }
                                     .onSuccess { Toast.makeText(ctx, ctx.getString(R.string.vault_exported, it.name), Toast.LENGTH_SHORT).show() }
                                     .onFailure { e -> if (e is android.security.keystore.UserNotAuthenticatedException) unlocked = false else error = e.message }
                             }
@@ -217,7 +218,7 @@ fun BackupScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit) 
             runCatching {
                 val text = withContext(Dispatchers.IO) { ctx.contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) } }
                 vm.importBackup(text)
-            }.onSuccess { r -> message = ctx.getString(R.string.restore_done, r.tasks, r.links, r.bookmarks) }
+            }.onSuccess { r -> message = with(ctx) { sr(R.string.restore_done_prefix, listOf(pr(R.plurals.tasks_n, r.tasks, r.tasks), pr(R.plurals.links_n, r.links, r.links), pr(R.plurals.bookmarks_n, r.bookmarks, r.bookmarks)).joinToString(" · ")) } }
                 .onFailure { message = ctx.getString(R.string.restore_failed) }
         }
     }

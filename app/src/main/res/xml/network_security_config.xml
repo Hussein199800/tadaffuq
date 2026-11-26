@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- HTTP العادي مسموح لأن كثيراً من خوادم الملفات لا تدعم HTTPS، والواجهة تنبّه إليه.
      الثقة بشهادات النظام فقط: لا تعطيل للتحقق من TLS ولا شهادات مستخدم. -->
-<network-security-config>
-    <base-config cleartextTrafficPermitted="true">
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <!-- مقصود وموثّق في docs/SECURITY.md: روابط http:// مطلوبة لمدير تنزيل عام، والواجهة تنبّه للاتصال غير المشفر -->
+    <base-config cleartextTrafficPermitted="true" tools:ignore="InsecureBaseConfiguration">
         <trust-anchors><certificates src="system" /></trust-anchors>
     </base-config>
 </network-security-config>

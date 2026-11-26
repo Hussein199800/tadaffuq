@@ -8,8 +8,6 @@
     <string name="tab_more">المزيد</string>
     <string name="shortcut_add">تنزيل جديد</string>
     <string name="tile_label">تدفّق</string>
-    <string name="tile_active">يجري التنزيل · اضغط للإيقاف</string>
-    <string name="tile_idle">متوقف · اضغط للاستئناف</string>
     <string name="channel_active">التنزيلات الجارية</string>
     <string name="channel_active_desc">إشعار واحد يجمع تقدم كل التنزيلات العاملة</string>
     <string name="channel_done">اكتمال التنزيلات وأخطاؤها</string>
@@ -53,8 +51,6 @@
     <string name="add_hint">الصق رابطاً أو عدة روابط أو نصاً يحتويها. النمط [001-120] يولّد روابط متسلسلة.</string>
     <string name="add_links_label">الروابط</string>
     <string name="add_no_links">لم يُعثر على روابط HTTP أو HTTPS في النص</string>
-    <string name="add_found">عُثر على %1$d رابطاً</string>
-    <string name="add_more_hidden">و%1$d رابطاً آخر لا تُعرض هنا لكنها ستُضاف</string>
     <string name="add_package_name">اسم الحزمة</string>
     <string name="add_package_desc">تُجمع هذه التنزيلات في حزمة واحدة تُدار معاً</string>
     <string name="add_file_name">اسم الملف</string>
@@ -148,14 +144,11 @@
     <string name="empty_downloads_text">أضف رابطاً أو شاركه مع تدفّق من أي تطبيق.</string>
     <string name="empty_filter">لا شيء هنا</string>
     <string name="empty_filter_text">لا توجد تنزيلات بهذه الحالة الآن.</string>
-    <string name="delete_title">حذف %1$d من التنزيلات؟</string>
     <string name="delete_desc">تُحذف المهام وأجزاؤها غير المكتملة.</string>
     <string name="delete_files_too">احذف الملفات المكتملة أيضاً</string>
     <string name="eta">متبقٍ %1$s</string>
-    <string name="connections_n">%1$d اتصال</string>
     <string name="hash_verified">البصمة مطابقة</string>
     <string name="segments_title">الأجزاء (%1$d)</string>
-    <string name="segments_a11y">خريطة %1$d جزءاً من الملف، الملوّن منها منجز</string>
     <string name="downloaded">المنجز</string>
     <string name="speed_now">السرعة الآن</string>
     <string name="speed_avg">المتوسط</string>
@@ -182,13 +175,12 @@
     <string name="waiting_n">تنتظر</string>
     <string name="chart_a11y">رسم السرعة لآخر دقيقتين، الآن %1$s</string>
     <string name="chart_caption">السرعة الإجمالية الفعلية خلال آخر دقيقتين</string>
-    <string name="scene_a11y">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر %1$d اتصال</string>
     <string name="today_usage">استهلاك اليوم</string>
     <string name="total">الإجمالي</string>
     <string name="mobile_data">بيانات الجوال</string>
     <string name="empty_home">ابدأ أول تنزيل</string>
     <string name="empty_home_text">الصق رابطاً، أو شارك رابطاً من أي تطبيق، أو نزّل من المتصفح المدمج.</string>
-    <string name="in_progress">قيد العمل</string>
+    <string name="status_in_progress">قيد العمل</string>
     <string name="see_all">عرض الكل</string>
     <string name="recent_done">اكتمل مؤخراً</string>
     <string name="clip_found">رابط في الحافظة: اضغط لتنزيله</string>
@@ -207,7 +199,6 @@
     <string name="reload">إعادة تحميل</string>
     <string name="previous">السابق</string>
     <string name="next">التالي</string>
-    <string name="trackers_blocked">حُجب %1$d متتبعاً في هذه الصفحة</string>
     <string name="private_note">التبويب الخاص لا يُسجَّل في السجل ولا يستعمل الذاكرة المؤقتة، لكن جهازك لا يدعم عزل WebView، فملفات تعريف الارتباط مشتركة مع بقية التبويبات. ليس خصوصية كاملة.</string>
     <string name="private_note_isolated">التبويب الخاص معزول: ملفات تعريف الارتباط والتخزين منفصلة عن بقية التبويبات وتُحذف بعد إغلاق آخر تبويب خاص، ولا يُسجَّل في السجل. الشبكة ومزوّدها يريان ما تزوره كالمعتاد.</string>
     <string name="no_bookmarks">لا مفضلة بعد</string>
@@ -215,7 +206,6 @@
     <string name="clear_history">مسح السجل</string>
     <string name="captured_title">روابط ملفات: %1$d</string>
     <string name="captured_none">لم تُعثر على روابط لملفات عامة في هذه الصفحة.</string>
-    <string name="files_sub">%1$d ملفاً · %2$s</string>
     <string name="search_files">ابحث في أسماء الملفات</string>
     <string name="sort_date">الأحدث</string>
     <string name="sort_name">الاسم</string>
@@ -257,7 +247,6 @@
     <string name="empty_files_title">ملفات فارغة</string>
     <string name="trash_n">نقل %1$d إلى السلة</string>
     <string name="missing_files">سجلات لملفات محذوفة من خارج التطبيق</string>
-    <string name="remove_records_n">إزالة %1$d من السجل</string>
     <string name="settings">الإعدادات</string>
     <string name="settings_desc">المحرك والشروط والملفات والمظهر</string>
     <string name="reports">التقارير</string>
@@ -269,34 +258,24 @@
     <string name="about">عن تدفّق</string>
     <string name="about_desc">الإصدار والمطوّر والخصوصية والتراخيص</string>
     <string name="sec_engine">محرك التنزيل</string>
-    <string name="sec_conditions">الشروط والحدود</string>
     <string name="sec_files">الملفات والتنبيهات</string>
     <string name="sec_browser">المتصفح</string>
-    <string name="sec_look">المظهر</string>
     <string name="speed_mode">وضع التنزيل</string>
-    <string name="speed_mode_desc">يضبط الاتصالات والمحاولات حسب حالتك</string>
-    <string name="mode_normal">عادي</string>
-    <string name="mode_normal_desc">توازن بين السرعة والبطارية</string>
+    <string name="mode_normal">ذكي (موصى به)</string>
+    <string name="mode_normal_desc">يختار عدد الاتصالات بنفسه حسب الخادم والشبكة</string>
     <string name="mode_max">السرعة القصوى</string>
-    <string name="mode_max_desc">حتى 32 اتصالاً وتقسيم أدق؛ يستهلك بطارية أكثر</string>
+    <string name="mode_max_desc">اتصالات أكثر وأجزاء أصغر؛ أسرع على الخوادم التي تسمح، ويستهلك بطارية أكثر</string>
     <string name="mode_weak">إنترنت ضعيف</string>
-    <string name="mode_weak_desc">اتصالان، ومحاولات أكثر بفواصل أطول، وحفظ للتقدم كل ثانية</string>
+    <string name="mode_weak_desc">اتصالان ومحاولات أكثر بانتظار أطول: أبطأ قليلاً لكنه يكمل على الشبكات المتذبذبة</string>
     <string name="mode_saver">توفير البيانات والبطارية</string>
     <string name="mode_saver_desc">اتصالان بلا ضبط تلقائي</string>
-    <string name="max_connections">أقصى عدد للاتصالات</string>
-    <string name="max_connections_desc">لكل ملف، والخادم قد يقبل أقل من ذلك</string>
-    <string name="max_parallel">التنزيلات المتزامنة</string>
-    <string name="max_parallel_desc">كم ملفاً يُنزَّل في الوقت نفسه، والباقي ينتظر دوره حسب الأولوية</string>
     <string name="global_limit">حد السرعة العام</string>
-    <string name="global_limit_desc">لكل التنزيلات معاً، ولكل مهمة حدها الخاص أيضاً</string>
     <string name="user_agent">هوية المتصفح (User-Agent)</string>
     <string name="user_agent_desc">بعض الخوادم تتطلب هوية معينة؛ اتركها افتراضية غالباً</string>
     <string name="wifi_only">Wi-Fi فقط</string>
-    <string name="wifi_only_desc">يعني شبكة غير محدودة: لا تنزيل على بيانات الجوال ولا على Wi-Fi مُعلَّمة «محدودة» (نقطة اتصال الهاتف مثلاً)</string>
+    <string name="wifi_only_desc">شبكة غير مقيسة فقط: لا بيانات جوال ولا شبكة Wi-Fi «محدودة» كنقطة اتصال الهاتف</string>
     <string name="only_charging">أثناء الشحن فقط</string>
     <string name="only_charging_desc">يتوقف عند فصل الشاحن ويُستأنف عند وصله</string>
-    <string name="low_battery">التوقف عند انخفاض البطارية</string>
-    <string name="low_battery_desc">ما لم يكن الجهاز على الشاحن</string>
     <string name="pause_hot">التوقف عند ارتفاع الحرارة</string>
     <string name="pause_hot_desc">يقلّل الاتصالات عند الدفء ويتوقف عند الحرارة الشديدة كما يبلغها النظام</string>
     <string name="data_limits">حدود بيانات الجوال</string>
@@ -320,8 +299,6 @@
     <string name="block_trackers_desc">قائمة صغيرة مدمجة لنطاقات تتبع وإعلانات معروفة</string>
     <string name="desktop_mode">وضع سطح المكتب</string>
     <string name="desktop_mode_desc">يطلب نسخة الحاسوب من المواقع</string>
-    <string name="theme">المظهر</string>
-    <string name="theme_desc">فاتح أو داكن أو حسب النظام</string>
     <string name="theme_system">حسب النظام</string>
     <string name="theme_light">فاتح</string>
     <string name="theme_dark">داكن</string>
@@ -345,7 +322,6 @@
     <string name="import_file">استيراد TXT أو CSV</string>
     <string name="sequence">روابط متسلسلة</string>
     <string name="sequence_desc">اكتب الرابط مع نطاق بين قوسين: file[001-120].zip، ويمكن تحديد خطوة: [0-100:10]</string>
-    <string name="sequence_count">سيُولَّد %1$d رابطاً، أولها:</string>
     <string name="download_all">تنزيل الكل (%1$d)</string>
     <string name="clear_all">مسح الكل</string>
     <string name="no_links">لا روابط محفوظة</string>
@@ -359,8 +335,6 @@
     <string name="trash_empty_text">الملفات التي تحذفها من «الملفات» تبقى هنا 30 يوماً.</string>
     <string name="version_x">الإصدار %1$s</string>
     <string name="about_text">مدير تنزيل عربي لتسريع الملفات وإدارتها: اتصالات متعددة، واستئناف آمن، وطابور ذكي، ومتصفح خفيف. بلا إعلانات ولا متتبعات ولا تسجيل دخول.</string>
-    <string name="developer">تطوير</string>
-    <string name="developer_name">حسين الطويل</string>
     <string name="privacy">الخصوصية</string>
     <string name="privacy_text">لا يرسل تدفّق أي بيانات إلى أي جهة. التاريخ والإعدادات والكوكيز تبقى على جهازك، والنسخ الاحتياطي السحابي معطّل. الاتصال فقط بالخوادم التي تطلب التنزيل منها.</string>
     <string name="licenses">التراخيص</string>
@@ -388,7 +362,6 @@
     <string name="mirrors_test">اختبار المصادر</string>
     <string name="mirror_ok">المحتوى مطابق</string>
     <string name="mirror_bad">محتوى مختلف أو تعذّر الفحص: لن يُستعمل</string>
-    <string name="sec_network">الشبكة</string>
     <string name="proxy">الوكيل (Proxy)</string>
     <string name="proxy_desc">HTTP أو SOCKS5 لكل التنزيلات، مع مصادقة اختيارية</string>
     <string name="proxy_none">بلا وكيل</string>
@@ -416,7 +389,6 @@
     <string name="torrent_no_metadata">تعذّر جلب معلومات التورنت. تأكد من الرابط ومن وجود أقران، وأن DHT مفعّل.</string>
     <string name="torrent_bad_file">ملف التورنت غير صالح</string>
     <string name="torrent_exists">هذا التورنت موجود في قائمتك</string>
-    <string name="torrent_summary">%1$d من %2$d ملف · %3$s</string>
     <string name="torrent_upload_note">سيُنزَّل %1$s تقريباً. التورنت يرفع أجزاءً للأقران أثناء التنزيل، وحد الرفع الحالي %2$s (من الإعدادات). يحتسب ذلك من بياناتك.</string>
     <string name="torrent_seed_after">المشاركة بعد الاكتمال</string>
     <string name="torrent_seed_after_desc">الاستمرار بالرفع للآخرين حتى بلوغ النسبة، ثم التوقف تلقائياً</string>
@@ -426,7 +398,6 @@
     <string name="torrent_ratio_desc">المرفوع ÷ المنزّل قبل إيقاف المشاركة</string>
     <string name="torrent_checking">فحص القطع</string>
     <string name="torrent_seeding">يشارك</string>
-    <string name="torrent_peers_seeds">%1$d قرين · %2$d باذر</string>
     <string name="torrent_uploaded">المرفوع</string>
     <string name="torrent_peers">الأقران</string>
     <string name="torrent_files">الملفات</string>
@@ -497,20 +468,15 @@
     <string name="backup_export">تصدير</string>
     <string name="backup_import">استيراد</string>
     <string name="backup_done">حُفظت النسخة</string>
-    <string name="restore_done">استُورد: %1$d مهمة · %2$d رابط · %3$d مفضلة</string>
     <string name="restore_failed">الملف ليس نسخة احتياطية صالحة من تدفّق</string>
-    <string name="sec_automation">الأتمتة</string>
     <string name="window">نافذة زمنية يومية</string>
     <string name="window_desc">التنزيل فقط بين %1$d:00 و%2$d:00 كل يوم (مثلاً ساعات الليل)</string>
     <string name="window_start">من</string>
     <string name="window_end">إلى</string>
-    <string name="window_hour_desc">بالتوقيت المحلي؛ تعبر منتصف الليل إن لزم</string>
     <string name="min_free">حد المساحة الحرة</string>
     <string name="min_free_desc">يتوقف الطابور إن قلّت المساحة عن هذا الحد</string>
     <string name="auto_extract">فك الأرشيفات تلقائياً</string>
     <string name="auto_extract_desc">ZIP و7Z وRAR (4 وما قبله) وTAR، مع حماية من المسارات الخبيثة وقنابل الضغط</string>
-    <string name="move_tree">نقل الملفات بعد الاكتمال</string>
-    <string name="move_tree_desc">إلى مجلد تختاره: بطاقة SD أو USB أو غيرهما، دون صلاحية الوصول لكل الملفات</string>
     <string name="copy_to_folder">نسخ إلى مجلد…</string>
     <string name="move_to_folder">نقل إلى مجلد…</string>
     <string name="copied">نُسخ</string>
@@ -518,7 +484,6 @@
     <string name="copy_failed">تعذّر النسخ</string>
     <string name="extract">فك الأرشيف</string>
     <string name="extracting">يجري الفك…</string>
-    <string name="extracted_n">فُك %1$d ملفاً</string>
     <string name="extract_failed">تعذّر الفك:</string>
     <string name="orphan_parts">ملفات جزئية مؤقتة بلا مهمة</string>
     <string name="delete_n_size">حذف %1$d (%2$s)</string>
@@ -559,14 +524,11 @@
     <string name="tile_active_n">يعمل %1$d · اضغط لإضافة المنسوخ</string>
     <string name="tile_add_copied">إضافة الرابط المنسوخ</string>
     <string name="clip_empty">لا يوجد رابط في الحافظة. انسخ رابطاً ثم اضغط البلاطة، أو الصقه هنا.</string>
-    <string name="sec_download">التحميل</string>
     <string name="save_folder">مجلد الحفظ</string>
-    <string name="save_folder_desc">الافتراضي التنزيلات/تدفق. اختر مجلداً آخر (بطاقة SD أو USB) فيُنقل إليه كل ملف بعد اكتماله والتحقق منه.</string>
+    <string name="save_folder_desc">للتنزيلات الجديدة. كل ملف يُنقل إلى المجلد المختار بعد اكتماله؛ وتغييره لا يغيّر وجهة ما أُضيف قبله (تُغيَّر من تفاصيل المهمة).</string>
     <string name="reset_default">الافتراضي</string>
-    <string name="max_connections_live_desc">لكل ملف، ويُطبَّق فوراً حتى على الجاري. الخادم قد يقبل أقل.</string>
-    <string name="sec_network_basic">الشبكة</string>
     <string name="auto_resume">الاستئناف التلقائي</string>
-    <string name="auto_resume_desc">بعد انقطاع الشبكة أو إعادة تشغيل الجهاز يُكمل من حيث توقف. معطّل = يبقى متوقفاً حتى تستأنفه.</string>
+    <string name="auto_resume_desc">أكمل عند عودة الاتصال إن أمكن</string>
     <string name="sec_notifications">الإشعارات</string>
     <string name="notify_per_task">إشعار لكل ملف</string>
     <string name="notify_per_task_desc">الاسم والنسبة والسرعة والوقت المتبقي مع أزرار إيقاف وإلغاء، تحت إشعار إجمالي</string>
@@ -587,8 +549,6 @@
     <string name="accent_violet">بنفسجي</string>
     <string name="accent_amber">كهرماني</string>
     <string name="accent_rose">وردي</string>
-    <string name="compact">عرض مضغوط</string>
-    <string name="compact_desc">بطاقات أصغر تُظهر تنزيلات أكثر في الشاشة</string>
     <string name="segments_in_list">خريطة الأجزاء في القائمة</string>
     <string name="segments_in_list_desc">تعرض اتصالات كل تنزيل جارٍ بدل شريط التقدم</string>
     <string name="reduce_motion">تقليل الحركة</string>
@@ -603,7 +563,6 @@
     <string name="max_retries_desc">لكل جزء قبل اعتبار التنزيل فاشلاً؛ العدّاد يُصفَّر مع أي تقدم</string>
     <string name="retry_delay">الانتظار قبل إعادة المحاولة</string>
     <string name="retry_delay_desc">المدة الأولى، وتتضاعف مع كل محاولة حتى 30 ثانية</string>
-    <string name="sec_mobile">بيانات الهاتف</string>
     <string name="separate_mobile">إعدادات مستقلة لبيانات الهاتف</string>
     <string name="separate_mobile_desc">اتصالات وتنزيلات متزامنة وحد سرعة خاصة عندما لا يتوفر Wi-Fi</string>
     <string name="mobile_only">على بيانات الهاتف فقط</string>
@@ -615,9 +574,6 @@
     <string name="about_privacy_value">لا تحليلات ولا إعلانات</string>
     <string name="about_source">المصدر</string>
     <string name="quick_panel">لوحة التحكم</string>
-    <string name="qp_conn">%1$s اتصال</string>
-    <string name="qp_parallel">%1$s متزامن</string>
-    <string name="qp_live">يُطبَّق فوراً على التنزيلات الجارية</string>
     <string name="qp_now">السرعة الإجمالية الآن: %1$s</string>
     <string name="subfolder">المجلد</string>
     <string name="subfolder_desc">مجلد فرعي داخل التنزيلات/%1$s، فارغ = حسب النوع والقواعد</string>
@@ -628,11 +584,61 @@
     <string name="add_saves_to">يُحفظ في: %1$s</string>
     <string name="storage_fallback">تعذّرت الكتابة في «التنزيلات»؛ تُحفظ الملفات مؤقتاً في مجلد التطبيق الخاص (يُحذف عند إلغاء تثبيته).</string>
     <string name="storage_denied">لم يُمنح إذن التخزين؛ سيُحفظ الملف في مجلد التطبيق الخاص.</string>
-    <string name="sec_capture">الالتقاط</string>
     <string name="tile_add">بلاطة النسخ في الإعدادات السريعة</string>
-    <string name="tile_add_desc">المس البلاطة بعد نسخ رابط فتُفتح نافذة الإضافة. لا تقرأ الحافظة في الخلفية.</string>
     <string name="tile_add_done">أُضيفت البلاطة</string>
     <string name="tile_add_manual">اسحب لوحة الإعدادات السريعة للأسفل مرتين، واضغط «تعديل» (القلم)، ثم اسحب بلاطة «تدفّق» إلى اللوحة.</string>
+    <string name="task_dest">الوجهة بعد الاكتمال: %1$s</string>
+    <string name="task_dest_default">التنزيلات/تدفق</string>
+    <string name="task_dest_change">تغيير</string>
+    <string name="set_hub_sub">الافتراضي ذكي ولا يحتاج تعديلاً؛ غيّر ما تحتاجه فقط</string>
+    <string name="hub_download">التحميل</string>
+    <string name="hub_network">الشبكة والجدولة</string>
+    <string name="hub_storage">التخزين</string>
+    <string name="hub_notify">الإشعارات والاختصارات</string>
+    <string name="hub_look">المظهر</string>
+    <string name="hub_advanced">متقدمة</string>
+    <string name="hub_advanced_v">البروكسي والمحاولات والتورنت والمتصفح</string>
+    <string name="how_it_works">كيف يعمل؟</string>
+    <string name="parallel_simple">عدد الملفات معاً</string>
+    <string name="parallel_simple_desc">الباقي ينتظر دوره حسب الأولوية</string>
+    <string name="conn_simple">عدد الاتصالات</string>
+    <string name="conn_simple_desc">عدد الأجزاء التي تُنزَّل من الملف في الوقت نفسه؛ الوضع الذكي يختار المناسب ضمن هذا الحد</string>
+    <string name="conn_how">يقسم تدفّق الملف أجزاءً ويُنزّلها معاً. أكثر ليس دائماً أسرع: بعض الخوادم تحد كل اتصال فيفيد التقسيم، وبعضها يرفض الاتصالات الكثيرة أو يبطئها. في الوضع الذكي يضيف تدفّق اتصالين ما دامت السرعة تتحسن فعلاً، ويتراجع إن لم تتحسن. التغيير يطبَّق فوراً حتى على الجاري.</string>
+    <string name="limit_simple">حد السرعة</string>
+    <string name="limit_simple_desc">اترك جزءاً من الإنترنت للتطبيقات الأخرى</string>
+    <string name="mode_simple">طريقة التنزيل</string>
+    <string name="sec_schedule">الجدولة والشروط</string>
+    <string name="low_battery_chips">إيقاف عند انخفاض البطارية</string>
+    <string name="tile_simple_desc">انسخ الرابط ثم اضغط بلاطة تدفّق من لوحة الهاتف</string>
+    <string name="palette_title">الثيم</string>
+    <string name="palette_navy">كحلي ونعناعي</string>
+    <string name="palette_green">أخضر وذهبي</string>
+    <string name="palette_orange">برتقالي وبنفسجي</string>
+    <string name="palette_ivory">عاجي وأسود</string>
+    <string name="theme_mode">الوضع</string>
+    <string name="text_size">حجم الخط</string>
+    <string name="text_size_desc">يُضاف إلى تكبير خط الهاتف ولا يلغيه</string>
+    <string name="text_small">صغير</string>
+    <string name="text_default">عادي</string>
+    <string name="text_large">كبير</string>
+    <string name="density">عرض القائمة</string>
+    <string name="density_comfy">مريح</string>
+    <string name="density_compact">مضغوط</string>
+    <string name="reset_look">استعادة المظهر الافتراضي</string>
+    <string name="preview_file">report-2025.pdf</string>
+    <string name="orphans">ملفات مؤقتة يتيمة</string>
+    <string name="orphans_desc">أجزاء تنزيلات حُذفت سجلاتها؛ لا تمس التنزيلات القابلة للاستئناف</string>
+    <string name="orphans_none">لا شيء</string>
+    <string name="orphans_found">%1$s في %2$s</string>
+    <string name="orphans_clean">تنظيف</string>
+    <string name="orphans_confirm">حذف %1$s من الملفات المؤقتة اليتيمة؟ لا يمكن التراجع.</string>
+    <string name="orphans_done">حُذف %1$s</string>
+    <string name="files_at_once_n">%1$d معاً</string>
+    <string name="all_networks">كل الشبكات</string>
+    <string name="err_space_copy">المساحة لا تكفي للتنزيل ثم النشر في «التنزيلات» (يلزم مِثلا حجم الملف مؤقتاً). حرّر مساحة أو اختر مجلداً على بطاقة SD.</string>
+    <string name="move_space">اكتمل الملف لكن المساحة لا تكفي لنشره في «التنزيلات»؛ بقي في مجلد التطبيق.</string>
+    <string name="move_failed_kept">اكتمل الملف لكن نقله إلى المجلد المختار تعذّر (ربما سُحب إذن المجلد)؛ بقي سليماً في مكانه.</string>
+    <string name="restore_done_prefix">استُورد: %1$s</string>
     <plurals name="notif_running">
         <item quantity="zero">لا تنزيلات</item>
         <item quantity="one">يجري تنزيل ملف واحد</item>
@@ -640,6 +646,14 @@
         <item quantity="few">يجري تنزيل %d ملفات</item>
         <item quantity="many">يجري تنزيل %d ملفاً</item>
         <item quantity="other">يجري تنزيل %d ملف</item>
+    </plurals>
+    <plurals name="files_n">
+        <item quantity="zero">لا ملفات</item>
+        <item quantity="one">ملف واحد</item>
+        <item quantity="two">ملفين</item>
+        <item quantity="few">%d ملفات</item>
+        <item quantity="many">%d ملفاً</item>
+        <item quantity="other">%d ملف</item>
     </plurals>
     <plurals name="files_trash_failed">
         <item quantity="zero"></item>
@@ -664,5 +678,141 @@
         <item quantity="few">تعذّر حذف %d ملفات؛ أُبقيت سجلاتها</item>
         <item quantity="many">تعذّر حذف %d ملفاً</item>
         <item quantity="other">تعذّر حذف %d ملف</item>
+    </plurals>
+    <plurals name="add_found">
+        <item quantity="zero">لم يُعثر على روابط</item>
+        <item quantity="one">عُثر على رابط واحد</item>
+        <item quantity="two">عُثر على رابطين</item>
+        <item quantity="few">عُثر على %1$d روابط</item>
+        <item quantity="many">عُثر على %1$d رابطاً</item>
+        <item quantity="other">عُثر على %1$d رابط</item>
+    </plurals>
+    <plurals name="add_more_hidden">
+        <item quantity="zero">و%1$d رابط آخر لا تُعرض هنا لكنها ستُضاف</item>
+        <item quantity="one">ورابط آخر لا يُعرض هنا لكنه سيُضاف</item>
+        <item quantity="two">ورابطان آخران لا يُعرضان هنا لكنهما سيُضافان</item>
+        <item quantity="few">و%1$d روابط أخرى لا تُعرض هنا لكنها ستُضاف</item>
+        <item quantity="many">و%1$d رابطاً آخر لا تُعرض هنا لكنها ستُضاف</item>
+        <item quantity="other">و%1$d رابط آخر لا تُعرض هنا لكنها ستُضاف</item>
+    </plurals>
+    <plurals name="connections_n">
+        <item quantity="zero">لا اتصالات</item>
+        <item quantity="one">اتصال واحد</item>
+        <item quantity="two">اتصالان</item>
+        <item quantity="few">%1$d اتصالات</item>
+        <item quantity="many">%1$d اتصالاً</item>
+        <item quantity="other">%1$d اتصال</item>
+    </plurals>
+    <plurals name="segments_a11y">
+        <item quantity="zero">خريطة أجزاء الملف</item>
+        <item quantity="one">خريطة جزء واحد من الملف، الملوّن منه منجز</item>
+        <item quantity="two">خريطة جزأين من الملف، الملوّن منهما منجز</item>
+        <item quantity="few">خريطة %1$d أجزاء من الملف، الملوّن منها منجز</item>
+        <item quantity="many">خريطة %1$d جزءاً من الملف، الملوّن منها منجز</item>
+        <item quantity="other">خريطة %1$d جزء من الملف، الملوّن منها منجز</item>
+    </plurals>
+    <plurals name="scene_a11y">
+        <item quantity="zero">مشهد حي: لا اتصالات نشطة الآن</item>
+        <item quantity="one">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر اتصال واحد</item>
+        <item quantity="two">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر اتصالين</item>
+        <item quantity="few">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر %1$d اتصالات</item>
+        <item quantity="many">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر %1$d اتصالاً</item>
+        <item quantity="other">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر %1$d اتصال</item>
+    </plurals>
+    <plurals name="trackers_blocked">
+        <item quantity="zero">لم يُحجب أي متتبع في هذه الصفحة</item>
+        <item quantity="one">حُجب متتبع واحد في هذه الصفحة</item>
+        <item quantity="two">حُجب متتبعان في هذه الصفحة</item>
+        <item quantity="few">حُجب %1$d متتبعات في هذه الصفحة</item>
+        <item quantity="many">حُجب %1$d متتبعاً في هذه الصفحة</item>
+        <item quantity="other">حُجب %1$d متتبع في هذه الصفحة</item>
+    </plurals>
+    <plurals name="sequence_count">
+        <item quantity="zero">لن يُولَّد أي رابط</item>
+        <item quantity="one">سيُولَّد رابط واحد:</item>
+        <item quantity="two">سيُولَّد رابطان، أولهما:</item>
+        <item quantity="few">سيُولَّد %1$d روابط، أولها:</item>
+        <item quantity="many">سيُولَّد %1$d رابطاً، أولها:</item>
+        <item quantity="other">سيُولَّد %1$d رابط، أولها:</item>
+    </plurals>
+    <plurals name="extracted_n">
+        <item quantity="zero">لم يُفك أي ملف</item>
+        <item quantity="one">فُك ملف واحد</item>
+        <item quantity="two">فُك ملفان</item>
+        <item quantity="few">فُكت %1$d ملفات</item>
+        <item quantity="many">فُك %1$d ملفاً</item>
+        <item quantity="other">فُك %1$d ملف</item>
+    </plurals>
+    <plurals name="delete_title">
+        <item quantity="zero">حذف %1$d تنزيل؟</item>
+        <item quantity="one">حذف تنزيل واحد؟</item>
+        <item quantity="two">حذف تنزيلين؟</item>
+        <item quantity="few">حذف %1$d تنزيلات؟</item>
+        <item quantity="many">حذف %1$d تنزيلاً؟</item>
+        <item quantity="other">حذف %1$d تنزيل؟</item>
+    </plurals>
+    <plurals name="remove_records_n">
+        <item quantity="zero">إزالة %1$d سجل</item>
+        <item quantity="one">إزالة سجل واحد</item>
+        <item quantity="two">إزالة سجلين</item>
+        <item quantity="few">إزالة %1$d سجلات</item>
+        <item quantity="many">إزالة %1$d سجلاً</item>
+        <item quantity="other">إزالة %1$d سجل</item>
+    </plurals>
+    <plurals name="files_sub">
+        <item quantity="zero">لا ملفات · %2$s</item>
+        <item quantity="one">ملف واحد · %2$s</item>
+        <item quantity="two">ملفان · %2$s</item>
+        <item quantity="few">%1$d ملفات · %2$s</item>
+        <item quantity="many">%1$d ملفاً · %2$s</item>
+        <item quantity="other">%1$d ملف · %2$s</item>
+    </plurals>
+    <plurals name="torrent_summary">
+        <item quantity="zero">لا ملفات · %3$s</item>
+        <item quantity="one">%1$d من ملف واحد · %3$s</item>
+        <item quantity="two">%1$d من ملفين · %3$s</item>
+        <item quantity="few">%1$d من %2$d ملفات · %3$s</item>
+        <item quantity="many">%1$d من %2$d ملفاً · %3$s</item>
+        <item quantity="other">%1$d من %2$d ملف · %3$s</item>
+    </plurals>
+    <plurals name="peers_n">
+        <item quantity="zero">لا أقران</item>
+        <item quantity="one">قرين واحد</item>
+        <item quantity="two">قرينان</item>
+        <item quantity="few">%1$d أقران</item>
+        <item quantity="many">%1$d قريناً</item>
+        <item quantity="other">%1$d قرين</item>
+    </plurals>
+    <plurals name="seeds_n">
+        <item quantity="zero">لا باذرين</item>
+        <item quantity="one">باذر واحد</item>
+        <item quantity="two">باذران</item>
+        <item quantity="few">%1$d باذرين</item>
+        <item quantity="many">%1$d باذراً</item>
+        <item quantity="other">%1$d باذر</item>
+    </plurals>
+    <plurals name="tasks_n">
+        <item quantity="zero">لا مهام</item>
+        <item quantity="one">مهمة واحدة</item>
+        <item quantity="two">مهمتان</item>
+        <item quantity="few">%1$d مهام</item>
+        <item quantity="many">%1$d مهمة</item>
+        <item quantity="other">%1$d مهمة</item>
+    </plurals>
+    <plurals name="links_n">
+        <item quantity="zero">لا روابط</item>
+        <item quantity="one">رابط واحد</item>
+        <item quantity="two">رابطان</item>
+        <item quantity="few">%1$d روابط</item>
+        <item quantity="many">%1$d رابطاً</item>
+        <item quantity="other">%1$d رابط</item>
+    </plurals>
+    <plurals name="bookmarks_n">
+        <item quantity="zero">لا مفضلات</item>
+        <item quantity="one">مفضلة واحدة</item>
+        <item quantity="two">مفضلتان</item>
+        <item quantity="few">%1$d مفضلات</item>
+        <item quantity="many">%1$d مفضلة</item>
+        <item quantity="other">%1$d مفضلة</item>
     </plurals>
 </resources>

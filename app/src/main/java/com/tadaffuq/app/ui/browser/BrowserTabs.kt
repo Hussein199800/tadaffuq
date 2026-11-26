@@ -67,11 +67,13 @@ object BrowserTabs {
     fun open(context: Context, url: String = HOME, private: Boolean = false): BrowserTab {
         val wv = WebView(MutableContextWrapper(context.applicationContext))
         // عزل حقيقي للتبويب الخاص (كوكيز وتخزين منفصلان) حيث يدعم WebView الملفات الشخصية (Profiles)
-        val isolated = private && runCatching {
-            androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE).also {
-                if (it) { androidx.webkit.ProfileStore.getInstance().getOrCreateProfile(PRIVATE_PROFILE); androidx.webkit.WebViewCompat.setProfile(wv, PRIVATE_PROFILE) }
-            }
-        }.getOrDefault(false)
+        var isolated = false
+        if (private && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE)) {
+            isolated = runCatching {
+                androidx.webkit.ProfileStore.getInstance().getOrCreateProfile(PRIVATE_PROFILE)
+                androidx.webkit.WebViewCompat.setProfile(wv, PRIVATE_PROFILE)
+            }.isSuccess
+        }
         val tab = BrowserTab(nextId++, private, wv, isolated)
         wv.settings.apply {
             javaScriptEnabled = true
@@ -133,9 +135,12 @@ object BrowserTabs {
         return tab
     }
 
-    private fun cookiesFor(tab: BrowserTab): CookieManager =
-        if (tab.isolated) runCatching { androidx.webkit.ProfileStore.getInstance().getProfile(PRIVATE_PROFILE)?.cookieManager }.getOrNull() ?: CookieManager.getInstance()
-        else CookieManager.getInstance()
+    private fun cookiesFor(tab: BrowserTab): CookieManager {
+        if (tab.isolated && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE)) {
+            runCatching { androidx.webkit.ProfileStore.getInstance().getProfile(PRIVATE_PROFILE)?.cookieManager }.getOrNull()?.let { return it }
+        }
+        return CookieManager.getInstance()
+    }
 
     private const val PRIVATE_PROFILE = "tadaffuq-private"
 
@@ -162,7 +167,9 @@ object BrowserTabs {
         // لا clearCache(true): يمسح ذاكرة WebView المشتركة لكل التبويبات. التبويب الخاص لا يكتب ذاكرة أصلاً (LOAD_NO_CACHE)،
         // والمعزول يُحذف ملفه الشخصي كاملاً بعد إغلاق آخر تبويب خاص
         tab.webView.destroy()
-        if (tab.isolated && tabs.none { it.isolated }) runCatching { androidx.webkit.ProfileStore.getInstance().deleteProfile(PRIVATE_PROFILE) }
+        if (tab.isolated && tabs.none { it.isolated } && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE)) {
+            runCatching { androidx.webkit.ProfileStore.getInstance().deleteProfile(PRIVATE_PROFILE) }
+        }
         current.value = (if (i <= current.value) current.value - 1 else current.value).coerceIn(0, (tabs.size - 1).coerceAtLeast(0))
     }
 
