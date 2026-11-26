@@ -346,7 +346,7 @@ private fun SequenceDialog(onDismiss: () -> Unit, onUse: (String) -> Unit) {
                 Text(stringResource(R.string.sequence_desc), style = MaterialTheme.typography.bodySmall)
                 OutlinedTextField(pattern, { pattern = it.trim() }, maxLines = 4, modifier = Modifier.fillMaxWidth())
                 if (preview.isNotEmpty()) {
-                    Text(sr(R.string.sequence_count, preview.size), style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 6.dp))
+                    Text(com.tadaffuq.app.core.pr(R.plurals.sequence_count, preview.size, preview.size), style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 6.dp))
                     preview.take(3).forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText) }
                 }
             }

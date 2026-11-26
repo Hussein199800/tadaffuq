@@ -102,7 +102,7 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
             if (segments != null && total > 0) {
                 Text(sr(R.string.segments_title, segments.size), style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(6.dp))
-                SegmentMap(segments, total, T.extra.chartLine, sr(R.string.segments_a11y, segments.size))
+                SegmentMap(segments, total, T.extra.chartLine, com.tadaffuq.app.core.pr(R.plurals.segments_a11y, segments.size, segments.size))
                 Spacer(Modifier.height(12.dp))
             }
 

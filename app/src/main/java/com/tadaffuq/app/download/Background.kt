@@ -67,7 +67,7 @@ class ResumeWorker @AssistedInject constructor(
             kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
                 if (manager.hasWork()) {
                     manager.pauseAll()
-                    val timeout = stopReason == androidx.work.WorkInfo.STOP_REASON_FOREGROUND_SERVICE_TIMEOUT || stopReason == androidx.work.WorkInfo.STOP_REASON_TIMEOUT
+                    val timeout = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && (stopReason == androidx.work.WorkInfo.STOP_REASON_FOREGROUND_SERVICE_TIMEOUT || stopReason == androidx.work.WorkInfo.STOP_REASON_TIMEOUT)
                     if (timeout) notifier.timedOut() else notifier.tapToResume()
                 }
             }

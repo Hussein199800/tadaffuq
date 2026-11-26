@@ -1,6 +1,7 @@
 package com.tadaffuq.app.ui.files
 
 import com.tadaffuq.app.core.sr
+import com.tadaffuq.app.core.pr
 import android.content.ActivityNotFoundException
 import android.widget.Toast
 import androidx.compose.foundation.horizontalScroll
@@ -102,7 +103,7 @@ fun FilesScreen(vm: MainViewModel, padding: PaddingValues) {
     LazyColumn(contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp)) {
         item {
             if (selection.isEmpty()) {
-                LargeTitle(stringResource(R.string.tab_files), sr(R.string.files_sub, files.size, Fmt.bytes(files.sumOf { it.totalBytes }))) {
+                LargeTitle(stringResource(R.string.tab_files), com.tadaffuq.app.core.pr(R.plurals.files_sub, files.size, files.size, Fmt.bytes(files.sumOf { it.totalBytes }))) {
                     IconButton(onClick = { searching = !searching; if (!searching) query = "" }) { Icon(Icons.Rounded.Search, stringResource(R.string.search)) }
                     androidx.compose.foundation.layout.Box {
                         IconButton(onClick = { sortMenu = true }) { Icon(Icons.AutoMirrored.Rounded.Sort, stringResource(R.string.sort)) }
@@ -218,7 +219,7 @@ private fun FileInfoSheet(t: TaskEntity, vm: MainViewModel, onDismiss: () -> Uni
                             msg = ctx.getString(R.string.extracting)
                             msg = runCatching { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                                 com.tadaffuq.engine.Archives.extract(file, java.io.File(file.parentFile, file.name.substringBeforeLast('.').removeSuffix(".tar")))
-                            } }.fold({ r -> ctx.getString(R.string.extracted_n, r.files) }, { e -> ctx.getString(R.string.extract_failed) + " " + ((e as? com.tadaffuq.engine.ArchiveException)?.reason ?: "") })
+                            } }.fold({ r -> with(ctx) { pr(R.plurals.extracted_n, r.files, r.files) } }, { e -> ctx.getString(R.string.extract_failed) + " " + ((e as? com.tadaffuq.engine.ArchiveException)?.reason ?: "") })
                         }
                     }, label = { Text(stringResource(R.string.extract)) })
                 }
@@ -316,7 +317,7 @@ private fun CleanupSheet(files: List<TaskEntity>, vm: MainViewModel, onDismiss: 
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.missing_files), style = MaterialTheme.typography.titleSmall)
             if (missing.isEmpty()) Text(stringResource(R.string.none_found), color = T.extra.secondaryText)
-            else TextButton(onClick = { vm.delete(missing.map { it.id }, false) }) { Text(sr(R.string.remove_records_n, missing.size)) }
+            else TextButton(onClick = { vm.delete(missing.map { it.id }, false) }) { Text(com.tadaffuq.app.core.pr(R.plurals.remove_records_n, missing.size, missing.size)) }
             Spacer(Modifier.height(20.dp))
         }
     }

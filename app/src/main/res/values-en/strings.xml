@@ -51,8 +51,6 @@
     <string name="add_hint">Paste one or more links, or text containing them. The pattern [001-120] generates numbered links.</string>
     <string name="add_links_label">Links</string>
     <string name="add_no_links">No HTTP or HTTPS links found in the text</string>
-    <string name="add_found">%1$d links found</string>
-    <string name="add_more_hidden">%1$d more links are not shown but will be added</string>
     <string name="add_package_name">Package name</string>
     <string name="add_package_desc">These downloads are grouped into one package</string>
     <string name="add_file_name">File name</string>
@@ -146,14 +144,11 @@
     <string name="empty_downloads_text">Add a link or share one to Tadaffuq from any app.</string>
     <string name="empty_filter">Nothing here</string>
     <string name="empty_filter_text">No downloads with this status right now.</string>
-    <string name="delete_title">Delete %1$d downloads?</string>
     <string name="delete_desc">Tasks and their partial data are removed.</string>
     <string name="delete_files_too">Also delete completed files</string>
     <string name="eta">%1$s left</string>
-    <string name="connections_n">%1$d conn.</string>
     <string name="hash_verified">Checksum verified</string>
     <string name="segments_title">Segments (%1$d)</string>
-    <string name="segments_a11y">Map of %1$d file segments; colored parts are done</string>
     <string name="downloaded">Downloaded</string>
     <string name="speed_now">Speed now</string>
     <string name="speed_avg">Average</string>
@@ -180,7 +175,6 @@
     <string name="waiting_n">Waiting</string>
     <string name="chart_a11y">Speed over the last two minutes, now %1$s</string>
     <string name="chart_caption">Actual total speed over the last two minutes</string>
-    <string name="scene_a11y">Live scene: data flows from server to phone over %1$d connections</string>
     <string name="today_usage">Today\'s usage</string>
     <string name="total">Total</string>
     <string name="mobile_data">Mobile data</string>
@@ -205,7 +199,6 @@
     <string name="reload">Reload</string>
     <string name="previous">Previous</string>
     <string name="next">Next</string>
-    <string name="trackers_blocked">%1$d trackers blocked on this page</string>
     <string name="private_note">Private tabs aren\'t saved to history and don\'t use the cache, but your device\'s WebView can\'t isolate them, so cookies are shared with other tabs. This isn\'t full privacy.</string>
     <string name="private_note_isolated">Private tabs are isolated: cookies and storage are separate from other tabs and are deleted after the last private tab closes, and nothing is saved to history. Your network and provider still see what you visit.</string>
     <string name="no_bookmarks">No bookmarks yet</string>
@@ -213,7 +206,6 @@
     <string name="clear_history">Clear history</string>
     <string name="captured_title">File links: %1$d</string>
     <string name="captured_none">No links to regular files found on this page.</string>
-    <string name="files_sub">%1$d files · %2$s</string>
     <string name="search_files">Search file names</string>
     <string name="sort_date">Newest</string>
     <string name="sort_name">Name</string>
@@ -255,7 +247,6 @@
     <string name="empty_files_title">Empty files</string>
     <string name="trash_n">Move %1$d to trash</string>
     <string name="missing_files">Records of files deleted outside the app</string>
-    <string name="remove_records_n">Remove %1$d records</string>
     <string name="settings">Settings</string>
     <string name="settings_desc">Engine, conditions, files and appearance</string>
     <string name="reports">Reports</string>
@@ -331,7 +322,6 @@
     <string name="import_file">Import TXT or CSV</string>
     <string name="sequence">Numbered links</string>
     <string name="sequence_desc">Write the link with a range in brackets: file[001-120].zip, optionally with a step: [0-100:10]</string>
-    <string name="sequence_count">%1$d links will be generated, starting with:</string>
     <string name="download_all">Download all (%1$d)</string>
     <string name="clear_all">Clear all</string>
     <string name="no_links">No saved links</string>
@@ -399,7 +389,6 @@
     <string name="torrent_no_metadata">Couldn\'t fetch torrent info. Check the link, that peers exist, and that DHT is on.</string>
     <string name="torrent_bad_file">Invalid torrent file</string>
     <string name="torrent_exists">This torrent is already in your list</string>
-    <string name="torrent_summary">%1$d of %2$d files · %3$s</string>
     <string name="torrent_upload_note">About %1$s will be downloaded. Torrents upload pieces to peers while downloading; the current upload limit is %2$s (in settings). This counts against your data.</string>
     <string name="torrent_seed_after">Seed after completion</string>
     <string name="torrent_seed_after_desc">Keep uploading to others until the ratio is reached, then stop automatically</string>
@@ -409,7 +398,6 @@
     <string name="torrent_ratio_desc">Uploaded ÷ downloaded before seeding stops</string>
     <string name="torrent_checking">Checking pieces</string>
     <string name="torrent_seeding">Seeding</string>
-    <string name="torrent_peers_seeds">%1$d peers · %2$d seeds</string>
     <string name="torrent_uploaded">Uploaded</string>
     <string name="torrent_peers">Peers</string>
     <string name="torrent_files">Files</string>
@@ -480,7 +468,6 @@
     <string name="backup_export">Export</string>
     <string name="backup_import">Import</string>
     <string name="backup_done">Backup saved</string>
-    <string name="restore_done">Imported: %1$d tasks · %2$d links · %3$d bookmarks</string>
     <string name="restore_failed">Not a valid Tadaffuq backup</string>
     <string name="window">Daily time window</string>
     <string name="window_desc">Download only between %1$d:00 and %2$d:00 every day (e.g. night hours)</string>
@@ -497,7 +484,6 @@
     <string name="copy_failed">Copy failed</string>
     <string name="extract">Extract</string>
     <string name="extracting">Extracting…</string>
-    <string name="extracted_n">Extracted %1$d files</string>
     <string name="extract_failed">Extraction failed:</string>
     <string name="orphan_parts">Temporary partial files without a task</string>
     <string name="delete_n_size">Delete %1$d (%2$s)</string>
@@ -652,6 +638,7 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <string name="err_space_copy">Not enough space to download and then publish to Downloads (needs twice the file size temporarily). Free up space or choose a folder on an SD card.</string>
     <string name="move_space">The file finished but there isn\'t enough space to publish it to Downloads; it stayed in the app folder.</string>
     <string name="move_failed_kept">The file finished but moving it to the chosen folder failed (folder access may have been revoked); it stayed safely where it was.</string>
+    <string name="restore_done_prefix">Imported: %1$s</string>
     <plurals name="notif_running">
         <item quantity="one">Downloading %d file</item>
         <item quantity="other">Downloading %d files</item>
@@ -671,5 +658,73 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <plurals name="files_delete_failed">
         <item quantity="one">Couldn\'t delete %d file; its record was kept</item>
         <item quantity="other">Couldn\'t delete %d files; their records were kept</item>
+    </plurals>
+    <plurals name="add_found">
+        <item quantity="one">%1$d link found</item>
+        <item quantity="other">%1$d links found</item>
+    </plurals>
+    <plurals name="add_more_hidden">
+        <item quantity="one">%1$d more link isn\'t shown but will be added</item>
+        <item quantity="other">%1$d more links are not shown but will be added</item>
+    </plurals>
+    <plurals name="connections_n">
+        <item quantity="one">%1$d conn.</item>
+        <item quantity="other">%1$d conn.</item>
+    </plurals>
+    <plurals name="segments_a11y">
+        <item quantity="one">Map of %1$d file segment; colored parts are done</item>
+        <item quantity="other">Map of %1$d file segments; colored parts are done</item>
+    </plurals>
+    <plurals name="scene_a11y">
+        <item quantity="one">Live scene: data flows from server to phone over %1$d connection</item>
+        <item quantity="other">Live scene: data flows from server to phone over %1$d connections</item>
+    </plurals>
+    <plurals name="trackers_blocked">
+        <item quantity="one">%1$d tracker blocked on this page</item>
+        <item quantity="other">%1$d trackers blocked on this page</item>
+    </plurals>
+    <plurals name="sequence_count">
+        <item quantity="one">%1$d link will be generated:</item>
+        <item quantity="other">%1$d links will be generated, starting with:</item>
+    </plurals>
+    <plurals name="extracted_n">
+        <item quantity="one">Extracted %1$d file</item>
+        <item quantity="other">Extracted %1$d files</item>
+    </plurals>
+    <plurals name="delete_title">
+        <item quantity="one">Delete %1$d download?</item>
+        <item quantity="other">Delete %1$d downloads?</item>
+    </plurals>
+    <plurals name="remove_records_n">
+        <item quantity="one">Remove %1$d record</item>
+        <item quantity="other">Remove %1$d records</item>
+    </plurals>
+    <plurals name="files_sub">
+        <item quantity="one">%1$d file · %2$s</item>
+        <item quantity="other">%1$d files · %2$s</item>
+    </plurals>
+    <plurals name="torrent_summary">
+        <item quantity="one">%1$d of %2$d file · %3$s</item>
+        <item quantity="other">%1$d of %2$d files · %3$s</item>
+    </plurals>
+    <plurals name="peers_n">
+        <item quantity="one">%1$d peer</item>
+        <item quantity="other">%1$d peers</item>
+    </plurals>
+    <plurals name="seeds_n">
+        <item quantity="one">%1$d seed</item>
+        <item quantity="other">%1$d seeds</item>
+    </plurals>
+    <plurals name="tasks_n">
+        <item quantity="one">%1$d task</item>
+        <item quantity="other">%1$d tasks</item>
+    </plurals>
+    <plurals name="links_n">
+        <item quantity="one">%1$d link</item>
+        <item quantity="other">%1$d links</item>
+    </plurals>
+    <plurals name="bookmarks_n">
+        <item quantity="one">%1$d bookmark</item>
+        <item quantity="other">%1$d bookmarks</item>
     </plurals>
 </resources>

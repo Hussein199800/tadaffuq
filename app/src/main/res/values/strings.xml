@@ -51,8 +51,6 @@
     <string name="add_hint">الصق رابطاً أو عدة روابط أو نصاً يحتويها. النمط [001-120] يولّد روابط متسلسلة.</string>
     <string name="add_links_label">الروابط</string>
     <string name="add_no_links">لم يُعثر على روابط HTTP أو HTTPS في النص</string>
-    <string name="add_found">عُثر على %1$d رابطاً</string>
-    <string name="add_more_hidden">و%1$d رابطاً آخر لا تُعرض هنا لكنها ستُضاف</string>
     <string name="add_package_name">اسم الحزمة</string>
     <string name="add_package_desc">تُجمع هذه التنزيلات في حزمة واحدة تُدار معاً</string>
     <string name="add_file_name">اسم الملف</string>
@@ -146,14 +144,11 @@
     <string name="empty_downloads_text">أضف رابطاً أو شاركه مع تدفّق من أي تطبيق.</string>
     <string name="empty_filter">لا شيء هنا</string>
     <string name="empty_filter_text">لا توجد تنزيلات بهذه الحالة الآن.</string>
-    <string name="delete_title">حذف %1$d من التنزيلات؟</string>
     <string name="delete_desc">تُحذف المهام وأجزاؤها غير المكتملة.</string>
     <string name="delete_files_too">احذف الملفات المكتملة أيضاً</string>
     <string name="eta">متبقٍ %1$s</string>
-    <string name="connections_n">%1$d اتصال</string>
     <string name="hash_verified">البصمة مطابقة</string>
     <string name="segments_title">الأجزاء (%1$d)</string>
-    <string name="segments_a11y">خريطة %1$d جزءاً من الملف، الملوّن منها منجز</string>
     <string name="downloaded">المنجز</string>
     <string name="speed_now">السرعة الآن</string>
     <string name="speed_avg">المتوسط</string>
@@ -180,7 +175,6 @@
     <string name="waiting_n">تنتظر</string>
     <string name="chart_a11y">رسم السرعة لآخر دقيقتين، الآن %1$s</string>
     <string name="chart_caption">السرعة الإجمالية الفعلية خلال آخر دقيقتين</string>
-    <string name="scene_a11y">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر %1$d اتصال</string>
     <string name="today_usage">استهلاك اليوم</string>
     <string name="total">الإجمالي</string>
     <string name="mobile_data">بيانات الجوال</string>
@@ -205,7 +199,6 @@
     <string name="reload">إعادة تحميل</string>
     <string name="previous">السابق</string>
     <string name="next">التالي</string>
-    <string name="trackers_blocked">حُجب %1$d متتبعاً في هذه الصفحة</string>
     <string name="private_note">التبويب الخاص لا يُسجَّل في السجل ولا يستعمل الذاكرة المؤقتة، لكن جهازك لا يدعم عزل WebView، فملفات تعريف الارتباط مشتركة مع بقية التبويبات. ليس خصوصية كاملة.</string>
     <string name="private_note_isolated">التبويب الخاص معزول: ملفات تعريف الارتباط والتخزين منفصلة عن بقية التبويبات وتُحذف بعد إغلاق آخر تبويب خاص، ولا يُسجَّل في السجل. الشبكة ومزوّدها يريان ما تزوره كالمعتاد.</string>
     <string name="no_bookmarks">لا مفضلة بعد</string>
@@ -213,7 +206,6 @@
     <string name="clear_history">مسح السجل</string>
     <string name="captured_title">روابط ملفات: %1$d</string>
     <string name="captured_none">لم تُعثر على روابط لملفات عامة في هذه الصفحة.</string>
-    <string name="files_sub">%1$d ملفاً · %2$s</string>
     <string name="search_files">ابحث في أسماء الملفات</string>
     <string name="sort_date">الأحدث</string>
     <string name="sort_name">الاسم</string>
@@ -255,7 +247,6 @@
     <string name="empty_files_title">ملفات فارغة</string>
     <string name="trash_n">نقل %1$d إلى السلة</string>
     <string name="missing_files">سجلات لملفات محذوفة من خارج التطبيق</string>
-    <string name="remove_records_n">إزالة %1$d من السجل</string>
     <string name="settings">الإعدادات</string>
     <string name="settings_desc">المحرك والشروط والملفات والمظهر</string>
     <string name="reports">التقارير</string>
@@ -331,7 +322,6 @@
     <string name="import_file">استيراد TXT أو CSV</string>
     <string name="sequence">روابط متسلسلة</string>
     <string name="sequence_desc">اكتب الرابط مع نطاق بين قوسين: file[001-120].zip، ويمكن تحديد خطوة: [0-100:10]</string>
-    <string name="sequence_count">سيُولَّد %1$d رابطاً، أولها:</string>
     <string name="download_all">تنزيل الكل (%1$d)</string>
     <string name="clear_all">مسح الكل</string>
     <string name="no_links">لا روابط محفوظة</string>
@@ -399,7 +389,6 @@
     <string name="torrent_no_metadata">تعذّر جلب معلومات التورنت. تأكد من الرابط ومن وجود أقران، وأن DHT مفعّل.</string>
     <string name="torrent_bad_file">ملف التورنت غير صالح</string>
     <string name="torrent_exists">هذا التورنت موجود في قائمتك</string>
-    <string name="torrent_summary">%1$d من %2$d ملف · %3$s</string>
     <string name="torrent_upload_note">سيُنزَّل %1$s تقريباً. التورنت يرفع أجزاءً للأقران أثناء التنزيل، وحد الرفع الحالي %2$s (من الإعدادات). يحتسب ذلك من بياناتك.</string>
     <string name="torrent_seed_after">المشاركة بعد الاكتمال</string>
     <string name="torrent_seed_after_desc">الاستمرار بالرفع للآخرين حتى بلوغ النسبة، ثم التوقف تلقائياً</string>
@@ -409,7 +398,6 @@
     <string name="torrent_ratio_desc">المرفوع ÷ المنزّل قبل إيقاف المشاركة</string>
     <string name="torrent_checking">فحص القطع</string>
     <string name="torrent_seeding">يشارك</string>
-    <string name="torrent_peers_seeds">%1$d قرين · %2$d باذر</string>
     <string name="torrent_uploaded">المرفوع</string>
     <string name="torrent_peers">الأقران</string>
     <string name="torrent_files">الملفات</string>
@@ -480,7 +468,6 @@
     <string name="backup_export">تصدير</string>
     <string name="backup_import">استيراد</string>
     <string name="backup_done">حُفظت النسخة</string>
-    <string name="restore_done">استُورد: %1$d مهمة · %2$d رابط · %3$d مفضلة</string>
     <string name="restore_failed">الملف ليس نسخة احتياطية صالحة من تدفّق</string>
     <string name="window">نافذة زمنية يومية</string>
     <string name="window_desc">التنزيل فقط بين %1$d:00 و%2$d:00 كل يوم (مثلاً ساعات الليل)</string>
@@ -497,7 +484,6 @@
     <string name="copy_failed">تعذّر النسخ</string>
     <string name="extract">فك الأرشيف</string>
     <string name="extracting">يجري الفك…</string>
-    <string name="extracted_n">فُك %1$d ملفاً</string>
     <string name="extract_failed">تعذّر الفك:</string>
     <string name="orphan_parts">ملفات جزئية مؤقتة بلا مهمة</string>
     <string name="delete_n_size">حذف %1$d (%2$s)</string>
@@ -652,6 +638,7 @@
     <string name="err_space_copy">المساحة لا تكفي للتنزيل ثم النشر في «التنزيلات» (يلزم مِثلا حجم الملف مؤقتاً). حرّر مساحة أو اختر مجلداً على بطاقة SD.</string>
     <string name="move_space">اكتمل الملف لكن المساحة لا تكفي لنشره في «التنزيلات»؛ بقي في مجلد التطبيق.</string>
     <string name="move_failed_kept">اكتمل الملف لكن نقله إلى المجلد المختار تعذّر (ربما سُحب إذن المجلد)؛ بقي سليماً في مكانه.</string>
+    <string name="restore_done_prefix">استُورد: %1$s</string>
     <plurals name="notif_running">
         <item quantity="zero">لا تنزيلات</item>
         <item quantity="one">يجري تنزيل ملف واحد</item>
@@ -691,5 +678,141 @@
         <item quantity="few">تعذّر حذف %d ملفات؛ أُبقيت سجلاتها</item>
         <item quantity="many">تعذّر حذف %d ملفاً</item>
         <item quantity="other">تعذّر حذف %d ملف</item>
+    </plurals>
+    <plurals name="add_found">
+        <item quantity="zero">لم يُعثر على روابط</item>
+        <item quantity="one">عُثر على رابط واحد</item>
+        <item quantity="two">عُثر على رابطين</item>
+        <item quantity="few">عُثر على %1$d روابط</item>
+        <item quantity="many">عُثر على %1$d رابطاً</item>
+        <item quantity="other">عُثر على %1$d رابط</item>
+    </plurals>
+    <plurals name="add_more_hidden">
+        <item quantity="zero">و%1$d رابط آخر لا تُعرض هنا لكنها ستُضاف</item>
+        <item quantity="one">ورابط آخر لا يُعرض هنا لكنه سيُضاف</item>
+        <item quantity="two">ورابطان آخران لا يُعرضان هنا لكنهما سيُضافان</item>
+        <item quantity="few">و%1$d روابط أخرى لا تُعرض هنا لكنها ستُضاف</item>
+        <item quantity="many">و%1$d رابطاً آخر لا تُعرض هنا لكنها ستُضاف</item>
+        <item quantity="other">و%1$d رابط آخر لا تُعرض هنا لكنها ستُضاف</item>
+    </plurals>
+    <plurals name="connections_n">
+        <item quantity="zero">لا اتصالات</item>
+        <item quantity="one">اتصال واحد</item>
+        <item quantity="two">اتصالان</item>
+        <item quantity="few">%1$d اتصالات</item>
+        <item quantity="many">%1$d اتصالاً</item>
+        <item quantity="other">%1$d اتصال</item>
+    </plurals>
+    <plurals name="segments_a11y">
+        <item quantity="zero">خريطة أجزاء الملف</item>
+        <item quantity="one">خريطة جزء واحد من الملف، الملوّن منه منجز</item>
+        <item quantity="two">خريطة جزأين من الملف، الملوّن منهما منجز</item>
+        <item quantity="few">خريطة %1$d أجزاء من الملف، الملوّن منها منجز</item>
+        <item quantity="many">خريطة %1$d جزءاً من الملف، الملوّن منها منجز</item>
+        <item quantity="other">خريطة %1$d جزء من الملف، الملوّن منها منجز</item>
+    </plurals>
+    <plurals name="scene_a11y">
+        <item quantity="zero">مشهد حي: لا اتصالات نشطة الآن</item>
+        <item quantity="one">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر اتصال واحد</item>
+        <item quantity="two">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر اتصالين</item>
+        <item quantity="few">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر %1$d اتصالات</item>
+        <item quantity="many">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر %1$d اتصالاً</item>
+        <item quantity="other">مشهد حي: البيانات تتدفق من الخادم إلى الهاتف عبر %1$d اتصال</item>
+    </plurals>
+    <plurals name="trackers_blocked">
+        <item quantity="zero">لم يُحجب أي متتبع في هذه الصفحة</item>
+        <item quantity="one">حُجب متتبع واحد في هذه الصفحة</item>
+        <item quantity="two">حُجب متتبعان في هذه الصفحة</item>
+        <item quantity="few">حُجب %1$d متتبعات في هذه الصفحة</item>
+        <item quantity="many">حُجب %1$d متتبعاً في هذه الصفحة</item>
+        <item quantity="other">حُجب %1$d متتبع في هذه الصفحة</item>
+    </plurals>
+    <plurals name="sequence_count">
+        <item quantity="zero">لن يُولَّد أي رابط</item>
+        <item quantity="one">سيُولَّد رابط واحد:</item>
+        <item quantity="two">سيُولَّد رابطان، أولهما:</item>
+        <item quantity="few">سيُولَّد %1$d روابط، أولها:</item>
+        <item quantity="many">سيُولَّد %1$d رابطاً، أولها:</item>
+        <item quantity="other">سيُولَّد %1$d رابط، أولها:</item>
+    </plurals>
+    <plurals name="extracted_n">
+        <item quantity="zero">لم يُفك أي ملف</item>
+        <item quantity="one">فُك ملف واحد</item>
+        <item quantity="two">فُك ملفان</item>
+        <item quantity="few">فُكت %1$d ملفات</item>
+        <item quantity="many">فُك %1$d ملفاً</item>
+        <item quantity="other">فُك %1$d ملف</item>
+    </plurals>
+    <plurals name="delete_title">
+        <item quantity="zero">حذف %1$d تنزيل؟</item>
+        <item quantity="one">حذف تنزيل واحد؟</item>
+        <item quantity="two">حذف تنزيلين؟</item>
+        <item quantity="few">حذف %1$d تنزيلات؟</item>
+        <item quantity="many">حذف %1$d تنزيلاً؟</item>
+        <item quantity="other">حذف %1$d تنزيل؟</item>
+    </plurals>
+    <plurals name="remove_records_n">
+        <item quantity="zero">إزالة %1$d سجل</item>
+        <item quantity="one">إزالة سجل واحد</item>
+        <item quantity="two">إزالة سجلين</item>
+        <item quantity="few">إزالة %1$d سجلات</item>
+        <item quantity="many">إزالة %1$d سجلاً</item>
+        <item quantity="other">إزالة %1$d سجل</item>
+    </plurals>
+    <plurals name="files_sub">
+        <item quantity="zero">لا ملفات · %2$s</item>
+        <item quantity="one">ملف واحد · %2$s</item>
+        <item quantity="two">ملفان · %2$s</item>
+        <item quantity="few">%1$d ملفات · %2$s</item>
+        <item quantity="many">%1$d ملفاً · %2$s</item>
+        <item quantity="other">%1$d ملف · %2$s</item>
+    </plurals>
+    <plurals name="torrent_summary">
+        <item quantity="zero">لا ملفات · %3$s</item>
+        <item quantity="one">%1$d من ملف واحد · %3$s</item>
+        <item quantity="two">%1$d من ملفين · %3$s</item>
+        <item quantity="few">%1$d من %2$d ملفات · %3$s</item>
+        <item quantity="many">%1$d من %2$d ملفاً · %3$s</item>
+        <item quantity="other">%1$d من %2$d ملف · %3$s</item>
+    </plurals>
+    <plurals name="peers_n">
+        <item quantity="zero">لا أقران</item>
+        <item quantity="one">قرين واحد</item>
+        <item quantity="two">قرينان</item>
+        <item quantity="few">%1$d أقران</item>
+        <item quantity="many">%1$d قريناً</item>
+        <item quantity="other">%1$d قرين</item>
+    </plurals>
+    <plurals name="seeds_n">
+        <item quantity="zero">لا باذرين</item>
+        <item quantity="one">باذر واحد</item>
+        <item quantity="two">باذران</item>
+        <item quantity="few">%1$d باذرين</item>
+        <item quantity="many">%1$d باذراً</item>
+        <item quantity="other">%1$d باذر</item>
+    </plurals>
+    <plurals name="tasks_n">
+        <item quantity="zero">لا مهام</item>
+        <item quantity="one">مهمة واحدة</item>
+        <item quantity="two">مهمتان</item>
+        <item quantity="few">%1$d مهام</item>
+        <item quantity="many">%1$d مهمة</item>
+        <item quantity="other">%1$d مهمة</item>
+    </plurals>
+    <plurals name="links_n">
+        <item quantity="zero">لا روابط</item>
+        <item quantity="one">رابط واحد</item>
+        <item quantity="two">رابطان</item>
+        <item quantity="few">%1$d روابط</item>
+        <item quantity="many">%1$d رابطاً</item>
+        <item quantity="other">%1$d رابط</item>
+    </plurals>
+    <plurals name="bookmarks_n">
+        <item quantity="zero">لا مفضلات</item>
+        <item quantity="one">مفضلة واحدة</item>
+        <item quantity="two">مفضلتان</item>
+        <item quantity="few">%1$d مفضلات</item>
+        <item quantity="many">%1$d مفضلة</item>
+        <item quantity="other">%1$d مفضلة</item>
     </plurals>
 </resources>

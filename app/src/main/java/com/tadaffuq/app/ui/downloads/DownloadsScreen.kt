@@ -164,7 +164,7 @@ fun DeleteDialog(count: Int, hasFiles: Boolean, onDismiss: () -> Unit, onConfirm
     var withFiles by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(sr(R.string.delete_title, count)) },
+        title = { Text(com.tadaffuq.app.core.pr(R.plurals.delete_title, count, count)) },
         text = {
             androidx.compose.foundation.layout.Column {
                 Text(stringResource(R.string.delete_desc))

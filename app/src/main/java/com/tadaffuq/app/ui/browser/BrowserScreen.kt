@@ -159,7 +159,7 @@ fun BrowserScreen(padding: PaddingValues, onDownload: (AddRequest) -> Unit, bloc
                     IconButton(onClick = { tab.webView.goForward() }, enabled = tab.canForward.value) { Icon(Icons.AutoMirrored.Rounded.ArrowForward, stringResource(R.string.forward)) }
                     IconButton(onClick = { tab.webView.reload() }) { Icon(Icons.Rounded.Refresh, stringResource(R.string.reload)) }
                     Text(
-                        if (tab.blocked.value > 0) sr(R.string.trackers_blocked, tab.blocked.value) else tab.title.value,
+                        if (tab.blocked.value > 0) com.tadaffuq.app.core.pr(R.plurals.trackers_blocked, tab.blocked.value, tab.blocked.value) else tab.title.value,
                         style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                     )
                 }

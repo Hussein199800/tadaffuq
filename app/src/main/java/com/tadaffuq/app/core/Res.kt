@@ -22,3 +22,11 @@ fun formatLatin(template: String, args: Array<out Any?>): String {
 fun sr(@StringRes id: Int, vararg args: Any?): String = formatLatin(stringResource(id), args)
 
 fun Context.sr(@StringRes id: Int, vararg args: Any?): String = formatLatin(getString(id), args)
+
+/** جمع بصيغ العربية الست (صفر، مفرد، مثنى، قلة، كثرة، أخرى) وأرقام لاتينية معزولة. */
+@Composable
+fun pr(@androidx.annotation.PluralsRes id: Int, count: Int, vararg args: Any?): String =
+    formatLatin(androidx.compose.ui.res.pluralStringResource(id, count), args)
+
+fun Context.pr(@androidx.annotation.PluralsRes id: Int, count: Int, vararg args: Any?): String =
+    formatLatin(resources.getQuantityString(id, count), args)

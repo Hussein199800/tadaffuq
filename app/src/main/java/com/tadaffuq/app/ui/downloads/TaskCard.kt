@@ -108,7 +108,7 @@ fun TaskCard(
             if (task.status != TaskStatus.COMPLETED) {
                 Spacer(Modifier.height(10.dp))
                 val fraction = if (total > 0) downloaded.toFloat() / total else if (task.status == TaskStatus.RUNNING) null else 0f
-                if (showSegments && live != null && live.total > 0) com.tadaffuq.app.ui.components.SegmentMap(live.segments, live.total, color, stringResource(R.string.segments_a11y, live.segments.size))
+                if (showSegments && live != null && live.total > 0) com.tadaffuq.app.ui.components.SegmentMap(live.segments, live.total, color, com.tadaffuq.app.core.pr(R.plurals.segments_a11y, live.segments.size, live.segments.size))
                 else ProgressLine(fraction, color)
                 Spacer(Modifier.height(6.dp))
                 Row {
@@ -144,7 +144,7 @@ private fun subtitle(task: TaskEntity, live: Snapshot?, downloaded: Long, total:
             if (live != null) {
                 append(" · ").append(Fmt.speed(live.speedBps))
                 if (live.etaSeconds >= 0) append(" · ").append(sr(R.string.eta, Fmt.duration(live.etaSeconds)))
-                append(" · ").append(sr(R.string.connections_n, live.connections))
+                append(" · ").append(com.tadaffuq.app.core.pr(R.plurals.connections_n, live.connections, live.connections))
             }
         }
         else -> {

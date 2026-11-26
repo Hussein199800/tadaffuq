@@ -90,7 +90,7 @@ fun HomeScreen(vm: MainViewModel, clipboardLink: String?, onAdd: (String?) -> Un
                 Text(stringResource(R.string.chart_caption), style = MaterialTheme.typography.labelSmall, color = T.extra.secondaryText)
                 if (settings.showLiveScene) {
                     Spacer(Modifier.height(8.dp))
-                    LiveScene(speed, connections, sr(R.string.scene_a11y, connections))
+                    LiveScene(speed, connections, com.tadaffuq.app.core.pr(R.plurals.scene_a11y, connections, connections))
                 }
             }
         }
