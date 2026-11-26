@@ -99,7 +99,12 @@ class TorrentEngine(private val stateDir: File) {
                     h.saveResumeData()
                     onFinished?.invoke(h.infoHash().toHex())
                 }
-                AlertType.ADD_TORRENT -> (alert as TorrentAlert<*>).handle().takeIf { it.isValid }?.let { handles[it.infoHash().toHex()] = it }
+                // مقبض التنبيه يشير إلى ذاكرة التنبيه نفسه التي تُحرَّر بعد تسليمه؛ حفظه كان يسبب انهياراً أصلياً
+                // متقطعاً (SIGSEGV في torrent_handle.is_valid) عند الاستعمال لاحقاً. نحفظ نسخة تملك نفسها من الجلسة.
+                AlertType.ADD_TORRENT -> {
+                    val hash = (alert as TorrentAlert<*>).handle().infoHash()
+                    session.find(hash)?.takeIf { it.isValid }?.let { handles[hash.toHex()] = it }
+                }
                 else -> Unit
             }
         }
