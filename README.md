@@ -2,7 +2,7 @@
 
 مدير تنزيل عربي أصلي لأندرويد (9 فأحدث): يسرّع تنزيل الملفات بتعدد الاتصالات، ويستأنفها بأمان، ويديرها في طابور ذكي — بلا حساب ولا إعلانات ولا متتبعات.
 
-> **الحالة: 1.0.0-rc4 (مرشح إصدار، غير منشور).** أُصلحت عيوب وثيقتي التدقيق، والوظائف مختبرة آلياً (136 اختباراً)، لكن **لم تُجرَّب على هاتف حقيقي** بعد. انظر [حالة التدقيق](AUDIT_STATUS.md) و[قائمة اختبار الهاتف](docs/PHONE_TEST_CHECKLIST.md) و[التقرير النهائي](docs/FINAL_REPORT.md).
+> **الحالة: 1.0.0-rc5 (مرشح إصدار، غير منشور).** أُصلحت عيوب وثائق التدقيق، والوظائف مختبرة آلياً (150 اختباراً)، وبوابة الإصدار في [RELEASE_GATE.md](RELEASE_GATE.md)، لكن **لم تُجرَّب على هاتف حقيقي** بعد. انظر [حالة التدقيق](AUDIT_STATUS.md) و[قائمة اختبار الهاتف](docs/PHONE_TEST_CHECKLIST.md) و[التقرير النهائي](docs/FINAL_REPORT.md).
 
 ## المزايا
 - **المحرك:** حتى 32 اتصالاً، تقسيم ديناميكي، تحميل ذكي، حد اتصالات يتغير أثناء التنزيل، تراجع عند 429/503، ملفات تتجاوز 4 غ.ب، مرايا بمقارنة عيّنات، تحقق SHA-256/SHA-1/MD5.
@@ -16,7 +16,7 @@
 
 ## البناء والاختبار
 ```bash
-./gradlew :engine:test :torrent:test :data:testDebugUnitTest :app:testDebugUnitTest   # 136 اختباراً
+./gradlew :engine:test :torrent:test :data:testDebugUnitTest :app:testDebugUnitTest   # 150 اختباراً
 ./gradlew :app:assembleDebug                      # APK لكل معمارية + شامل
 ./gradlew :app:assembleRelease                    # مصغّر بـ R8، موقّع إن وُجد المفتاح
 ./gradlew :app:bundleRelease                      # AAB لـ Google Play (أمر منفصل)

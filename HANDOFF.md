@@ -1,4 +1,6 @@
-# تسليم: تدفّق 1.0.0-rc4 — ما أُنجز وما بقي
+# تسليم: تدفّق 1.0.0-rc5 — ما أُنجز وما بقي
+
+> **محدّث:** إغلاق rc4 تم في rc5؛ انظر [`RELEASE_GATE.md`](RELEASE_GATE.md) للحالة الحالية. البنود 4 و5 و6 أدناه (MediaStore، RateLimiter، PluralsCandidate) أُنجزت.
 
 **المستودع:** `Hussein199800/tadaffuq` · **الفرع:** `dev` عند `b1dabd8` (1.0.0-rc4، versionCode 5) · `main` ما زال عند `1340f36` (rc3) بانتظار موافقة الدمج.
 **اقرأ أولاً:** `CLAUDE.md` (قواعد المشروع)، `AUDIT_STATUS.md` (كل بند بدليله والـ commit)، `docs/FINAL_REPORT.md`، `docs/PHONE_TEST_CHECKLIST.md`.
