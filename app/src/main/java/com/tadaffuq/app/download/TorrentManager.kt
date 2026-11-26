@@ -74,9 +74,24 @@ class TorrentManager @Inject constructor(
         }
     }
 
-    private fun torrentSettings(s: Settings) = TorrentSettings(
-        dht = s.torrentDht, lsd = s.torrentDht, downloadLimit = s.torrentDownLimit, uploadLimit = s.torrentUpLimit,
+    private fun torrentSettings(s: Settings, down: Int = shareOfGlobal(s)) = TorrentSettings(
+        dht = s.torrentDht, lsd = s.torrentDht, downloadLimit = down, uploadLimit = s.torrentUpLimit,
     )
+
+    @Volatile private var appliedDown = -1
+    @Volatile private var appliedAt = 0L
+
+    /**
+     * حد السرعة العام يشمل التورنت: يأخذ ما تتركه التنزيلات العادية من الحد (بحد أدنى 32 ك.ب/ث كي لا يتجمد)،
+     * ولا يتجاوز حد التورنت الخاص إن وُضع. 0 = بلا حد. هامش موثّق: المجموع قد يزيد عن الحد بـ 32 ك.ب/ث على الأكثر.
+     */
+    internal fun shareOfGlobal(s: Settings, httpBps: Long = downloads.live.value.values.sumOf { it.speedBps }): Int {
+        val global = downloads.globalLimiter.bytesPerSecond
+        val own = s.torrentDownLimit
+        if (global <= 0) return own
+        val rest = (global - httpBps).coerceAtLeast(MIN_SHARE).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        return if (own > 0) minOf(own, rest) else rest
+    }
 
     private fun ensureEngine() { if (!engine.running) engine.start(torrentSettings(settings)) ; engine.onFinished = { h -> scope.launch { finished(h) } } }
 
@@ -88,6 +103,7 @@ class TorrentManager @Inject constructor(
     }
 
     private val lastTotals = HashMap<String, Long>()
+    private companion object { const val MIN_SHARE = 32L * 1024 }
 
     /** من «إيقاف الكل» أو انتهاء مهلة الخدمة: يُحفظ PAUSED فلا يعود التورنت للعمل إلا باستئناف صريح. */
     suspend fun pauseAll() = withContext(Dispatchers.IO) {
@@ -109,6 +125,13 @@ class TorrentManager @Inject constructor(
             val all = dao.all()
             val snaps = all.mapNotNull { t -> engine.status(t.infoHash)?.let { t.infoHash to it } }.toMap()
             _live.value = snaps
+            // نصيب التورنت من الحد العام يُعاد حسابه، ويُطبَّق فقط عند تغير ملموس (≥15٪) وكل 3 ث على الأكثر
+            val want = shareOfGlobal(settings)
+            val now = System.currentTimeMillis()
+            if (want != appliedDown && now - appliedAt >= 3_000 &&
+                (appliedDown <= 0 || want <= 0 || kotlin.math.abs(want - appliedDown) * 100 / appliedDown >= 15)) {
+                engine.apply(torrentSettings(settings, want)); appliedDown = want; appliedAt = now
+            }
             // شروط الطابور نفسها تنطبق على التورنت
             val hold = downloads.hold.value
             if (hold != null && !engine.sessionPaused) engine.pauseSession()

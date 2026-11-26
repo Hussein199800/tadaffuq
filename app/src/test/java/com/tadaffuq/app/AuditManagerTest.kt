@@ -298,3 +298,24 @@ class AuditManagerTest {
         assertTrue("origin still gets its cookie", cookieHosts.values.all { it == "sid=SECRET" } && cookieHosts.isNotEmpty())
     }
 }
+
+/** RC4: حد السرعة العام يشمل التورنت (ما تتركه التنزيلات العادية، بحد أدنى موثّق 32 ك.ب/ث). */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], application = android.app.Application::class)
+class TorrentShareTest {
+    @Test fun torrentGetsRemainderOfGlobalLimit() {
+        val ctx: Context = ApplicationProvider.getApplicationContext()
+        val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
+        val settings = SettingsRepository(ctx)
+        val dm = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), com.tadaffuq.app.download.AppCredentials(ctx, com.tadaffuq.app.core.SecretStore(ctx)), Conditions(ctx), Notifier(ctx))
+        val tm = com.tadaffuq.app.download.TorrentManager(ctx, db, settings, dm, Notifier(ctx))
+        val s = com.tadaffuq.data.Settings(torrentDownLimit = 0)
+        dm.globalLimiter.bytesPerSecond = 0
+        assertEquals(0, tm.shareOfGlobal(s, 0))                       // بلا حد عام: حد التورنت الخاص (لا شيء)
+        dm.globalLimiter.bytesPerSecond = 200_000
+        assertEquals(50_000, tm.shareOfGlobal(s, 150_000))            // الباقي من الحد
+        assertEquals(32 * 1024, tm.shareOfGlobal(s, 199_000))         // حد أدنى كي لا يتجمد
+        assertEquals(20_000, tm.shareOfGlobal(s.copy(torrentDownLimit = 20_000), 0)) // الأصغر يغلب
+        db.close()
+    }
+}
