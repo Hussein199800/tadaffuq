@@ -152,6 +152,12 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
                 if (s.items.any { com.tadaffuq.engine.Archives.isArchive(it.name) })
                     SwitchLine(stringResource(R.string.add_extract), stringResource(R.string.add_extract_desc), s.extract) { v -> vm.update { it.copy(extract = v) } }
                 ScheduleRow(s.scheduledAt) { t -> vm.update { it.copy(scheduledAt = t) } }
+                // ما وصل مع الرابط من التطبيق المرسِل: يظهر حتى لا تُرسل بيانات جلسة دون علم المستخدم
+                if (s.received.isNotEmpty()) Text(
+                    com.tadaffuq.app.core.sr(R.string.add_received, s.received.joinToString("، ")),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
                 TextButton(onClick = { advanced = !advanced }, modifier = Modifier.padding(horizontal = 8.dp)) {
                     Text(stringResource(if (advanced) R.string.hide_advanced else R.string.show_advanced))
                 }
@@ -177,6 +183,14 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
                     OutlinedTextField(
                         s.cookies, { v -> vm.update { it.copy(cookies = v) } }, label = { Text("Cookies") },
                         supportingText = { Text(stringResource(R.string.add_cookies_desc)) }, modifier = Modifier.fillMaxWidth(), maxLines = 3,
+                    )
+                    OutlinedTextField(
+                        s.headers, { v -> vm.update { it.copy(headers = v) } }, label = { Text(stringResource(R.string.add_headers)) },
+                        supportingText = {
+                            val bad = s.rejectedHeaders
+                            Text(if (bad.isEmpty()) stringResource(R.string.add_headers_desc) else com.tadaffuq.app.core.sr(R.string.add_headers_bad, bad.joinToString("، ") { it.substringBefore(':').take(40) }))
+                        },
+                        isError = s.rejectedHeaders.isNotEmpty(), modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 8,
                     )
                     OutlinedButton(onClick = vm::reprobe) { Text(stringResource(R.string.add_reprobe)) }
                 }

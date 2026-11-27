@@ -43,6 +43,8 @@ data class TaskEntity(
     val userAgent: String? = null,
     val referer: String? = null,
     val cookies: String? = null,
+    /** ترويسات إضافية «الاسم: القيمة» لكل سطر، مشفّرة مثل الكوكيز (v6). */
+    val headers: String? = null,
     val errorCode: String? = null,
     val errorDetail: String? = null,
     val retries: Int = 0,

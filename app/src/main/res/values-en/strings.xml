@@ -70,6 +70,10 @@
     <string name="add_hash_desc">SHA-256, SHA-1 or MD5 from the file page; verified after download</string>
     <string name="add_hash_invalid">Invalid checksum format</string>
     <string name="add_cookies_desc">Stored on this device only and never logged</string>
+    <string name="add_headers">Extra headers</string>
+    <string name="add_headers_desc">One per line as \"Name: value\". Apps that open the link with Tadaffuq fill it in; anything with a token or session is sent only to the link\'s own site</string>
+    <string name="add_headers_bad">Lines that won\'t be sent (invalid, or managed by the app): %1$s</string>
+    <string name="add_received">Received with the link from the app: %1$s. See advanced options</string>
     <string name="add_reprobe">Re-check with these headers</string>
     <string name="add_save_later">Save for later</string>
     <string name="add_start">Start download</string>

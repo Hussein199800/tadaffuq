@@ -42,7 +42,13 @@ data class AddRequest(
     val referer: String? = null,
     val userAgent: String? = null,
     val cookies: String? = null,
+    /** ترويسات إضافية من التطبيق المرسِل (منقّاة، بلا Referer وUser-Agent والكوكيز). */
+    val headers: Map<String, String> = emptyMap(),
     val suggestedName: String? = null,
+    /** نوع الملف كما أعلنه التطبيق المرسِل (video/mp4…)؛ يُستعمل للامتداد إن لم يحدده الخادم. */
+    val mimeType: String? = null,
+    /** جاء من تطبيق آخر («فتح باستخدام» أو المشاركة). */
+    val external: Boolean = false,
     /** فُتحت من بلاطة النسخ. */
     val fromClipboard: Boolean = false,
     val clipboardEmpty: Boolean = false,
@@ -72,6 +78,10 @@ data class AddState(
     val referer: String = "",
     val userAgent: String = "",
     val cookies: String = "",
+    /** ترويسات إضافية، سطر لكل ترويسة «الاسم: القيمة». */
+    val headers: String = "",
+    /** ما وصل مع الرابط من التطبيق المرسِل (Referer، User-Agent…) لعرضه. */
+    val received: List<String> = emptyList(),
     val mirrors: String = "",
     /** كلمة مرور FTP/SFTP: تُحفظ مشفّرة ولا تبقى في الرابط. */
     val remotePassword: String = "",
@@ -87,6 +97,7 @@ data class AddState(
     val done: Boolean = false,
 ) {
     val single get() = items.size == 1
+    val rejectedHeaders get() = com.tadaffuq.engine.ExtraHeaders.rejectedLines(headers)
     val hashValid get() = expectedHash.isBlank() || Hashes.detect(expectedHash) != null
     val anyDuplicate get() = items.any { it.selected && it.duplicates.isNotEmpty() }
     val anyRemote get() = items.any { com.tadaffuq.engine.Protocols.isRemote(it.url) }
@@ -111,6 +122,10 @@ class AddViewModel @Inject constructor(
             referer = req.referer.orEmpty(),
             userAgent = req.userAgent.orEmpty(),
             cookies = req.cookies.orEmpty(),
+            headers = com.tadaffuq.engine.ExtraHeaders.format(req.headers),
+            received = if (!req.external) emptyList() else listOfNotNull(
+                req.referer?.let { "Referer" }, req.userAgent?.let { "User-Agent" }, req.cookies?.let { "Cookies" },
+            ) + req.headers.keys,
         )
         parse(immediate = true)
     }
@@ -153,7 +168,9 @@ class AddViewModel @Inject constructor(
                         val code = err?.let(ErrorCodes::of) ?: result.exceptionOrNull()?.let { "NETWORK" }
                         val detail = err?.let(ErrorCodes::detail)
                         val name = when {
-                            s.single && request?.suggestedName != null -> FileNames.sanitize(request!!.suggestedName!!)
+                            // عنوان الحلقة من التطبيق المرسِل: يأخذ امتداد الخادم أو نوع الملف إن خلا منه
+                            s.single && request?.suggestedName != null ->
+                                FileNames.withExtension(request!!.suggestedName!!, probe?.fileName, probe?.mimeType ?: request?.mimeType)
                             probe != null -> probe.fileName
                             else -> FileNames.resolve(null, item.url, null)
                         }
@@ -173,7 +190,13 @@ class AddViewModel @Inject constructor(
     private fun spec(url: String): RequestSpec {
         val s = _state.value
         val own = sessionApplies(url)
-        return RequestSpec(url, referer = s.referer.ifBlank { null }?.takeIf { own }, userAgent = s.userAgent.ifBlank { null }, cookies = s.cookies.ifBlank { null }?.takeIf { own })
+        return RequestSpec(url, headers = headersFor(url), referer = s.referer.ifBlank { null }?.takeIf { own }, userAgent = s.userAgent.ifBlank { null }, cookies = s.cookies.ifBlank { null }?.takeIf { own })
+    }
+
+    /** الترويسات الإضافية تخص الرابط الذي جاءت معه كالكوكيز؛ Referer وUser-Agent والكوكيز لها حقولها. */
+    private fun headersFor(url: String): Map<String, String> {
+        if (!sessionApplies(url)) return emptyMap()
+        return com.tadaffuq.engine.ExtraHeaders.without(com.tadaffuq.engine.ExtraHeaders.parse(_state.value.headers), com.tadaffuq.engine.ExtraHeaders.dedicated)
     }
 
     /** الكوكيز وReferer تخص الرابط الذي التُقطت معه؛ في الروابط المتعددة تُطبَّق على المضيف نفسه فقط. */
@@ -236,6 +259,7 @@ class AddViewModel @Inject constructor(
                     userAgent = s.userAgent.ifBlank { null },
                     referer = s.referer.ifBlank { null }?.takeIf { sessionApplies(item.url) },
                     cookies = s.cookies.ifBlank { null }?.takeIf { sessionApplies(item.url) },
+                    headers = headersFor(item.url),
                     packageId = packageId,
                     wifiOnly = s.wifiOnly,
                     startPaused = s.startPaused,

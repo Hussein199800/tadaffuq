@@ -60,6 +60,8 @@ data class NewTask(
     val userAgent: String? = null,
     val referer: String? = null,
     val cookies: String? = null,
+    /** ترويسات إضافية من التطبيق المرسِل أو من المستخدم (بعد التنقية). */
+    val headers: Map<String, String> = emptyMap(),
     val priority: Int = 0,
     val packageId: Long? = null,
     val wifiOnly: Boolean = false,
@@ -323,7 +325,7 @@ class DownloadManager @Inject constructor(
         var last: Snapshot? = null
         com.tadaffuq.app.core.TechLog.log("start #${t.id} ${t.url} conn=${cfg.connections}/${cfg.maxConnections} resume=${saved != null}")
         val spec = RequestSpec(
-            headers = hubAuth(t.url),
+            headers = taskHeaders(t),
             url = t.url,
             userAgent = t.userAgent ?: s.userAgent.ifBlank { null } ?: DEFAULT_UA,
             referer = t.referer,
@@ -570,6 +572,10 @@ class DownloadManager @Inject constructor(
     private val client: OkHttpClient get() = clients.get(settings)
 
     /** رمز Hugging Face يُرسل لمضيفه فقط (OkHttp يحذفه عند التحويل لمضيف آخر)، ولا يُحفظ في قاعدة البيانات. */
+    /** ترويسات المهمة المحفوظة ثم تفويض Hugging Face إن وُجد (يغلب). */
+    private fun taskHeaders(t: TaskEntity): Map<String, String> =
+        com.tadaffuq.engine.ExtraHeaders.parse(com.tadaffuq.app.core.FieldCrypt.open(t.headers)) + hubAuth(t.url)
+
     private fun hubAuth(url: String): Map<String, String> {
         val host = runCatching { java.net.URI(url).host }.getOrNull() ?: return emptyMap()
         if (host != "huggingface.co") return emptyMap()
@@ -610,7 +616,7 @@ class DownloadManager @Inject constructor(
 
     suspend fun testMirrors(t: TaskEntity): List<com.tadaffuq.engine.MirrorResult> {
         val mirrors = t.mirrors?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
-        return com.tadaffuq.engine.MirrorSelector(client).rank(RequestSpec(t.url, userAgent = t.userAgent ?: DEFAULT_UA, referer = t.referer, cookies = com.tadaffuq.app.core.FieldCrypt.open(t.cookies), secretsHost = RequestSpec.authorityOf(t.url)), mirrors)
+        return com.tadaffuq.engine.MirrorSelector(client).rank(RequestSpec(t.url, headers = taskHeaders(t), userAgent = t.userAgent ?: DEFAULT_UA, referer = t.referer, cookies = com.tadaffuq.app.core.FieldCrypt.open(t.cookies), secretsHost = RequestSpec.authorityOf(t.url)), mirrors)
     }
 
     suspend fun setMirrors(id: Long, mirrors: String?) { dao.get(id)?.let { dao.update(it.copy(mirrors = mirrors?.trim()?.ifBlank { null })) } }
@@ -634,7 +640,10 @@ class DownloadManager @Inject constructor(
                 etag = n.probe?.etag, lastModified = n.probe?.lastModified, mimeType = n.probe?.mimeType,
                 finalUrl = n.probe?.finalUrl, connections = n.connections.coerceIn(0, DownloadConfig.MAX_CONNECTIONS),
                 expectedHash = n.expectedHash?.trim()?.ifBlank { null }, userAgent = n.userAgent, referer = n.referer,
-                cookies = com.tadaffuq.app.core.FieldCrypt.seal(n.cookies), priority = n.priority, packageId = n.packageId, wifiOnly = n.wifiOnly,
+                cookies = com.tadaffuq.app.core.FieldCrypt.seal(n.cookies),
+                headers = com.tadaffuq.engine.ExtraHeaders.sanitize(n.headers.toList()).takeIf { it.isNotEmpty() }
+                    ?.let { com.tadaffuq.app.core.FieldCrypt.seal(com.tadaffuq.engine.ExtraHeaders.format(it)) },
+                priority = n.priority, packageId = n.packageId, wifiOnly = n.wifiOnly,
                 speedLimitBps = n.speedLimitBps, mirrors = n.mirrors?.trim()?.ifBlank { null },
                 postExtract = n.postExtract, treeUri = n.treeUri ?: settings.moveToTree.ifBlank { null }, scheduledAt = n.scheduledAt?.takeIf { it > System.currentTimeMillis() },
             )

@@ -135,13 +135,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun handle(intent: Intent?) {
         when (intent?.action) {
-            Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)?.let { add(AddRequest(it)) }
+            Intent.ACTION_SEND -> com.tadaffuq.app.core.ExternalIntent.request(intent)?.let(::add)
             Intent.ACTION_VIEW -> {
                 val data = intent.data
                 when {
                     data?.scheme == "magnet" -> pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = data.toString())
                     data?.scheme == "content" || data?.scheme == "file" -> readTorrent(data)
-                    else -> intent.dataString?.let { add(AddRequest(it)) }
+                    // رابط من تطبيق مشاهدة أو متصفح: مع Referer والترويسات والعنوان إن أرسلها
+                    else -> com.tadaffuq.app.core.ExternalIntent.request(intent)?.let(::add)
                 }
             }
             ACTION_ADD -> add(AddRequest(""))

@@ -79,6 +79,39 @@ object FileNames {
         "application/gzip" -> "gz"
         "text/plain" -> "txt"
         "application/json" -> "json"
+        "video/mp4" -> "mp4"
+        "video/x-matroska", "video/mkv" -> "mkv"
+        "video/webm" -> "webm"
+        "video/quicktime" -> "mov"
+        "video/x-msvideo", "video/avi" -> "avi"
+        "video/3gpp" -> "3gp"
+        "video/mp2t" -> "ts"
+        "video/x-flv" -> "flv"
+        "audio/mpeg", "audio/mp3" -> "mp3"
+        "audio/mp4", "audio/x-m4a", "audio/m4a" -> "m4a"
+        "audio/aac" -> "aac"
+        "audio/ogg" -> "ogg"
+        "audio/opus" -> "opus"
+        "audio/flac", "audio/x-flac" -> "flac"
+        "audio/wav", "audio/x-wav", "audio/wave" -> "wav"
+        "image/jpeg" -> "jpg"
+        "image/png" -> "png"
+        "image/webp" -> "webp"
+        "image/gif" -> "gif"
         else -> null
+    }
+
+    /** اسم مقترح (عنوان الحلقة مثلاً) بلا امتداد: يأخذ امتداد الاسم الذي حدده الخادم، وإلا من نوع الملف. */
+    fun withExtension(name: String, fallbackName: String?, mime: String?): String {
+        val clean = sanitize(name)
+        if (hasExtension(clean)) return clean
+        val ext = fallbackName?.let(::sanitize)?.takeIf(::hasExtension)?.substringAfterLast('.') ?: mime?.let(::extensionFor)
+        return if (ext != null) "$clean.$ext" else clean
+    }
+
+    /** امتداد حقيقي: 1-5 أحرف أو أرقام بعد آخر نقطة (لا «الحلقة 5.» ولا «v1.0 final»). */
+    fun hasExtension(name: String): Boolean {
+        val ext = name.substringAfterLast('.', "")
+        return ext.length in 1..5 && ext.all { it.isLetterOrDigit() && it.code < 128 } && ext.any { it.isLetter() } && name.length > ext.length + 1
     }
 }

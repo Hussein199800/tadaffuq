@@ -102,6 +102,27 @@ class ManagerIntegrationTest {
         assertTrue(db.tasks().segments(id).isEmpty())
     }
 
+    /** 1.2.0: ترويسات التطبيق المرسِل تُحفظ مشفّرة وتصل إلى الخادم في كل طلب (الفحص والأجزاء). */
+    @Test fun extraHeadersReachTheServerAndAreStoredSealed() = runBlocking {
+        val m = manager()
+        val dir = tmp.newFolder("hdr")
+        val id = m.enqueue(listOf(NewTask(server.url("/f/ep.mp4").toString(), "ep.mp4", dir.path, referer = "https://site.tv/ep5",
+            headers = mapOf("Origin" to "https://site.tv", "X-Auth-Token" to "TOK", "Range" to "bytes=9-")))).single()
+        val stored = db.tasks().get(id)!!.headers
+        assertTrue(com.tadaffuq.app.core.FieldCrypt.isSealed(stored))
+        assertTrue("plain token in DB", stored?.contains("TOK") != true)
+        val t = waitFor(id, TaskStatus.COMPLETED, TaskStatus.FAILED)
+        assertEquals(t.errorCode, TaskStatus.COMPLETED, t.status)
+        assertArrayEquals(content, File(t.filePath!!).readBytes())
+        val reqs = generateSequence { server.takeRequest(200, TimeUnit.MILLISECONDS) }.toList()
+        assertTrue(reqs.isNotEmpty())
+        reqs.forEach {
+            assertEquals("https://site.tv", it.getHeader("Origin")); assertEquals("TOK", it.getHeader("X-Auth-Token"))
+            assertEquals("https://site.tv/ep5", it.getHeader("Referer"))
+            assertTrue("Range from sender must be dropped", it.getHeader("Range")?.startsWith("bytes=9-") != true)
+        }
+    }
+
     @Test fun pauseResumeAndProcessRestartKeepIntegrity() = runBlocking {
         throttle = 400
         val dir = tmp.newFolder("out2")

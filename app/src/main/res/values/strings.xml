@@ -70,6 +70,10 @@
     <string name="add_hash_desc">SHA-256 أو SHA-1 أو MD5 من صفحة الملف؛ يُتحقق منها بعد الاكتمال</string>
     <string name="add_hash_invalid">صيغة البصمة غير صحيحة</string>
     <string name="add_cookies_desc">تُحفظ على الجهاز فقط ولا تظهر في أي سجل</string>
+    <string name="add_headers">ترويسات إضافية</string>
+    <string name="add_headers_desc">سطر لكل ترويسة بصيغة «الاسم: القيمة». تملؤها التطبيقات التي تفتح الرابط بتدفّق تلقائياً، وما فيه رمز أو جلسة لا يُرسل إلا لموقع الرابط</string>
+    <string name="add_headers_bad">أسطر لن تُرسل (صيغة غير صحيحة أو يديرها التطبيق): %1$s</string>
+    <string name="add_received">وصل مع الرابط من التطبيق: %1$s. تجدها في الإعدادات المتقدمة</string>
     <string name="add_reprobe">إعادة الفحص بهذه الترويسات</string>
     <string name="add_save_later">احفظ لاحقاً</string>
     <string name="add_start">ابدأ التنزيل</string>

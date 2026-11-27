@@ -13,8 +13,8 @@ plugins {
 val gitSha: String = (System.getenv("GITHUB_SHA")?.take(7) ?: runCatching {
     providers.exec { commandLine("git", "rev-parse", "--short=7", "HEAD") }.standardOutput.asText.get().trim()
 }.getOrNull())?.ifBlank { null } ?: "local"
-val appVersionCode = 10
-val appVersionName = "1.1.0"
+val appVersionCode = 11
+val appVersionName = "1.2.0"
 base { archivesName.set("tadaffuq-$appVersionName-$appVersionCode-$gitSha") }
 
 android {

@@ -51,6 +51,17 @@
                 <data android:scheme="http" />
                 <data android:scheme="https" />
             </intent-filter>
+            <!-- «فتح باستخدام» و«تنزيل خارجي» من تطبيقات المشاهدة: رابط http/https معلن النوع (video/mp4، audio/*…).
+                 مرشّح بلا نوع (أعلاه) لا يطابق نية فيها نوع، فهذا ما يُظهر تدفّق بجانب مديري التنزيل الآخرين. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <!-- أي نوع: فيديو وصوت وصور وملفات وapplication/octet-stream -->
+                <data android:mimeType="*/*" />
+            </intent-filter>
             <!-- روابط Magnet وملفات .torrent -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

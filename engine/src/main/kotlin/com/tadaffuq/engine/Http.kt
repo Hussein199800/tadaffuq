@@ -110,7 +110,7 @@ internal fun parseContentRange(value: String?): ContentRange? {
 }
 
 /**
- * يحذف الكوكيز وAuthorization (وReferer عند الهبوط من HTTPS إلى HTTP) من أي طلب — بما فيها التحويلات —
+ * يحذف الكوكيز وAuthorization وأي ترويسة إضافية سرية (وReferer عند الهبوط من HTTPS إلى HTTP) من أي طلب — بما فيها التحويلات —
  * يتجه إلى مضيف غير الذي التُقطت له الأسرار، أو عبر HTTP بعد التقاطها عبر HTTPS (P0-10).
  * OkHttp يحذف Authorization وحده عند تغيّر المضيف، لكنه يُبقي Cookie الذي نضيفه يدوياً.
  */
@@ -123,6 +123,8 @@ internal object SecretsGuard : okhttp3.Interceptor {
         val downgrade = scope.https && !req.isHttps
         if (!foreign && !downgrade) return chain.proceed(req)
         val clean = req.newBuilder().removeHeader("Cookie").removeHeader("Authorization")
+            // ترويسات إضافية تحمل سراً (رمز أو مفتاح أو جلسة) تُعامل كالكوكيز
+            .apply { req.headers.names().filter(ExtraHeaders::isSensitive).forEach { removeHeader(it) } }
             .apply { if (downgrade) removeHeader("Referer") }.build()
         return chain.proceed(clean)
     }
