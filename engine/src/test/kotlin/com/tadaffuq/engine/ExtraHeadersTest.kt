@@ -57,6 +57,18 @@ class ExtraHeadersTest {
         assertEquals("watch.mp4", FileNames.resolve(null, "https://cdn.x/watch?id=9", "video/mp4"))
     }
 
+    /** 1.4.0: «E06[HD].mp4[Animeify]» من خادم Animeify كان بلا امتداد عند أندرويد؛ والفيديو فئة مستقلة. */
+    @Test fun trailingTagAndMediaCategories() {
+        assertEquals("BSKHKT-E06[HD][Animeify].mp4", FileNames.fixTrailingTag("BSKHKT-E06[HD].mp4[Animeify]"))
+        assertEquals("ep (1)[x].mkv", FileNames.fixTrailingTag("ep (1).mkv[x]"))
+        assertEquals("a.mp4", FileNames.fixTrailingTag("a.mp4"))
+        assertEquals("notes.v2[draft]", FileNames.fixTrailingTag("notes.v2[draft]")) // ليس امتداداً معروفاً
+        assertEquals("BSKHKT-E06[HD][Animeify].mp4", FileNames.resolve("attachment; filename=\"BSKHKT-E06[HD].mp4[Animeify]\"", "https://x/y", "video/mp4"))
+        assertEquals(FileCategory.VIDEO, FileNames.category("x.mp4"))
+        assertEquals(FileCategory.AUDIO, FileNames.category("x.mp3"))
+        assertEquals(FileCategory.IMAGES, FileNames.category("x.webp"))
+    }
+
     /** ترويسة سرية مخصصة لا تتبع التحويل إلى مضيف آخر؛ غير السرية (Origin) تتبعه، والمضيف الأصلي يتلقى الاثنتين. */
     @Test fun sensitiveCustomHeadersStayWithTheirHost() = runBlocking {
         val data = Random(5).nextBytes(50_000)

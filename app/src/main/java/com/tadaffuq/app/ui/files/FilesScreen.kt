@@ -47,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -73,6 +74,9 @@ import java.io.File
 enum class Sort(val label: Int) { DATE(R.string.sort_date), NAME(R.string.sort_name), SIZE(R.string.sort_size) }
 
 fun categoryLabel(c: FileCategory) = when (c) {
+    FileCategory.VIDEO -> R.string.cat_video
+    FileCategory.AUDIO -> R.string.cat_audio
+    FileCategory.IMAGES -> R.string.cat_images
     FileCategory.COMPRESSED -> R.string.cat_compressed
     FileCategory.DOCUMENTS -> R.string.cat_documents
     FileCategory.PROGRAMS -> R.string.cat_programs
@@ -270,11 +274,10 @@ private fun CleanupSheet(files: List<TaskEntity>, vm: MainViewModel, onDismiss: 
     val empty = files.filter { it.totalBytes == 0L }
     val missing = files.filter { f -> !com.tadaffuq.app.download.TaskFiles.exists(androidx.compose.ui.platform.LocalContext.current, f.filePath) }
     val allTasks by vm.tasks.collectAsState()
-    // ملفات .tdq جزئية لا تخص أي مهمة (من مهام حُذفت أو انهيار قديم)
-    val orphans = remember(allTasks) {
-        val known = allTasks.filter { it.status != TaskStatus.COMPLETED }.map { File(it.dirPath, it.fileName + StorageDirs.PART_SUFFIX).path }.toSet()
-        StorageDirs.root().walkTopDown().maxDepth(4).filter { it.isFile && it.name.endsWith(StorageDirs.PART_SUFFIX) && it.path !in known }.toList()
-    }
+    // ملفات .tdq جزئية لا تخص أي مهمة: فحص المدير نفسه (بمعرّف المهمة وأسماء الإصدارات القديمة)،
+    // فالجزء الذي يحتاجه تنزيل متوقف للاستئناف لا يظهر هنا أبداً
+    var orphans by remember { mutableStateOf<List<File>>(emptyList()) }
+    LaunchedEffect(allTasks) { orphans = vm.manager.orphanParts() }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
         Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 20.dp)) {
@@ -314,7 +317,8 @@ private fun CleanupSheet(files: List<TaskEntity>, vm: MainViewModel, onDismiss: 
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.orphan_parts), style = MaterialTheme.typography.titleSmall)
             if (orphans.isEmpty()) Text(stringResource(R.string.none_found), color = T.extra.secondaryText)
-            else TextButton(onClick = { orphans.forEach { it.delete() } }) { Text(com.tadaffuq.app.core.sr(R.string.delete_n_size, orphans.size, Fmt.bytes(orphans.sumOf { it.length() }))) }
+            // يُعاد الفحص لحظة الحذف: مهمة أُضيفت أو استُؤنفت بعد فتح النافذة لا تفقد جزءها
+            else TextButton(onClick = { scope.launch { vm.manager.cleanOrphans(orphans); orphans = vm.manager.orphanParts() } }) { Text(com.tadaffuq.app.core.sr(R.string.delete_n_size, orphans.size, Fmt.bytes(orphans.sumOf { it.length() }))) }
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.missing_files), style = MaterialTheme.typography.titleSmall)
             if (missing.isEmpty()) Text(stringResource(R.string.none_found), color = T.extra.secondaryText)

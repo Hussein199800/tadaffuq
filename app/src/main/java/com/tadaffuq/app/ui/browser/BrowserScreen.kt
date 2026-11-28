@@ -217,7 +217,16 @@ fun BrowserScreen(padding: PaddingValues, onDownload: (AddRequest) -> Unit, bloc
         }
         "history" -> ModalBottomSheet(onDismissRequest = { sheet = null }) {
             val history by vm.history.collectAsState()
-            TextButton(onClick = vm::clearHistory, modifier = Modifier.padding(horizontal = 8.dp)) { Text(stringResource(R.string.clear_history)) }
+            // مسح السجل كله بتأكيد يوضح النطاق
+            var askClear by remember { mutableStateOf(false) }
+            com.tadaffuq.app.ui.components.RoleButton(com.tadaffuq.app.ui.components.Role.CLEAR, stringResource(R.string.clear_history), { askClear = true }, Modifier.padding(horizontal = 8.dp))
+            if (askClear) androidx.compose.material3.AlertDialog(
+                onDismissRequest = { askClear = false },
+                title = { Text(stringResource(R.string.clear_history)) },
+                text = { Text(stringResource(R.string.clear_history_confirm)) },
+                confirmButton = { TextButton(onClick = { vm.clearHistory(); askClear = false }) { Text(stringResource(R.string.clear_history), color = T.extra.danger) } },
+                dismissButton = { TextButton(onClick = { askClear = false }) { Text(stringResource(R.string.cancel)) } },
+            )
             LinkList(history.map { it.title to it.url }, stringResource(R.string.no_history)) { tab.webView.loadUrl(it); sheet = null }
         }
     }
@@ -225,7 +234,9 @@ fun BrowserScreen(padding: PaddingValues, onDownload: (AddRequest) -> Unit, bloc
     captured?.let { list ->
         CapturedLinksDialog(list, onDismiss = { captured = null }) { urls ->
             captured = null
-            onDownload(AddRequest(urls.joinToString("\n"), referer = tab.url.value, userAgent = tab.webView.settings.userAgentString))
+            // كوكيز أول رابط كما في الضغط المباشر؛ نافذة الإضافة تطبّقها على روابط المضيف نفسه فقط (SessionScope)
+            onDownload(AddRequest(urls.joinToString("\n"), referer = tab.url.value, userAgent = tab.webView.settings.userAgentString,
+                cookies = urls.firstOrNull()?.let { BrowserTabs.cookieFor(tab, it) }))
         }
     }
 }

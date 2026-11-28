@@ -79,6 +79,9 @@ object StorageDirs {
     fun trash(): File = File(root(), ".سلة")
 
     fun folderName(c: FileCategory) = when (c) {
+        FileCategory.VIDEO -> "فيديو"
+        FileCategory.AUDIO -> "صوت"
+        FileCategory.IMAGES -> "صور"
         FileCategory.COMPRESSED -> "مضغوطة"
         FileCategory.DOCUMENTS -> "مستندات"
         FileCategory.PROGRAMS -> "برامج"

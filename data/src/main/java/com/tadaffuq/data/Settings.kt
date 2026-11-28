@@ -47,6 +47,8 @@ data class Settings(
     val blockTrackers: Boolean = false,
     val desktopMode: Boolean = false,
     val density: ListDensity = ListDensity.COMFORTABLE,
+    /** ترتيب قائمة التنزيلات (اسم DownloadSort)؛ عرض فقط، لا يغيّر أولوية التنفيذ. */
+    val downloadsSort: String = "NEWEST",
     val showLiveScene: Boolean = true,
     val userAgent: String = "",
     val warnExecutables: Boolean = true,
@@ -144,6 +146,7 @@ class SettingsRepository(private val context: Context) {
         val trackers = booleanPreferencesKey("blockTrackers")
         val desktop = booleanPreferencesKey("desktopMode")
         val density = stringPreferencesKey("density")
+        val dlSort = stringPreferencesKey("downloadsSort")
         val scene = booleanPreferencesKey("showLiveScene")
         val ua = stringPreferencesKey("userAgent")
         val warnExe = booleanPreferencesKey("warnExecutables")
@@ -222,6 +225,7 @@ class SettingsRepository(private val context: Context) {
             p[K.trackers] = s.blockTrackers
             p[K.desktop] = s.desktopMode
             p[K.density] = s.density.name
+            p[K.dlSort] = s.downloadsSort
             p[K.scene] = s.showLiveScene
             p[K.ua] = s.userAgent
             p[K.warnExe] = s.warnExecutables
@@ -294,6 +298,7 @@ class SettingsRepository(private val context: Context) {
             blockTrackers = p[K.trackers] ?: d.blockTrackers,
             desktopMode = p[K.desktop] ?: d.desktopMode,
             density = p[K.density]?.let { runCatching { ListDensity.valueOf(it) }.getOrNull() } ?: d.density,
+            downloadsSort = p[K.dlSort] ?: d.downloadsSort,
             showLiveScene = p[K.scene] ?: d.showLiveScene,
             userAgent = p[K.ua] ?: d.userAgent,
             warnExecutables = p[K.warnExe] ?: d.warnExecutables,

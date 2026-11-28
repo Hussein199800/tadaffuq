@@ -75,10 +75,11 @@ class AppUpdater @Inject constructor(
             val gh = GitHubReleases(client())
             val releases = gh.releases(SelfUpdate.REPO, 10)
             // بصمات أحدث ثلاثة إصدارات فقط (ملف صغير لكل منها)
-            val sums = releases.take(3).associateWith { runCatching { gh.checksums(it) }.getOrDefault(emptyMap()) }
+            val fetched = releases.take(3).associateWith { runCatching { gh.checksums(it) } }
+            val sums = fetched.mapValues { it.value.getOrDefault(emptyMap()) }
             val c = SelfUpdate.pick(releases, BuildConfig.VERSION_CODE, Build.SUPPORTED_ABIS.toList(), { sums[it].orEmpty() })
             settings.update { it.copy(updateCheckedAt = System.currentTimeMillis()) }
-            _state.value = if (c != null) UpdateState.Available(c) else if (manual) UpdateState.UpToDate else UpdateState.Idle
+            _state.value = stateFor(c, verifyFailed = fetched.values.any { it.isFailure }, manual = manual)
             c
         } catch (e: SourceException) {
             _state.value = when {
@@ -88,6 +89,16 @@ class AppUpdater @Inject constructor(
                 else -> UpdateState.Failed(UpdateState.Reason.NETWORK)
             }
             null
+        }
+    }
+
+    companion object {
+        /** تعذّر جلب بصمات إصدار حديث يعني «تعذّر التحقق» لا «لديك أحدث إصدار» (التحقق يبقى شرطاً للتثبيت). */
+        internal fun stateFor(c: SelfUpdate.Candidate?, verifyFailed: Boolean, manual: Boolean): UpdateState = when {
+            c != null -> UpdateState.Available(c)
+            !manual -> UpdateState.Idle
+            verifyFailed -> UpdateState.Failed(UpdateState.Reason.NETWORK)
+            else -> UpdateState.UpToDate
         }
     }
 

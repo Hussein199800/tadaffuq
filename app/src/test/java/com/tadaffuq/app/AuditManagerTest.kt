@@ -283,7 +283,8 @@ class AuditManagerTest {
         val user = File(dir, "notes.txt").apply { writeText("mine") }
         val found = dm.orphanParts()
         assertEquals(listOf(orphan.absolutePath), found.map { it.absolutePath })
-        assertEquals(1, dm.cleanOrphans(found))
+        // 1.4.0 (مراجعة Codex): قائمة قديمة أو خاطئة تضم جزءاً قابلاً للاستئناف لا تحذفه (يُعاد الفحص لحظة الحذف)
+        assertEquals(1, dm.cleanOrphans(found + live))
         assertTrue(live.exists()); assertTrue(user.exists()); assertFalse(orphan.exists())
     }
 
@@ -316,6 +317,19 @@ class TorrentShareTest {
         assertEquals(50_000, tm.shareOfGlobal(s, 150_000))            // الباقي من الحد
         assertEquals(32 * 1024, tm.shareOfGlobal(s, 199_000))         // حد أدنى كي لا يتجمد
         assertEquals(20_000, tm.shareOfGlobal(s.copy(torrentDownLimit = 20_000), 0)) // الأصغر يغلب
+        db.close()
+    }
+
+    /** 1.4.0 (مراجعة Codex): «إيقاف الكل» يوقف مشاركة المكتمل ويُحفظ، فلا يعود الرفع بعد إعادة التشغيل. */
+    @Test fun pauseAllStopsSeedingPersistently() = kotlinx.coroutines.runBlocking {
+        val ctx: Context = ApplicationProvider.getApplicationContext()
+        val db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).build()
+        val settings = SettingsRepository(ctx)
+        val dm = DownloadManager(ctx, db, settings, com.tadaffuq.app.download.ClientProvider(com.tadaffuq.app.core.SecretStore(ctx)), com.tadaffuq.app.download.AppCredentials(ctx, com.tadaffuq.app.core.SecretStore(ctx)), Conditions(ctx), Notifier(ctx))
+        val tm = com.tadaffuq.app.download.TorrentManager(ctx, db, settings, dm, Notifier(ctx))
+        db.torrents().upsert(com.tadaffuq.data.TorrentEntity("abc", "x", "/d", ByteArray(0), "0", 1, 1, com.tadaffuq.data.TorrentRunState.COMPLETED, seedAfter = true))
+        tm.pauseAll()
+        assertEquals(com.tadaffuq.data.TorrentRunState.PAUSED, db.torrents().get("abc")!!.state)
         db.close()
     }
 }

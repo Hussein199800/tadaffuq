@@ -109,7 +109,8 @@ class TorrentManager @Inject constructor(
     suspend fun pauseAll() = withContext(Dispatchers.IO) {
         dao.all().filter { it.state == TorrentRunState.ACTIVE || (it.state == TorrentRunState.COMPLETED && it.seedAfter) }.forEach { t ->
             if (engine.running) engine.pause(t.infoHash)
-            if (t.state == TorrentRunState.ACTIVE) dao.setState(t.infoHash, TorrentRunState.PAUSED)
+            // المكتمل الذي يشارك يُحفظ متوقفاً أيضاً (كالإيقاف الفردي)، وإلا عاد الرفع بعد إعادة تشغيل التطبيق
+            dao.setState(t.infoHash, TorrentRunState.PAUSED)
         }
     }
 

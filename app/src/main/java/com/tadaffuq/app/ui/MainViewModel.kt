@@ -109,6 +109,11 @@ class MainViewModel @Inject constructor(
     fun restore(tasks: List<TaskEntity>) = viewModelScope.launch(Dispatchers.IO) {
         var failed = 0
         tasks.forEach { t ->
+            if (com.tadaffuq.app.download.TaskFiles.isContent(t.filePath)) {
+                // ملف SAF بقي مكانه: يعود السجل إن كان الملف ما زال موجوداً
+                if (com.tadaffuq.app.download.TaskFiles.exists(ctx, t.filePath)) db.tasks().update(t.copy(trashedAt = null)) else failed++
+                return@forEach
+            }
             val f = t.filePath?.let(::File)
             if (f == null || !f.exists()) { failed++; return@forEach }
             val dir = File(t.dirPath).apply { mkdirs() }

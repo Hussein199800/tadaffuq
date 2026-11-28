@@ -1,5 +1,12 @@
 package com.tadaffuq.app.ui.downloads
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.automirrored.rounded.Sort
 import com.tadaffuq.app.core.sr
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -70,14 +77,20 @@ fun DownloadsScreen(vm: MainViewModel, onAdd: () -> Unit, padding: PaddingValues
     var selection by remember { mutableStateOf(setOf<Long>()) }
     var detail by rememberSaveable { mutableStateOf<Long?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
-    val shown = tasks.filter { filter.match(it.status) }
+    val st0 by vm.settings.collectAsState()
+    val sort = DownloadSort.of(st0.downloadsSort)
+    val shown = sort.apply(tasks.filter { filter.match(it.status) })
+    // التورنت العامل يُحسب في «يعمل» و«ينتظر» مع التنزيلات العادية
+    val torrentActive = tlive.values.count { it.state == com.tadaffuq.torrent.TorrentState.DOWNLOADING || it.state == com.tadaffuq.torrent.TorrentState.METADATA || it.state == com.tadaffuq.torrent.TorrentState.CHECKING || it.state == com.tadaffuq.torrent.TorrentState.SEEDING }
+    val failedCount = tasks.count { it.status == TaskStatus.FAILED }
+    var sortMenu by remember { mutableStateOf(false) }
 
     LazyColumn(contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 88.dp, top = padding.calculateTopPadding())) {
         item {
             if (selection.isEmpty()) {
-                LargeTitle(stringResource(R.string.tab_downloads), sr(R.string.downloads_sub, tasks.count { it.status.isActive }, tasks.count { it.status.isWaiting })) {
-                    if (tasks.any { it.status.isActive || it.status.isWaiting }) IconButton(onClick = vm::pauseAll) { Icon(Icons.Rounded.Pause, stringResource(R.string.action_pause_all)) }
-                    if (tasks.any { it.status == TaskStatus.PAUSED }) IconButton(onClick = vm::resumeAll) { Icon(Icons.Rounded.PlayArrow, stringResource(R.string.action_resume_all)) }
+                LargeTitle(stringResource(R.string.tab_downloads), sr(R.string.downloads_sub, tasks.count { it.status.isActive } + torrentActive, tasks.count { it.status.isWaiting })) {
+                    if (tasks.any { it.status.isActive || it.status.isWaiting }) IconButton(onClick = vm::pauseAll) { Icon(Icons.Rounded.Pause, stringResource(R.string.action_pause_all), tint = com.tadaffuq.app.ui.components.roleColor(com.tadaffuq.app.ui.components.Role.PAUSE)) }
+                    if (tasks.any { it.status == TaskStatus.PAUSED }) IconButton(onClick = vm::resumeAll) { Icon(Icons.Rounded.PlayArrow, stringResource(R.string.action_resume_all), tint = com.tadaffuq.app.ui.components.roleColor(com.tadaffuq.app.ui.components.Role.START)) }
                 }
             } else {
                 SelectionBar(
@@ -92,8 +105,32 @@ fun DownloadsScreen(vm: MainViewModel, onAdd: () -> Unit, padding: PaddingValues
             val settings by vm.settings.collectAsState()
             QuickPanel(settings, live.values.sumOf { it.speedBps }) { f -> vm.updateSettings(f) }
             hold?.let {
-                Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-                    Text(holdText(it), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(12.dp))
+                // رسالة تخص الطابور كله: تنبيه كهرماني تحت العنوان
+                com.tadaffuq.app.ui.components.RoleBanner(com.tadaffuq.app.ui.components.Role.PAUSE, holdText(it), Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            }
+            // الترتيب ظاهر دائماً باسمه الحالي، واختصار للإخفاقات يفتح فلترها بلمسة
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.foundation.layout.Box {
+                    androidx.compose.material3.OutlinedButton(onClick = { sortMenu = true }, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Icon(Icons.AutoMirrored.Rounded.Sort, null, modifier = Modifier.size(18.dp))
+                        androidx.compose.foundation.layout.Spacer(Modifier.width(6.dp))
+                        Text(sr(R.string.sort_by, stringResource(sort.label)))
+                    }
+                    androidx.compose.material3.DropdownMenu(sortMenu, { sortMenu = false }) {
+                        DownloadSort.entries.forEach { o ->
+                            androidx.compose.material3.DropdownMenuItem(
+                                text = { Text(stringResource(o.label)) },
+                                leadingIcon = { if (o == sort) Icon(Icons.Rounded.Check, null) },
+                                onClick = { vm.updateSettings { it.copy(downloadsSort = o.name) }; sortMenu = false },
+                            )
+                        }
+                    }
+                }
+                androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                if (failedCount > 0 && filter != Filter.FAILED) androidx.compose.material3.TextButton(onClick = { filter = Filter.FAILED }, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Icon(Icons.Rounded.ErrorOutline, null, tint = T.extra.danger, modifier = Modifier.size(18.dp))
+                    androidx.compose.foundation.layout.Spacer(Modifier.width(4.dp))
+                    Text(com.tadaffuq.app.core.pr(R.plurals.failed_shortcut, failedCount, failedCount), color = T.extra.danger)
                 }
             }
             Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -162,14 +199,14 @@ private fun SelectionBar(count: Int, onClose: () -> Unit, onAll: () -> Unit, onP
         IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, stringResource(R.string.cancel)) }
         Text(sr(R.string.selected_n, count), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
         IconButton(onClick = onAll) { Icon(Icons.Rounded.SelectAll, stringResource(R.string.select_all)) }
-        IconButton(onClick = onPause) { Icon(Icons.Rounded.Pause, stringResource(R.string.action_pause)) }
-        IconButton(onClick = onResume) { Icon(Icons.Rounded.PlayArrow, stringResource(R.string.action_resume)) }
-        IconButton(onClick = onDelete) { Icon(Icons.Rounded.Delete, stringResource(R.string.action_delete)) }
+        IconButton(onClick = onPause) { Icon(Icons.Rounded.Pause, stringResource(R.string.action_pause), tint = com.tadaffuq.app.ui.components.roleColor(com.tadaffuq.app.ui.components.Role.PAUSE)) }
+        IconButton(onClick = onResume) { Icon(Icons.Rounded.PlayArrow, stringResource(R.string.action_resume), tint = com.tadaffuq.app.ui.components.roleColor(com.tadaffuq.app.ui.components.Role.START)) }
+        IconButton(onClick = onDelete) { Icon(Icons.Rounded.Delete, stringResource(R.string.action_delete), tint = com.tadaffuq.app.ui.components.roleColor(com.tadaffuq.app.ui.components.Role.DELETE)) }
     }
 }
 
 @Composable
-fun DeleteDialog(count: Int, hasFiles: Boolean, onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit) {
+fun DeleteDialog(count: Int, hasFiles: Boolean, onDismiss: () -> Unit, savedBytes: Long = 0, onConfirm: (Boolean) -> Unit) {
     var withFiles by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -177,13 +214,16 @@ fun DeleteDialog(count: Int, hasFiles: Boolean, onDismiss: () -> Unit, onConfirm
         text = {
             androidx.compose.foundation.layout.Column {
                 Text(stringResource(R.string.delete_desc))
+                // تنزيل لم يكتمل: يُسمّى ما سيُفقد
+                if (savedBytes > 0) Text(com.tadaffuq.app.core.sr(R.string.delete_progress_lost, Fmt.bytes(savedBytes)), color = T.extra.warning)
                 if (hasFiles) Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(withFiles, { withFiles = it })
                     Text(stringResource(R.string.delete_files_too))
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(withFiles) }) { Text(stringResource(R.string.action_delete), color = T.extra.danger) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+        // الزر يقول ما سيحدث فعلاً: إزالة السجل فقط، أو حذف الملف من الجهاز
+        confirmButton = { TextButton(onClick = { onConfirm(withFiles) }) { Text(stringResource(if (hasFiles && withFiles) R.string.delete_file_device else R.string.remove_from_list), color = T.extra.danger) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel), color = T.extra.neutral) } },
     )
 }

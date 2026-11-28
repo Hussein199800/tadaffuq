@@ -46,7 +46,13 @@ object Backup {
         val existing = db.tasks().all().map { it.url to it.fileName }.toSet()
         val tasks = o.optJSONArray("tasks") ?: JSONArray()
         val toInsert = (0 until tasks.length()).map { tasks.getJSONObject(it) }.filter { (it.getString("url") to it.getString("fileName")) !in existing }.map { t ->
-            val status = runCatching { TaskStatus.valueOf(t.getString("status")) }.getOrDefault(TaskStatus.PAUSED)
+            val status0 = runCatching { TaskStatus.valueOf(t.getString("status")) }.getOrDefault(TaskStatus.PAUSED)
+            val path = t.optString("filePath").takeIf { !t.isNull("filePath") }
+            // «مكتمل» فقط إن كان الملف على هذا الجهاز فعلاً؛ وإلا (هاتف جديد، أو رابط SAF بلا إذن هنا) سجل متوقف
+            // بسبب واضح، والاستئناف يعيد تنزيله
+            val present = path != null && !path.startsWith("content://") && java.io.File(path).isFile
+            val missing = status0 == TaskStatus.COMPLETED && !present
+            val status = if (missing) TaskStatus.PAUSED else status0
             TaskEntity(
                 url = t.getString("url"), fileName = t.getString("fileName"), dirPath = t.getString("dirPath"),
                 // ما لم يكتمل يُستورد متوقفاً بلا أجزاء: يبدأ من جديد بأمان عند الاستئناف
@@ -56,6 +62,7 @@ object Backup {
                 expectedHash = t.optString("expectedHash").takeIf { !t.isNull("expectedHash") }, actualHash = t.optString("actualHash").takeIf { !t.isNull("actualHash") },
                 priority = t.optInt("priority"), mirrors = t.optString("mirrors").takeIf { !t.isNull("mirrors") },
                 downloadedBytes = if (status == TaskStatus.COMPLETED) t.optLong("totalBytes", 0) else 0,
+                errorCode = if (missing) "IMPORT_MISSING" else null,
             )
         }
         db.tasks().insertAll(toInsert)

@@ -3,7 +3,7 @@ package com.tadaffuq.engine
 import java.io.File
 import java.net.URLDecoder
 
-enum class FileCategory { COMPRESSED, DOCUMENTS, PROGRAMS, DISK_IMAGES, MODELS, OTHER }
+enum class FileCategory { VIDEO, AUDIO, IMAGES, COMPRESSED, DOCUMENTS, PROGRAMS, DISK_IMAGES, MODELS, OTHER }
 
 object FileNames {
     private val illegal = Regex("[\\\\/:*?\"<>|\\u0000-\\u001F]")
@@ -16,8 +16,8 @@ object FileNames {
             URLDecoder.decode(path.substringAfterLast('/'), "UTF-8")
         }.getOrNull()
         val raw = fromHeader?.takeIf { it.isNotBlank() } ?: fromUrl?.takeIf { it.isNotBlank() } ?: "download"
-        var name = sanitize(raw)
-        if (!name.contains('.') && mime != null) extensionFor(mime)?.let { name = "$name.$it" }
+        var name = fixTrailingTag(sanitize(raw))
+        if (!hasExtension(name) && mime != null) extensionFor(mime)?.let { name = "$name.$it" }
         return name
     }
 
@@ -58,6 +58,9 @@ object FileNames {
     }
 
     fun category(name: String): FileCategory = when (name.substringAfterLast('.', "").lowercase()) {
+        "mp4", "mkv", "webm", "mov", "avi", "m4v", "3gp", "ts", "flv", "wmv", "mpg", "mpeg" -> FileCategory.VIDEO
+        "mp3", "m4a", "aac", "ogg", "opus", "flac", "wav", "wma", "amr" -> FileCategory.AUDIO
+        "jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "bmp", "svg" -> FileCategory.IMAGES
         "zip", "rar", "7z", "tar", "gz", "tgz", "bz2", "xz", "zst", "lz", "lzma" -> FileCategory.COMPRESSED
         "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "txt", "csv", "epub", "rtf", "md", "json", "xml" -> FileCategory.DOCUMENTS
         "apk", "apks", "xapk", "aab", "exe", "msi", "dmg", "pkg", "deb", "rpm", "appimage", "sh", "bat", "jar" -> FileCategory.PROGRAMS
@@ -103,10 +106,23 @@ object FileNames {
 
     /** اسم مقترح (عنوان الحلقة مثلاً) بلا امتداد: يأخذ امتداد الاسم الذي حدده الخادم، وإلا من نوع الملف. */
     fun withExtension(name: String, fallbackName: String?, mime: String?): String {
-        val clean = sanitize(name)
+        val clean = fixTrailingTag(sanitize(name))
         if (hasExtension(clean)) return clean
         val ext = fallbackName?.let(::sanitize)?.takeIf(::hasExtension)?.substringAfterLast('.') ?: mime?.let(::extensionFor)
         return if (ext != null) "$clean.$ext" else clean
+    }
+
+    private val trailingTag = Regex("""^(.+)\.([A-Za-z0-9]{2,5})((?:\s*\[[^\]]*\]|\s*\([^)]*\))+)$""")
+
+    /**
+     * «حلقة.mp4[Animeify]»: مواقع تُلحق وسماً بعد الامتداد فيفقد الملف امتداده عند أندرويد (لا يُفتح بالمشغّل ولا يُصنّف).
+     * يُنقل الوسم قبل الامتداد: «حلقة[Animeify].mp4». فقط حين يكون ما قبل الوسم امتداداً معروفاً.
+     */
+    fun fixTrailingTag(name: String): String {
+        if (hasExtension(name)) return name
+        val m = trailingTag.matchEntire(name) ?: return name
+        val (base, ext, tag) = m.destructured
+        return if (category("x.$ext") != FileCategory.OTHER || ext.lowercase() in setOf("bin", "iso")) "$base${tag.trim()}.$ext" else name
     }
 
     /** امتداد حقيقي: 1-5 أحرف أو أرقام بعد آخر نقطة (لا «الحلقة 5.» ولا «v1.0 final»). */

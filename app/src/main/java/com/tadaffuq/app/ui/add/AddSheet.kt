@@ -92,7 +92,7 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
             s.webPage?.let { page ->
                 item {
                     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-                        Text(stringResource(R.string.add_web_page), style = MaterialTheme.typography.bodyMedium, color = T.extra.warning)
+                        com.tadaffuq.app.ui.components.RoleBanner(com.tadaffuq.app.ui.components.Role.PAUSE, stringResource(R.string.add_web_page))
                         androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (onOpenPage != null) androidx.compose.material3.FilledTonalButton(onClick = { onOpenPage(page) }) { Text(stringResource(R.string.open_in_app_browser)) }
                             OutlinedButton(onClick = { com.tadaffuq.app.core.OtherBrowser.open(ctx, page); onDismiss() }) { Text(stringResource(R.string.open_in_other_browser)) }
@@ -101,10 +101,10 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
                 }
             }
             if (request.clipboardEmpty && s.input.isBlank()) item {
-                Text(stringResource(R.string.clip_empty), style = MaterialTheme.typography.bodyMedium, color = T.extra.warning, modifier = Modifier.padding(horizontal = 20.dp))
+                com.tadaffuq.app.ui.components.RoleBanner(com.tadaffuq.app.ui.components.Role.PAUSE, stringResource(R.string.clip_empty), Modifier.padding(horizontal = 16.dp))
             }
             if (s.items.isNotEmpty() && StorageDirs.usingFallback) item {
-                Text(stringResource(R.string.storage_fallback), style = MaterialTheme.typography.bodySmall, color = T.extra.warning, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+                com.tadaffuq.app.ui.components.RoleBanner(com.tadaffuq.app.ui.components.Role.PAUSE, stringResource(R.string.storage_fallback), Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
             }
             if (s.items.isEmpty() && s.input.isNotBlank() && s.magnet == null) item {
                 Text(stringResource(R.string.add_no_links), color = T.extra.secondaryText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 20.dp))
@@ -157,11 +157,8 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
 
             if (s.items.isNotEmpty()) item {
                 // ما وصل مع الرابط من التطبيق المرسِل: يظهر حتى لا تُرسل بيانات جلسة دون علم المستخدم
-                if (s.received.isNotEmpty()) Text(
-                    com.tadaffuq.app.core.sr(R.string.add_received, s.received.joinToString("، ")),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
+                if (s.received.isNotEmpty()) com.tadaffuq.app.ui.components.RoleBanner(com.tadaffuq.app.ui.components.Role.ADD,
+                    com.tadaffuq.app.core.sr(R.string.add_received, s.received.joinToString("، ")), Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
                 TextButton(onClick = { advanced = !advanced }, modifier = Modifier.padding(horizontal = 8.dp)) {
                     Text(stringResource(if (advanced) R.string.hide_advanced else R.string.show_advanced))
                 }
@@ -216,14 +213,11 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
             item {
                 // مثل ADM: «إضافة» تضع التنزيل في القائمة متوقفاً، و«بدء» تبدأه الآن
                 Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 16.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.cancel)) }
+                    // ثلاثة أدوار بثلاثة ألوان: إلغاء (رمادي)، إضافة للقائمة (أزرق)، بدء الآن (أخضر ممتلئ، الرئيسي)
+                    com.tadaffuq.app.ui.components.RoleButton(com.tadaffuq.app.ui.components.Role.CLEAR, stringResource(R.string.cancel), onDismiss, icon = null)
                     Spacer(Modifier.weight(1f))
-                    OutlinedButton(onClick = { vm.submit(start = false) }, enabled = s.canSubmit, modifier = Modifier.heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.add_queue_btn))
-                    }
-                    Button(onClick = { vm.submit(start = true) }, enabled = s.canSubmit, modifier = Modifier.heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.add_start_btn))
-                    }
+                    com.tadaffuq.app.ui.components.RoleButton(com.tadaffuq.app.ui.components.Role.ADD, stringResource(R.string.add_queue_btn), { vm.submit(start = false) }, enabled = s.canSubmit)
+                    com.tadaffuq.app.ui.components.RoleButton(com.tadaffuq.app.ui.components.Role.START, stringResource(R.string.add_start_btn), { vm.submit(start = true) }, filled = true, enabled = s.canSubmit)
                 }
                 Text(stringResource(R.string.add_buttons_desc), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
                 if (s.items.any { it.selected }) TextButton(onClick = vm::saveForLater, modifier = Modifier.padding(horizontal = 8.dp)) {

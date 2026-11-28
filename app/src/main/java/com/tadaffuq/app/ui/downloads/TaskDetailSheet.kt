@@ -82,7 +82,15 @@ fun TaskDetailSheet(t: TaskEntity, live: Snapshot?, vm: MainViewModel, onDismiss
         "limit" -> SpeedLimitDialog(t.speedLimitBps, { dialog = null }) { vm.setSpeedLimit(t.id, it); dialog = null }
         "url" -> UrlDialog(t.url, { dialog = null }) { vm.updateUrl(t.id, it); dialog = null }
         "mirrors" -> MirrorsDialog(t, vm) { dialog = null }
-        "delete" -> DeleteDialog(1, t.status == TaskStatus.COMPLETED, { dialog = null }) { withFiles -> vm.delete(listOf(t.id), withFiles); dialog = null; onDismiss() }
+        "delete" -> DeleteDialog(1, t.status == TaskStatus.COMPLETED, { dialog = null }, savedBytes = if (t.status != TaskStatus.COMPLETED) t.downloadedBytes else 0) { withFiles -> vm.delete(listOf(t.id), withFiles); dialog = null; onDismiss() }
+        // «من البداية» يمسح التقدّم: تأكيد يذكر ما سيُفقد
+        "restart" -> androidx.compose.material3.AlertDialog(
+            onDismissRequest = { dialog = null },
+            title = { Text(stringResource(R.string.restart_title)) },
+            text = { Text(com.tadaffuq.app.core.sr(R.string.restart_text, Fmt.bytes(t.downloadedBytes))) },
+            confirmButton = { TextButton(onClick = { vm.restart(t.id); dialog = null }) { Text(stringResource(R.string.action_restart), color = T.extra.danger) } },
+            dismissButton = { TextButton(onClick = { dialog = null }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 }
 
@@ -186,7 +194,7 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 when (t.status) {
                     TaskStatus.RUNNING, TaskStatus.QUEUED, TaskStatus.WAITING_NETWORK ->
-                        Action(Icons.Rounded.Pause, stringResource(R.string.action_pause)) { vm.pause(listOf(t.id)) }
+                        Action(Icons.Rounded.Pause, stringResource(R.string.action_pause), com.tadaffuq.app.ui.components.Role.PAUSE) { vm.pause(listOf(t.id)) }
                     TaskStatus.FAILED.takeIf { t.errorCode == "HOSTKEY_NEW" && t.errorDetail != null } -> {
                         Action(Icons.Rounded.PlayArrow, stringResource(R.string.hostkey_trust)) {
                             com.tadaffuq.engine.RemoteTarget.parse(t.url)?.let { r -> vm.manager.credentials.trustHostKey(r.host, r.port, t.errorDetail!!) }
@@ -194,18 +202,21 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
                         }
                     }
                     TaskStatus.PAUSED, TaskStatus.FAILED ->
-                        Action(Icons.Rounded.PlayArrow, stringResource(if (t.status == TaskStatus.FAILED) R.string.action_retry else R.string.action_resume)) { vm.resume(listOf(t.id)) }
+                        Action(Icons.Rounded.PlayArrow, stringResource(if (t.status == TaskStatus.FAILED) R.string.action_retry else R.string.action_resume), com.tadaffuq.app.ui.components.Role.START) { vm.resume(listOf(t.id)) }
                     else -> Unit
                 }
                 if (t.status == TaskStatus.COMPLETED) {
-                    val file = t.filePath?.let(::File)
-                    if (file?.exists() == true) {
-                        Action(Icons.Rounded.OpenInNew, stringResource(R.string.action_open)) {
-                            try { ctx.startActivity(StorageDirs.openIntent(ctx, file)) } catch (e: ActivityNotFoundException) {
+                    // مسار محلي أو رابط content:// (بطاقة SD أو مجلد مختار) عبر مزوّد التخزين نفسه
+                    val path = t.filePath
+                    if (path != null && com.tadaffuq.app.download.TaskFiles.exists(ctx, path)) {
+                        Action(Icons.Rounded.OpenInNew, stringResource(R.string.action_open), com.tadaffuq.app.ui.components.Role.ADD) {
+                            try { ctx.startActivity(com.tadaffuq.app.download.TaskFiles.openIntent(ctx, path)) } catch (e: ActivityNotFoundException) {
                                 Toast.makeText(ctx, R.string.no_app_to_open, Toast.LENGTH_SHORT).show()
                             }
                         }
-                        Action(Icons.Rounded.Share, stringResource(R.string.action_share)) { ctx.startActivity(StorageDirs.shareIntent(ctx, listOf(file))) }
+                        Action(Icons.Rounded.Share, stringResource(R.string.action_share), com.tadaffuq.app.ui.components.Role.ADD) {
+                            runCatching { ctx.startActivity(com.tadaffuq.app.download.TaskFiles.shareIntent(ctx, path)) }
+                        }
                     }
                 } else {
                     Action(Icons.Rounded.ArrowUpward, stringResource(R.string.priority_up)) { vm.setPriority(t.id, t.priority + 1) }
@@ -213,21 +224,26 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
                     Action(Icons.Rounded.Speed, stringResource(R.string.speed_limit)) { openDialog("limit") }
                     Action(Icons.Rounded.Link, stringResource(R.string.refresh_link)) { openDialog("url") }
                     Action(Icons.Rounded.Link, stringResource(R.string.mirrors)) { openDialog("mirrors") }
-                    Action(Icons.Rounded.RestartAlt, stringResource(R.string.action_restart)) { vm.restart(t.id) }
+                    Action(Icons.Rounded.RestartAlt, stringResource(R.string.action_restart), com.tadaffuq.app.ui.components.Role.DELETE) { openDialog("restart") }
                 }
                 Action(Icons.Rounded.ContentCopy, stringResource(R.string.copy_link)) {
                     ctx.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("url", t.url))
                 }
-                Action(Icons.Rounded.Delete, stringResource(R.string.action_delete)) { openDialog("delete") }
+                Action(Icons.Rounded.Delete, stringResource(R.string.action_delete), com.tadaffuq.app.ui.components.Role.DELETE) { openDialog("delete") }
             }
             Spacer(Modifier.height(20.dp))
         }
     }
 }
 
+/** زر إجراء؛ [role] يلوّنه بلون دوره الثابت (بدء أخضر، إيقاف كهرماني، فتح/مشاركة أزرق، حذف أحمر)، وبدونه محايد. */
 @Composable
-private fun Action(icon: ImageVector, label: String, onClick: () -> Unit) {
-    AssistChip(onClick = onClick, label = { Text(label) }, leadingIcon = { Icon(icon, null) })
+private fun Action(icon: ImageVector, label: String, role: com.tadaffuq.app.ui.components.Role? = null, onClick: () -> Unit) {
+    val c = role?.let { com.tadaffuq.app.ui.components.roleColor(it) }
+    AssistChip(onClick = onClick, label = { Text(label) }, leadingIcon = { Icon(icon, null) },
+        colors = if (c != null) androidx.compose.material3.AssistChipDefaults.assistChipColors(labelColor = c, leadingIconContentColor = c)
+        else androidx.compose.material3.AssistChipDefaults.assistChipColors(),
+        border = if (c != null) androidx.compose.foundation.BorderStroke(1.dp, c) else androidx.compose.material3.AssistChipDefaults.assistChipBorder(true))
 }
 
 @Composable

@@ -84,12 +84,33 @@
     <string name="default_browser_off">Off. Tap to choose it</string>
     <string name="open_pages_browser">Open web pages in Tadaffuq browser</string>
     <string name="open_pages_browser_desc">A page link that reaches Tadaffuq opens in its browser instead of the download window</string>
+    <string name="restart_title">Start over?</string>
+    <string name="restart_text">The saved progress (%1$s) will be deleted and the whole file downloaded again</string>
+    <string name="delete_progress_lost">Saved progress (%1$s) will be deleted</string>
+    <string name="remove_from_list">Remove from list</string>
+    <string name="delete_file_device">Delete file from device</string>
+    <string name="vault_delete_title">Delete permanently from the private folder?</string>
+    <string name="vault_delete_text">\"%1$s\" will be deleted permanently and cannot be recovered</string>
+    <string name="vault_delete_failed">Couldn\'t delete \"%1$s\"; nothing changed. Try again</string>
+    <string name="err_import_missing">Imported from a backup and the file isn\'t on this device. Resume to download it again</string>
+    <string name="cat_video">Video</string>
+    <string name="cat_audio">Audio</string>
+    <string name="cat_images">Images</string>
+    <string name="sort_by">Sort: %1$s</string>
+    <string name="sort_newest">Newest first</string>
+    <string name="sort_oldest">Oldest first</string>
+    <string name="sort_name_az">Name (A → Z)</string>
+    <string name="sort_largest">Largest first</string>
+    <string name="sort_smallest">Smallest first</string>
+    <string name="sort_progress">Least progress first</string>
+    <string name="sort_priority">Highest priority first</string>
+    <string name="clear_history_confirm">All browsing history in Tadaffuq\'s browser will be cleared (bookmarks are kept)</string>
     <string name="add_reprobe">Re-check with these headers</string>
     <string name="add_save_later">Save link to the link hub</string>
     <string name="add_start">Start download</string>
-    <string name="add_start_btn">Start</string>
-    <string name="add_queue_btn">Add</string>
-    <string name="add_buttons_desc">\"Add\" puts it in the list paused to start whenever you like; \"Start\" begins now</string>
+    <string name="add_start_btn">Start now</string>
+    <string name="add_queue_btn">Add to list</string>
+    <string name="add_buttons_desc">\"Add to list\" puts it in the list paused to start whenever you like; \"Start now\" begins right away</string>
     <string name="exe_warning">Executable file: open it only if you trust the source</string>
     <string name="dup_title">Duplicate download</string>
     <string name="dup_desc">The link or name already exists in your list. Choose what happens:</string>
@@ -712,6 +733,10 @@ Details in docs/RPC.md. Works while the app is open or downloading. Not aria2-co
     <plurals name="connections_n">
         <item quantity="one">%1$d conn.</item>
         <item quantity="other">%1$d conn.</item>
+    </plurals>
+    <plurals name="failed_shortcut">
+        <item quantity="one">1 failed · show</item>
+        <item quantity="other">%1$d failed · show</item>
     </plurals>
     <plurals name="segments_a11y">
         <item quantity="one">Map of %1$d file segment; colored parts are done</item>

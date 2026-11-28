@@ -28,6 +28,7 @@ fun errorText(code: String?): String = when {
     code == "AUTH" -> stringResource(R.string.err_auth)
     code == "HOSTKEY_NEW" -> stringResource(R.string.err_hostkey_new)
     code == "HOSTKEY_CHANGED" -> stringResource(R.string.err_hostkey_changed)
+    code == "IMPORT_MISSING" -> stringResource(R.string.err_import_missing)
     else -> stringResource(R.string.err_unknown)
 }
 

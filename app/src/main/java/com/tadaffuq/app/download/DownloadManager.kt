@@ -713,6 +713,9 @@ class DownloadManager @Inject constructor(
         ids.forEach { id ->
             jobs[id]?.let { stop(id, TaskStatus.PAUSED); it.join() }
             val t = dao.get(id) ?: return@forEach
+            // ملف على بطاقة SD أو مجلد SAF (content://): لا يُنقل إلى مجلد التطبيق؛ يبقى مكانه حتى الحذف النهائي،
+            // والسجل وحده في السلة، فتعيده الاستعادة ما دام الملف موجوداً
+            if (TaskFiles.isContent(t.filePath)) { dao.update(t.copy(trashedAt = System.currentTimeMillis())); return@forEach }
             val f = t.filePath?.let(::File)
             if (f != null && f.exists()) {
                 val dest = File(bin, "${t.id}_${f.name}")

@@ -1,5 +1,8 @@
 package com.tadaffuq.app.ui.downloads
 
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Movie
 import com.tadaffuq.app.core.sr
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -57,6 +60,9 @@ import com.tadaffuq.engine.FileNames
 import com.tadaffuq.engine.Snapshot
 
 fun categoryIcon(name: String): ImageVector = when (FileNames.category(name)) {
+    FileCategory.VIDEO -> Icons.Rounded.Movie
+    FileCategory.AUDIO -> Icons.Rounded.MusicNote
+    FileCategory.IMAGES -> Icons.Rounded.Image
     FileCategory.COMPRESSED -> Icons.Rounded.Archive
     FileCategory.DOCUMENTS -> Icons.Rounded.Description
     FileCategory.PROGRAMS -> Icons.Rounded.Apps
@@ -69,6 +75,9 @@ fun categoryIcon(name: String): ImageVector = when (FileNames.category(name)) {
 fun categoryTint(name: String): com.tadaffuq.app.ui.components.Tint = categoryTint(FileNames.category(name))
 
 fun categoryTint(c: FileCategory): com.tadaffuq.app.ui.components.Tint = when (c) {
+    FileCategory.VIDEO -> com.tadaffuq.app.ui.components.Tint.CORAL
+    FileCategory.AUDIO -> com.tadaffuq.app.ui.components.Tint.VIOLET
+    FileCategory.IMAGES -> com.tadaffuq.app.ui.components.Tint.MINT
     FileCategory.COMPRESSED -> com.tadaffuq.app.ui.components.Tint.AMBER
     FileCategory.DOCUMENTS -> com.tadaffuq.app.ui.components.Tint.BLUE
     FileCategory.PROGRAMS -> com.tadaffuq.app.ui.components.Tint.VIOLET
@@ -189,5 +198,7 @@ private fun PrimaryAction(status: TaskStatus, onClick: () -> Unit) {
         TaskStatus.FAILED -> Icons.Rounded.Refresh to R.string.action_retry
         else -> return
     }
-    IconButton(onClick = onClick) { Icon(icon, contentDescription = stringResource(label)) }
+    // الإيقاف كهرماني، والاستئناف وإعادة المحاولة أخضر (وسيلة التعافي، لا لون الفشل)
+    val tint = com.tadaffuq.app.ui.components.roleColor(if (icon == Icons.Rounded.Pause) com.tadaffuq.app.ui.components.Role.PAUSE else com.tadaffuq.app.ui.components.Role.START)
+    IconButton(onClick = onClick) { Icon(icon, contentDescription = stringResource(label), tint = tint) }
 }

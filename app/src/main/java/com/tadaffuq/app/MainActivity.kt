@@ -220,7 +220,7 @@ class MainActivity : AppCompatActivity() {
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
             modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
             header = {
-                androidx.compose.material3.FloatingActionButton(onClick = { add(AddRequest("")) }, containerColor = MaterialTheme.colorScheme.primary) {
+                androidx.compose.material3.FloatingActionButton(onClick = { add(AddRequest("")) }, containerColor = com.tadaffuq.app.ui.theme.T.extra.info, contentColor = com.tadaffuq.app.ui.theme.T.extra.onRole) {
                     Icon(Icons.Rounded.Add, stringResource(R.string.add_title))
                 }
             },
@@ -262,9 +262,10 @@ class MainActivity : AppCompatActivity() {
                 if (!wide && (tabRoute == "home" || tabRoute == "downloads")) ExtendedFloatingActionButton(
                     onClick = { add(AddRequest("")) },
                     icon = { Icon(Icons.Rounded.Add, null) },
-                    text = { Text(stringResource(R.string.add_short)) },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    text = { Text(stringResource(R.string.add_title)) },
+                    // «إضافة» بلونها الثابت (أزرق) في كل الشاشات
+                    containerColor = com.tadaffuq.app.ui.theme.T.extra.info,
+                    contentColor = com.tadaffuq.app.ui.theme.T.extra.onRole,
                 )
             },
         ) { inner ->

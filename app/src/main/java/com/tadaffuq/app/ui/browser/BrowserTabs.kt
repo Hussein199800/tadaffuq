@@ -135,6 +135,9 @@ object BrowserTabs {
         return tab
     }
 
+    /** كوكيز رابط من ملف التصفح الخاص بالتبويب (العادي أو الخاص المعزول). */
+    fun cookieFor(tab: BrowserTab, url: String): String? = runCatching { cookiesFor(tab).getCookie(url) }.getOrNull()?.ifBlank { null }
+
     private fun cookiesFor(tab: BrowserTab): CookieManager {
         if (tab.isolated && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.MULTI_PROFILE)) {
             runCatching { androidx.webkit.ProfileStore.getInstance().getProfile(PRIVATE_PROFILE)?.cookieManager }.getOrNull()?.let { return it }

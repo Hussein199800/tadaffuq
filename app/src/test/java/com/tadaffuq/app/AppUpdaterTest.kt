@@ -57,6 +57,13 @@ class AppUpdaterTest {
         assertFalse("rejected package deleted", updateDir().listFiles().orEmpty().any { it.name.endsWith(".apk") })
     }
 
+    /** 1.4.0 (مراجعة Codex): فشل جلب البصمات لا يُعرض «لديك أحدث إصدار». */
+    @Test fun unverifiableIsNotUpToDate() {
+        org.junit.Assert.assertTrue(AppUpdater.stateFor(null, verifyFailed = true, manual = true) is com.tadaffuq.app.update.UpdateState.Failed)
+        org.junit.Assert.assertEquals(com.tadaffuq.app.update.UpdateState.UpToDate, AppUpdater.stateFor(null, verifyFailed = false, manual = true))
+        org.junit.Assert.assertEquals(com.tadaffuq.app.update.UpdateState.Idle, AppUpdater.stateFor(null, verifyFailed = true, manual = false))
+    }
+
     @Test fun networkErrorIsReported() = runBlocking {
         server.enqueue(MockResponse().setResponseCode(500))
         val u = updater()

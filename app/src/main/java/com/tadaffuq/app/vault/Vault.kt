@@ -98,8 +98,10 @@ class Vault(private val context: Context) {
         File(dir, "${item.id}.tdv").inputStream().buffered().use { input -> dest.outputStream().buffered().use { VaultCrypto.decrypt(ensureKey(), input, it) } }
     }
 
+    /** يُحذف من الفهرس فقط بعد أن يختفي الملف المشفّر فعلاً؛ الفشل يُرمى ليظهر للمستخدم. */
     fun delete(item: VaultItem) {
-        File(dir, "${item.id}.tdv").delete()
+        val f = File(dir, "${item.id}.tdv")
+        if (f.exists() && !f.delete()) throw java.io.IOException("delete failed")
         save(list().filterNot { it.id == item.id })
     }
 

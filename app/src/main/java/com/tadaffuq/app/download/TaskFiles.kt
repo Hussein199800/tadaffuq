@@ -43,6 +43,11 @@ object TaskFiles {
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         else StorageDirs.openIntent(ctx, File(path))
 
+    fun shareIntent(ctx: Context, path: String): Intent =
+        if (isContent(path)) Intent.createChooser(Intent(Intent.ACTION_SEND).setType(ctx.contentResolver.getType(Uri.parse(path)) ?: "*/*")
+            .putExtra(Intent.EXTRA_STREAM, Uri.parse(path)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        else StorageDirs.shareIntent(ctx, listOf(File(path)))
+
     /** حذف ملف بمسار أو رابط content:// (MediaStore أو SAF). true إن لم يعد موجوداً. */
     fun delete(ctx: Context, path: String): Boolean = if (isContent(path)) runCatching {
         val u = Uri.parse(path)

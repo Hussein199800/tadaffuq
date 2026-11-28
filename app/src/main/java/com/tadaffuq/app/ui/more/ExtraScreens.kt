@@ -144,6 +144,7 @@ fun VaultScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit) {
     var unlocked by remember { mutableStateOf(false) }
     var items by remember { mutableStateOf<List<VaultItem>>(emptyList()) }
     var error by remember { mutableStateOf<String?>(null) }
+    var confirmDelete by remember { mutableStateOf<VaultItem?>(null) }
     val canAuth = remember { BiometricManager.from(ctx).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL) }
 
     fun refresh() = scope.launch { items = runCatching { withContext(Dispatchers.IO) { vault.list() } }.getOrElse { error = it.message; emptyList() } }
@@ -189,12 +190,31 @@ fun VaultScreen(vm: MainViewModel, padding: PaddingValues, onBack: () -> Unit) {
                                     .onFailure { e -> if (e is android.security.keystore.UserNotAuthenticatedException) unlocked = false else error = e.message }
                             }
                         }) { Text(stringResource(R.string.vault_export)) }
-                        TextButton(onClick = { scope.launch { runCatching { withContext(Dispatchers.IO) { vault.delete(it2) } }; refresh() } }) { Text(stringResource(R.string.delete_forever), color = T.extra.danger) }
+                        TextButton(onClick = { confirmDelete = it2 }) { Text(stringResource(R.string.delete_forever), color = T.extra.danger) }
                     }
                 }
             }
         }
         error?.let { e -> item { Text(e, color = T.extra.danger, modifier = Modifier.padding(20.dp)) } }
+    }
+    // حذف نهائي من الخزنة: تأكيد يسمّي الملف، والفشل يظهر ويمكن إعادة المحاولة
+    confirmDelete?.let { item ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text(stringResource(R.string.vault_delete_title)) },
+            text = { Text(com.tadaffuq.app.core.sr(R.string.vault_delete_text, item.name)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDelete = null
+                    scope.launch {
+                        runCatching { withContext(Dispatchers.IO) { vault.delete(item) } }
+                            .onFailure { error = ctx.getString(R.string.vault_delete_failed, item.name) }
+                        refresh()
+                    }
+                }) { Text(stringResource(R.string.delete_forever), color = T.extra.danger) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(stringResource(R.string.cancel)) } },
+        )
     }
 }
 

@@ -1,5 +1,14 @@
 package com.tadaffuq.app.ui.components
 
+import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -475,5 +484,68 @@ fun HowItWorks(text: String) {
         androidx.compose.animation.AnimatedVisibility(open) {
             Text(text, style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp))
         }
+    }
+}
+
+
+/** دور الإجراء: لون وأيقونة ثابتان في التطبيق كله، مع النص دائماً (لا يُعتمد على اللون وحده). */
+enum class Role { ADD, START, CLEAR, PAUSE, DELETE }
+
+@Composable
+fun roleColor(r: Role): Color = when (r) {
+    Role.ADD -> T.extra.info
+    Role.START -> T.extra.success
+    Role.CLEAR -> T.extra.neutral
+    Role.PAUSE -> T.extra.warning
+    Role.DELETE -> T.extra.danger
+}
+
+fun roleIcon(r: Role): androidx.compose.ui.graphics.vector.ImageVector = when (r) {
+    Role.ADD -> androidx.compose.material.icons.Icons.Rounded.Add
+    Role.START -> androidx.compose.material.icons.Icons.Rounded.PlayArrow
+    Role.CLEAR -> androidx.compose.material.icons.Icons.Rounded.Close
+    Role.PAUSE -> androidx.compose.material.icons.Icons.Rounded.Pause
+    Role.DELETE -> androidx.compose.material.icons.Icons.Rounded.Delete
+}
+
+/**
+ * زر بدور: [filled] للإجراء الرئيسي (خلفية بلون الدور ونص معكوس)، وإلا إطار ونص بلون الدور.
+ * [icon] لتغيير الأيقونة مع إبقاء اللون (استئناف، إعادة المحاولة…).
+ */
+@Composable
+fun RoleButton(role: Role, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, filled: Boolean = false, enabled: Boolean = true,
+               icon: androidx.compose.ui.graphics.vector.ImageVector? = roleIcon(role)) {
+    val c = roleColor(role)
+    val content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
+        if (icon != null) { androidx.compose.material3.Icon(icon, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)) }
+        Text(label)
+    }
+    if (filled) androidx.compose.material3.Button(onClick, modifier.heightIn(min = 48.dp), enabled = enabled,
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = c, contentColor = T.extra.onRole), content = content)
+    else if (role == Role.CLEAR) androidx.compose.material3.TextButton(onClick, modifier.heightIn(min = 48.dp), enabled = enabled,
+        colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = c), content = content)
+    else androidx.compose.material3.OutlinedButton(onClick, modifier.heightIn(min = 48.dp), enabled = enabled,
+        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = c),
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (enabled) c else c.copy(alpha = 0.38f)), content = content)
+}
+
+/** تنبيه داخل الشاشة: رمز ونص بلون الدور على خلفية خفيفة منه (رسالة الطابور تحت العنوان، رسالة الملف داخل بطاقته). */
+@Composable
+fun RoleBanner(role: Role, text: String, modifier: Modifier = Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector = when (role) {
+    Role.ADD -> androidx.compose.material.icons.Icons.Rounded.Info
+    Role.START -> androidx.compose.material.icons.Icons.Rounded.CheckCircle
+    Role.PAUSE -> androidx.compose.material.icons.Icons.Rounded.Warning
+    Role.DELETE -> androidx.compose.material.icons.Icons.Rounded.ErrorOutline
+    Role.CLEAR -> androidx.compose.material.icons.Icons.Rounded.Info
+}, action: (@Composable () -> Unit)? = null) {
+    val c = roleColor(role)
+    androidx.compose.foundation.layout.Row(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.copy(alpha = 0.12f)).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.material3.Icon(icon, null, tint = c, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(text, color = c, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+        if (action != null) action()
     }
 }

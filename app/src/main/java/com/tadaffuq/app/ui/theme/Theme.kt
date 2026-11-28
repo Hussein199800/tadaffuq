@@ -35,13 +35,19 @@ data class Extra(
     val warning: Color,
     val danger: Color,
     val paused: Color,
+    /** إضافة ومعلومة (أزرق). */
+    val info: Color,
+    /** مسح وإعادة ضبط (رمادي). */
+    val neutral: Color,
+    /** لون النص فوق زر ممتلئ بأحد الألوان الدلالية (الزوج معكوس). */
+    val onRole: Color,
     val card: Color,
     val chartLine: Color,
     val chartFill: Color,
 )
 
 val LocalExtra = staticCompositionLocalOf {
-    Extra(Color.Gray, Color.LightGray, Mint, Color(0xFFE8A33D), Color(0xFFE5484D), Color.Gray, Color.White, Mint, Mint)
+    Extra(Color.Gray, Color.LightGray, Mint, Color(0xFFE8A33D), Color(0xFFE5484D), Color.Gray, Color(0xFF174B86), Color(0xFF475569), Color.White, Color.White, Mint, Mint)
 }
 
 val Plex = FontFamily(
@@ -176,14 +182,17 @@ fun TadaffuqTheme(
     }
     val accentDark = if (useDynamic) scheme.primary else bright
     val accentLight = if (useDynamic) scheme.primary else deep
-    // النجاح والتحذير والخطر ثابتة دلالياً في كل الثيمات
+    // أدوار ثابتة دلالياً في كل الثيمات (لا يغيّرها لون التمييز): أزرق إضافة/معلومة، أخضر بدء/نجاح، رمادي مسح،
+    // كهرماني إيقاف/تنبيه، أحمر حذف/فشل. كل زوج ≥ 6.8:1 مع خلفية الثيم؛ الزر الممتلئ يعكس الزوج (onRole).
     val extra = if (dark) Extra(
-        secondaryText = t.secondaryText, hairline = t.hairline, success = Mint, warning = Color(0xFFF2B35B),
-        danger = Color(0xFFFF7B72), paused = Color(0xFF8B949E), card = t.card,
+        secondaryText = t.secondaryText, hairline = t.hairline, success = Color(0xFF72DCAC), warning = Color(0xFFFFD083),
+        danger = Color(0xFFFFABB0), paused = Color(0xFFC3CDDA), info = Color(0xFF9CCAFF), neutral = Color(0xFFC3CDDA),
+        onRole = Color(0xFF101820), card = t.card,
         chartLine = accentDark, chartFill = accentDark.copy(alpha = 0.18f),
     ) else Extra(
-        secondaryText = t.secondaryText, hairline = t.hairline, success = Color(0xFF0B7F63), warning = Color(0xFF9A5B00),
-        danger = Color(0xFFC92A2F), paused = Color(0xFF6B7280), card = t.card,
+        secondaryText = t.secondaryText, hairline = t.hairline, success = Color(0xFF146444), warning = Color(0xFF805000),
+        danger = Color(0xFFAD2633), paused = Color(0xFF475569), info = Color(0xFF174B86), neutral = Color(0xFF475569),
+        onRole = Color.White, card = t.card,
         chartLine = accentLight, chartFill = accentLight.copy(alpha = 0.2f),
     )
     CompositionLocalProvider(LocalExtra provides extra) {
