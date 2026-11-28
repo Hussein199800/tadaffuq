@@ -57,9 +57,12 @@ import com.tadaffuq.engine.FileNames
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> Unit = {}, vm: AddViewModel = hiltViewModel()) {
+fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> Unit = {}, onOpenPage: ((String) -> Unit)? = null, vm: AddViewModel = hiltViewModel()) {
     LaunchedEffect(request) { vm.open(request) }
     val s by vm.state.collectAsState()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    // تدفّق متصفحاً افتراضياً: رابط صفحة (لا ملف) يذهب إلى المتصفح المدمج مباشرة
+    LaunchedEffect(s.webPage, s.autoOpenPage) { val p = s.webPage; if (p != null && s.autoOpenPage && onOpenPage != null) onOpenPage(p) }
     LaunchedEffect(s.done) { if (s.done) onDismiss() }
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var advanced by rememberSaveable { mutableStateOf(false) }
@@ -67,19 +70,33 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = MaterialTheme.colorScheme.surfaceContainer) {
         LazyColumn(Modifier.fillMaxWidth().navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             item {
-                Text(stringResource(R.string.add_title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(horizontal = 20.dp))
-                Text(stringResource(R.string.add_hint), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+                Text(stringResource(R.string.add_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 20.dp))
+                // رابط وصل جاهزاً (حافظة أو مشاركة أو تطبيق): نافذة مختصرة بلا شرح ولا حقل كبير
+                val prefilled = request.text.isNotBlank()
+                if (!prefilled) Text(stringResource(R.string.add_hint), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
                 OutlinedTextField(
                     value = s.input, onValueChange = vm::setInput,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                     label = { Text(stringResource(R.string.add_links_label)) },
-                    minLines = 2, maxLines = 6,
+                    textStyle = if (prefilled) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyLarge,
+                    minLines = if (prefilled) 1 else 2, maxLines = if (prefilled && s.single) 2 else 6,
                 )
             }
             s.magnet?.let { m ->
                 item {
                     androidx.compose.material3.FilledTonalButton(onClick = { onTorrent(m) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                         Text(stringResource(R.string.torrent_open_magnet))
+                    }
+                }
+            }
+            s.webPage?.let { page ->
+                item {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+                        Text(stringResource(R.string.add_web_page), style = MaterialTheme.typography.bodyMedium, color = T.extra.warning)
+                        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (onOpenPage != null) androidx.compose.material3.FilledTonalButton(onClick = { onOpenPage(page) }) { Text(stringResource(R.string.open_in_app_browser)) }
+                            OutlinedButton(onClick = { com.tadaffuq.app.core.OtherBrowser.open(ctx, page); onDismiss() }) { Text(stringResource(R.string.open_in_other_browser)) }
+                        }
                     }
                 }
             }
@@ -139,19 +156,6 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
             }
 
             if (s.items.isNotEmpty()) item {
-                Hairline()
-                SliderRow(
-                    title = stringResource(R.string.add_connections),
-                    description = stringResource(R.string.add_connections_desc),
-                    value = s.connections.toFloat(), range = 0f..32f, steps = 31,
-                    label = if (s.connections == 0) stringResource(R.string.auto) else Fmt.iso(s.connections.toString()),
-                    onChange = { v -> vm.update { it.copy(connections = v.toInt()) } },
-                )
-                SwitchLine(stringResource(R.string.add_wifi_only), stringResource(R.string.add_wifi_only_desc), s.wifiOnly) { v -> vm.update { it.copy(wifiOnly = v) } }
-                SwitchLine(stringResource(R.string.add_start_paused), stringResource(R.string.add_start_paused_desc), s.startPaused) { v -> vm.update { it.copy(startPaused = v) } }
-                if (s.items.any { com.tadaffuq.engine.Archives.isArchive(it.name) })
-                    SwitchLine(stringResource(R.string.add_extract), stringResource(R.string.add_extract_desc), s.extract) { v -> vm.update { it.copy(extract = v) } }
-                ScheduleRow(s.scheduledAt) { t -> vm.update { it.copy(scheduledAt = t) } }
                 // ما وصل مع الرابط من التطبيق المرسِل: يظهر حتى لا تُرسل بيانات جلسة دون علم المستخدم
                 if (s.received.isNotEmpty()) Text(
                     com.tadaffuq.app.core.sr(R.string.add_received, s.received.joinToString("، ")),
@@ -161,6 +165,20 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
                 TextButton(onClick = { advanced = !advanced }, modifier = Modifier.padding(horizontal = 8.dp)) {
                     Text(stringResource(if (advanced) R.string.hide_advanced else R.string.show_advanced))
                 }
+            }
+            if (advanced && s.items.isNotEmpty()) item {
+                Hairline()
+                SliderRow(
+                    title = stringResource(R.string.add_connections),
+                    description = stringResource(R.string.add_connections_desc),
+                    value = s.connections.toFloat(), range = 0f..32f, steps = 31,
+                    label = if (s.connections == 0) stringResource(R.string.auto) else Fmt.iso(s.connections.toString()),
+                    onChange = { v -> vm.update { it.copy(connections = v.toInt()) } },
+                )
+                SwitchLine(stringResource(R.string.add_wifi_only), stringResource(R.string.add_wifi_only_desc), s.wifiOnly) { v -> vm.update { it.copy(wifiOnly = v) } }
+                if (s.items.any { com.tadaffuq.engine.Archives.isArchive(it.name) })
+                    SwitchLine(stringResource(R.string.add_extract), stringResource(R.string.add_extract_desc), s.extract) { v -> vm.update { it.copy(extract = v) } }
+                ScheduleRow(s.scheduledAt) { t -> vm.update { it.copy(scheduledAt = t) } }
             }
             if (advanced && s.items.isNotEmpty()) item {
                 Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -196,13 +214,20 @@ fun AddSheet(request: AddRequest, onDismiss: () -> Unit, onTorrent: (String) -> 
                 }
             }
             item {
-                Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = vm::saveForLater, enabled = s.items.any { it.selected }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.add_save_later))
+                // مثل ADM: «إضافة» تضع التنزيل في القائمة متوقفاً، و«بدء» تبدأه الآن
+                Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 16.dp, top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.cancel)) }
+                    Spacer(Modifier.weight(1f))
+                    OutlinedButton(onClick = { vm.submit(start = false) }, enabled = s.canSubmit, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.add_queue_btn))
                     }
-                    Button(onClick = vm::submit, enabled = s.canSubmit, modifier = Modifier.weight(1.4f).heightIn(min = 48.dp)) {
-                        Text(stringResource(if (s.startPaused) R.string.add_to_queue else R.string.add_start))
+                    Button(onClick = { vm.submit(start = true) }, enabled = s.canSubmit, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.add_start_btn))
                     }
+                }
+                Text(stringResource(R.string.add_buttons_desc), style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+                if (s.items.any { it.selected }) TextButton(onClick = vm::saveForLater, modifier = Modifier.padding(horizontal = 8.dp)) {
+                    Text(stringResource(R.string.add_save_later))
                 }
                 Spacer(Modifier.height(8.dp))
             }
@@ -235,7 +260,7 @@ private fun ItemRow(item: Item, single: Boolean, vm: AddViewModel) {
                 } else {
                     Text(item.name.ifBlank { item.url }, style = MaterialTheme.typography.bodyLarge)
                 }
-                Text(item.url, style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
+                if (!single) Text(item.url, style = MaterialTheme.typography.bodySmall, color = T.extra.secondaryText)
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {

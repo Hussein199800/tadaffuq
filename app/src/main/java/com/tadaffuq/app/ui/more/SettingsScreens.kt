@@ -134,6 +134,17 @@ fun AdvancedSettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: ()
         item { SectionHeader(stringResource(R.string.sec_browser)) }
         item {
             Card(padding = PaddingValues(vertical = 4.dp)) {
+                val ctx = LocalContext.current
+                var held by remember { mutableStateOf(com.tadaffuq.app.core.BrowserRole.held(ctx)) }
+                val role = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) {
+                    held = com.tadaffuq.app.core.BrowserRole.held(ctx)
+                }
+                SettingRow(stringResource(R.string.default_browser), stringResource(R.string.default_browser_desc),
+                    value = stringResource(if (held) R.string.default_browser_on else R.string.default_browser_off),
+                    onClick = { runCatching { role.launch(com.tadaffuq.app.core.BrowserRole.requestIntent(ctx)) } })
+                Hairline()
+                ToggleRow(stringResource(R.string.open_pages_browser), stringResource(R.string.open_pages_browser_desc), s.openPagesInBrowser) { v -> set { it.copy(openPagesInBrowser = v) } }
+                Hairline()
                 ToggleRow(stringResource(R.string.block_popups), stringResource(R.string.block_popups_desc), s.blockPopups) { v -> set { it.copy(blockPopups = v) } }
                 Hairline()
                 ToggleRow(stringResource(R.string.block_trackers), stringResource(R.string.block_trackers_desc), s.blockTrackers) { v -> set { it.copy(blockTrackers = v) } }
@@ -158,11 +169,11 @@ fun AdvancedSettingsScreen(vm: MainViewModel, padding: PaddingValues, onBack: ()
 
 /** صفحة «حول» بنمط سَيْل: الأيقونة والاسم والإصدار والوصف، وبطاقة المطوّر، وجدول المعلومات. */
 @Composable
-fun AboutScreen(padding: PaddingValues, updates: @Composable () -> Unit = {}, onBack: () -> Unit) {
+fun AboutScreen(padding: PaddingValues, updates: @Composable () -> Unit = {}, showHeader: Boolean = true, onBack: () -> Unit) {
     val ctx = LocalContext.current
     val accent = T.extra.chartLine
     LazyColumn(contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp)) {
-        item { SubTitle(stringResource(R.string.about_title), onBack = onBack) }
+        if (showHeader) item { SubTitle(stringResource(R.string.about_title), onBack = onBack) }
         item {
             Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(

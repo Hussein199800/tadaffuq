@@ -42,6 +42,8 @@ data class Settings(
     val dailyLimitBytes: Long = 0,
     val monthlyLimitBytes: Long = 0,
     val blockPopups: Boolean = true,
+    /** رابط صفحة ويب فُتح بتدفّق (متصفحاً افتراضياً): يُفتح في المتصفح المدمج بدل نافذة التنزيل. */
+    val openPagesInBrowser: Boolean = true,
     val blockTrackers: Boolean = false,
     val desktopMode: Boolean = false,
     val density: ListDensity = ListDensity.COMFORTABLE,
@@ -108,7 +110,7 @@ data class Settings(
     val mobileParallel: Int = 1,
     val mobileLimitBps: Long = 0,
     /** طريقة عرض التنزيلات. */
-    val showSegmentsInList: Boolean = false,
+    val showSegmentsInList: Boolean = true,
 ) {
     /** الإعدادات الفعلية حسب الشبكة الحالية: على بيانات الهاتف يُطبَّق ملفها المستقل إن فُعّل. */
     fun forNetwork(onCellular: Boolean): Settings =
@@ -138,6 +140,7 @@ class SettingsRepository(private val context: Context) {
         val daily = longPreferencesKey("dailyLimitBytes")
         val monthly = longPreferencesKey("monthlyLimitBytes")
         val popups = booleanPreferencesKey("blockPopups")
+        val openPages = booleanPreferencesKey("openPagesInBrowser")
         val trackers = booleanPreferencesKey("blockTrackers")
         val desktop = booleanPreferencesKey("desktopMode")
         val density = stringPreferencesKey("density")
@@ -186,7 +189,7 @@ class SettingsRepository(private val context: Context) {
         val mConn = intPreferencesKey("mobileMaxConnections")
         val mPar = intPreferencesKey("mobileParallel")
         val mLimit = longPreferencesKey("mobileLimitBps")
-        val segList = booleanPreferencesKey("showSegmentsInList")
+        val segList = booleanPreferencesKey("showSegmentsInList2")
     }
 
     val settings: Flow<Settings> = context.store.data.map { p ->
@@ -215,6 +218,7 @@ class SettingsRepository(private val context: Context) {
             p[K.daily] = s.dailyLimitBytes.coerceAtLeast(0)
             p[K.monthly] = s.monthlyLimitBytes.coerceAtLeast(0)
             p[K.popups] = s.blockPopups
+            p[K.openPages] = s.openPagesInBrowser
             p[K.trackers] = s.blockTrackers
             p[K.desktop] = s.desktopMode
             p[K.density] = s.density.name
@@ -286,6 +290,7 @@ class SettingsRepository(private val context: Context) {
             dailyLimitBytes = p[K.daily] ?: d.dailyLimitBytes,
             monthlyLimitBytes = p[K.monthly] ?: d.monthlyLimitBytes,
             blockPopups = p[K.popups] ?: d.blockPopups,
+            openPagesInBrowser = p[K.openPages] ?: d.openPagesInBrowser,
             blockTrackers = p[K.trackers] ?: d.blockTrackers,
             desktopMode = p[K.desktop] ?: d.desktopMode,
             density = p[K.density]?.let { runCatching { ListDensity.valueOf(it) }.getOrNull() } ?: d.density,

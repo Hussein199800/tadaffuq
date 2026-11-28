@@ -288,7 +288,14 @@ class MainActivity : AppCompatActivity() {
                 }
                 composable("downloads") { DownloadsScreen(vm, { add(AddRequest("")) }, padding) }
                 composable("files") { FilesScreen(vm, padding) }
-                composable("more") { MoreScreen(padding) { nav.navigate(it) } }
+                composable("more") {
+                    // «عن تدفّق» قسم داخل «المزيد» (بلا زر رجوع)، والهامش العلوي يأخذه العنوان والأقسام
+                    MoreScreen(padding, about = {
+                        AboutScreen(PaddingValues(bottom = padding.calculateBottomPadding()), showHeader = false, updates = {
+                            com.tadaffuq.app.update.UpdateCard(updater, settings) { v -> vm.updateSettings { it.copy(autoUpdateCheck = v) } }
+                        }) {}
+                    }) { nav.navigate(it) }
+                }
                 composable("settings") { SettingsScreen(vm, padding, { nav.popBackStack() }) { nav.navigate(it) } }
                 composable("advanced") { com.tadaffuq.app.ui.more.AdvancedSettingsScreen(vm, padding) { nav.popBackStack() } }
                 composable("reports") { ReportsScreen(vm, padding) { nav.popBackStack() } }
@@ -309,7 +316,10 @@ class MainActivity : AppCompatActivity() {
         }
         }
         UpdateHost(settings.updateDismissedCode)
-        pending?.let { req -> AddSheet(req, onDismiss = { pending = null }, onTorrent = { m -> pending = null; pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = m) }) }
+        pending?.let { req ->
+            AddSheet(req, onDismiss = { pending = null }, onTorrent = { m -> pending = null; pendingTorrent = com.tadaffuq.app.ui.torrent.TorrentRequest(magnet = m) },
+                onOpenPage = { url -> pending = null; com.tadaffuq.app.ui.browser.BrowserTabs.open(this@MainActivity, url); jumpTo = "browser" })
+        }
         pendingTorrent?.let { r -> com.tadaffuq.app.ui.torrent.TorrentAddSheet(r, onDismiss = { pendingTorrent = null }) }
     }
 

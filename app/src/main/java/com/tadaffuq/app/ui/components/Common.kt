@@ -212,13 +212,17 @@ fun ProgressLine(fraction: Float?, color: Color, modifier: Modifier = Modifier) 
     }
 }
 
-/** خريطة الأجزاء: كل جزء بموضعه الحقيقي من الملف، والمنجز منه ملوّن. */
+/**
+ * خريطة الأجزاء: كل جزء بموضعه الحقيقي من الملف، والمنجز منه ملوّن، وحافة القراءة الحالية لكل جزء
+ * غير مكتمل علامة واضحة (أين وصل كل اتصال)، والفواصل بين الأجزاء ظاهرة.
+ */
 @Composable
-fun SegmentMap(segments: List<SegmentState>, total: Long, color: Color, description: String, modifier: Modifier = Modifier) {
+fun SegmentMap(segments: List<SegmentState>, total: Long, color: Color, description: String, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 22.dp) {
     val track = MaterialTheme.colorScheme.surfaceVariant
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val divider = T.extra.card
-    Canvas(modifier.fillMaxWidth().height(18.dp).clip(RoundedCornerShape(6.dp)).semantics { contentDescription = description }) {
+    val edge = MaterialTheme.colorScheme.onSurface
+    Canvas(modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(6.dp)).semantics { contentDescription = description }) {
         drawRect(track)
         if (total <= 0) return@Canvas
         fun x(pos: Long) = (pos.toDouble() / total * size.width).toFloat().let { if (rtl) size.width - it else it }
@@ -226,7 +230,29 @@ fun SegmentMap(segments: List<SegmentState>, total: Long, color: Color, descript
             val a = x(s.start); val b = x(s.start + s.downloaded)
             val left = minOf(a, b); val w = kotlin.math.abs(b - a)
             if (w > 0) drawRect(color, topLeft = Offset(left, 0f), size = Size(w, size.height))
-            drawLine(divider, Offset(a, 0f), Offset(a, size.height), strokeWidth = 1.5f)
+            if (!s.done) drawLine(edge, Offset(b, 0f), Offset(b, size.height), strokeWidth = 3f)
+            drawLine(divider, Offset(a, 0f), Offset(a, size.height), strokeWidth = 2f)
+        }
+    }
+}
+
+/** صف لكل جزء (مثل ADM): رقمه، شريطه، النسبة، والمنجز من حجمه. الأجزاء مرتبة بموضعها في الملف. */
+@Composable
+fun SegmentList(segments: List<SegmentState>, color: Color, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+        segments.sortedBy { it.start }.forEachIndexed { i, s ->
+            val size = (s.end - s.start + 1).coerceAtLeast(1)
+            val frac = (s.downloaded.toDouble() / size).coerceIn(0.0, 1.0)
+            androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text(com.tadaffuq.app.core.Fmt.iso((i + 1).toString()), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(24.dp))
+                ProgressLine(frac.toFloat(), color, Modifier.weight(1f).height(8.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (s.done) "✓ " + com.tadaffuq.app.core.Fmt.bytes(size)
+                    else com.tadaffuq.app.core.Fmt.iso("${(frac * 100).toInt()}٪") + " · " + com.tadaffuq.app.core.Fmt.bytes(s.downloaded) + " / " + com.tadaffuq.app.core.Fmt.bytes(size),
+                    style = MaterialTheme.typography.labelSmall, color = T.extra.secondaryText,
+                )
+            }
         }
     }
 }

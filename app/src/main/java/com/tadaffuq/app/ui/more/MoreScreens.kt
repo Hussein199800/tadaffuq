@@ -1,5 +1,15 @@
 package com.tadaffuq.app.ui.more
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.rounded.Build
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import com.tadaffuq.app.core.sr
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -82,30 +92,69 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 
 @Composable
-fun MoreScreen(padding: PaddingValues, open: (String) -> Unit) {
-    LazyColumn(contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + 24.dp)) {
-        item { LargeTitle(stringResource(R.string.tab_more)) }
-        item {
-            Card(padding = PaddingValues(vertical = 4.dp)) {
-                SettingRow(stringResource(R.string.settings), stringResource(R.string.settings_desc), Icons.Rounded.Settings, tint = com.tadaffuq.app.ui.components.Tint.BLUE, onClick = { open("settings") })
-                Hairline()
-                SettingRow(stringResource(R.string.reports), stringResource(R.string.reports_desc), Icons.Rounded.BarChart, tint = com.tadaffuq.app.ui.components.Tint.VIOLET, onClick = { open("reports") })
-                Hairline()
-                SettingRow(stringResource(R.string.link_hub), stringResource(R.string.link_hub_desc), Icons.Rounded.Link, tint = com.tadaffuq.app.ui.components.Tint.MINT, onClick = { open("links") })
-                Hairline()
-                SettingRow(stringResource(R.string.rules), stringResource(R.string.rules_desc), Icons.Rounded.Rule, tint = com.tadaffuq.app.ui.components.Tint.AMBER, onClick = { open("rules") })
-                Hairline()
-                SettingRow(stringResource(R.string.vault), stringResource(R.string.vault_desc), Icons.Rounded.Lock, tint = com.tadaffuq.app.ui.components.Tint.CORAL, onClick = { open("vault") })
-                Hairline()
-                SettingRow(stringResource(R.string.backup), stringResource(R.string.backup_desc), Icons.Rounded.Backup, tint = com.tadaffuq.app.ui.components.Tint.BLUE, onClick = { open("backup") })
-                Hairline()
-                SettingRow(stringResource(R.string.dev), stringResource(R.string.dev_desc), Icons.Rounded.Code, tint = com.tadaffuq.app.ui.components.Tint.SLATE, onClick = { open("dev") })
-                Hairline()
-                SettingRow(stringResource(R.string.rpc), stringResource(R.string.rpc_desc), Icons.Rounded.Lan, tint = com.tadaffuq.app.ui.components.Tint.VIOLET, onClick = { open("rpc") })
-                Hairline()
-                SettingRow(stringResource(R.string.trash), stringResource(R.string.trash_desc), Icons.Rounded.DeleteOutline, tint = com.tadaffuq.app.ui.components.Tint.AMBER, onClick = { open("trash") })
-                Hairline()
-                SettingRow(stringResource(R.string.about), stringResource(R.string.about_desc), Icons.Rounded.Info, tint = com.tadaffuq.app.ui.components.Tint.MINT, onClick = { open("about") })
+fun MoreScreen(padding: PaddingValues, about: @Composable () -> Unit = {}, initialTab: Int = 0, open: (String) -> Unit) {
+    // ثلاثة أقسام بدل قائمة طويلة (مثل «سَيْل»): ما يُضبط مرة، وما يُستعمل، ومعلومات التطبيق
+    var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(initialTab) }
+    Column(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
+        LargeTitle(stringResource(R.string.tab_more))
+        MoreTabs(tab) { tab = it }
+        androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
+            when (tab) {
+                2 -> about()
+                else -> LazyColumn(
+                    contentPadding = PaddingValues(top = 8.dp, bottom = padding.calculateBottomPadding() + 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    val rows = if (tab == 0) listOf(
+                        MoreEntry(R.string.settings, R.string.settings_desc, Icons.Rounded.Settings, com.tadaffuq.app.ui.components.Tint.BLUE, "settings"),
+                        MoreEntry(R.string.rules, R.string.rules_desc, Icons.Rounded.Rule, com.tadaffuq.app.ui.components.Tint.AMBER, "rules"),
+                        MoreEntry(R.string.backup, R.string.backup_desc, Icons.Rounded.Backup, com.tadaffuq.app.ui.components.Tint.MINT, "backup"),
+                        MoreEntry(R.string.rpc, R.string.rpc_desc, Icons.Rounded.Lan, com.tadaffuq.app.ui.components.Tint.VIOLET, "rpc"),
+                    ) else listOf(
+                        MoreEntry(R.string.reports, R.string.reports_desc, Icons.Rounded.BarChart, com.tadaffuq.app.ui.components.Tint.VIOLET, "reports"),
+                        MoreEntry(R.string.link_hub, R.string.link_hub_desc, Icons.Rounded.Link, com.tadaffuq.app.ui.components.Tint.MINT, "links"),
+                        MoreEntry(R.string.vault, R.string.vault_desc, Icons.Rounded.Lock, com.tadaffuq.app.ui.components.Tint.CORAL, "vault"),
+                        MoreEntry(R.string.trash, R.string.trash_desc, Icons.Rounded.DeleteOutline, com.tadaffuq.app.ui.components.Tint.AMBER, "trash"),
+                        MoreEntry(R.string.dev, R.string.dev_desc, Icons.Rounded.Code, com.tadaffuq.app.ui.components.Tint.SLATE, "dev"),
+                    )
+                    items(rows.size) { k ->
+                        val e = rows[k]
+                        Card(padding = PaddingValues(vertical = 2.dp)) {
+                            SettingRow(stringResource(e.title), stringResource(e.desc), e.icon, tint = e.tint, onClick = { open(e.route) }, trailing = {
+                                // سهم يتبع اتجاه الكتابة (يشير يساراً في العربية)
+                                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            })
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private data class MoreEntry(val title: Int, val desc: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector, val tint: com.tadaffuq.app.ui.components.Tint, val route: String)
+
+/** شريط أقسام بحبة للمحدد (يلتف النص ولا يُقص، ومنطقة لمس 48dp). */
+@Composable
+private fun MoreTabs(selected: Int, onSelect: (Int) -> Unit) {
+    val labels = listOf(R.string.more_tab_settings to Icons.Rounded.Settings, R.string.more_tab_tools to Icons.Rounded.Build, R.string.more_tab_about to Icons.Rounded.Info)
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(18.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        labels.forEachIndexed { i, (label, icon) ->
+            val on = i == selected
+            val bg by androidx.compose.animation.animateColorAsState(if (on) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent, label = "tab")
+            val fg = if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            Row(
+                Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(14.dp)).background(bg)
+                    .selectable(selected = on, role = androidx.compose.ui.semantics.Role.Tab, onClick = { onSelect(i) }).padding(horizontal = 6.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(icon, null, tint = fg, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(label), color = fg, style = MaterialTheme.typography.labelLarge, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }
         }
     }

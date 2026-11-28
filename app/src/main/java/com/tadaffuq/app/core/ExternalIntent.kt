@@ -39,10 +39,10 @@ object ExternalIntent {
             else -> null
         }?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         val extras = runCatching { intent.extras }.getOrNull()
-        return fromExtras(text, extras, intent.type)
+        return fromExtras(text, extras, intent.type, opened = intent.action == Intent.ACTION_VIEW)
     }
 
-    internal fun fromExtras(text: String, extras: Bundle?, mime: String?): AddRequest {
+    internal fun fromExtras(text: String, extras: Bundle?, mime: String?, opened: Boolean = false): AddRequest {
         val headers = ArrayList<Pair<String, String>>()
         var referer: String? = null
         var ua: String? = null
@@ -77,6 +77,7 @@ object ExternalIntent {
             suggestedName = name?.take(180),
             mimeType = mime?.takeIf { it.contains('/') && !it.contains('*') },
             external = true,
+            opened = opened,
         )
     }
 

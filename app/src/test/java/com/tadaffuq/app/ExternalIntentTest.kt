@@ -72,6 +72,17 @@ class ExternalIntentTest {
         assertEquals("a b", r.suggestedName)
     }
 
+    /** «فتح» رابط (تدفّق متصفحاً افتراضياً) يختلف عن المشاركة: الصفحة تُفتح في المتصفح المدمج تلقائياً للأول فقط. */
+    @Test fun openedFlagAndOtherBrowserExcludesUs() {
+        assertTrue(ExternalIntent.request(view(null))!!.opened)
+        assertTrue(!ExternalIntent.request(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, url))!!.opened)
+        val chooser = com.tadaffuq.app.core.OtherBrowser.intent(ctx, url)
+        @Suppress("DEPRECATION") val excluded = chooser.getParcelableArrayExtra(Intent.EXTRA_EXCLUDE_COMPONENTS)!!.map { it as android.content.ComponentName }
+        assertTrue(excluded.any { it.className.endsWith(".MainActivity") })
+        @Suppress("DEPRECATION") val inner = chooser.getParcelableExtra<Intent>(Intent.EXTRA_INTENT)!!
+        assertEquals(url, inner.dataString)
+    }
+
     @Test fun sendAndEmpty() {
         val r = ExternalIntent.request(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "شاهد $url").putExtra("referer", "https://s/"))!!
         assertEquals("شاهد $url", r.text); assertEquals("https://s/", r.referer)

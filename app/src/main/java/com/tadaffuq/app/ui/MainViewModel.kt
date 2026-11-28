@@ -39,6 +39,10 @@ class MainViewModel @Inject constructor(
     val secrets: com.tadaffuq.app.core.SecretStore,
     val vault: com.tadaffuq.app.vault.Vault,
 ) : ViewModel() {
+    /** الأجزاء المحفوظة لمهمة متوقفة (لعرض أين وصل كل جزء دون تشغيل). */
+    suspend fun savedSegments(taskId: Long): List<com.tadaffuq.engine.SegmentState> =
+        db.tasks().segments(taskId).map { com.tadaffuq.engine.SegmentState(it.idx, it.start, it.endInclusive, it.downloaded) }
+
     suspend fun exportBackup(): String = com.tadaffuq.app.core.Backup.export(db, settingsRepo.current())
     suspend fun importBackup(json: String): com.tadaffuq.app.core.Backup.ImportResult {
         val r = com.tadaffuq.app.core.Backup.import(db, json, settingsRepo.current())

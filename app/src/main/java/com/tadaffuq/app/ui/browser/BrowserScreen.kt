@@ -1,5 +1,6 @@
 package com.tadaffuq.app.ui.browser
 
+import androidx.compose.material.icons.rounded.OpenInNew
 import com.tadaffuq.app.core.sr
 import android.content.MutableContextWrapper
 import android.view.ViewGroup
@@ -142,6 +143,8 @@ fun BrowserScreen(padding: PaddingValues, onDownload: (AddRequest) -> Unit, bloc
                                 onClick = { vm.toggleBookmark(tab.url.value, tab.title.value, isBookmarked); menu = false })
                             DropdownMenuItem(text = { Text(stringResource(R.string.bookmarks)) }, onClick = { sheet = "bookmarks"; menu = false })
                             DropdownMenuItem(text = { Text(stringResource(R.string.history)) }, onClick = { sheet = "history"; menu = false })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.open_in_other_browser)) }, leadingIcon = { Icon(Icons.Rounded.OpenInNew, null) },
+                                onClick = { com.tadaffuq.app.core.OtherBrowser.open(ctx, tab.url.value); menu = false })
                             DropdownMenuItem(text = { Text(stringResource(R.string.find_in_page)) }, leadingIcon = { Icon(Icons.Rounded.Search, null) }, onClick = { findText = ""; menu = false })
                             DropdownMenuItem(text = { Text(stringResource(R.string.capture_links)) }, leadingIcon = { Icon(Icons.Rounded.Download, null) }, onClick = {
                                 menu = false

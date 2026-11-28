@@ -127,6 +127,8 @@ class ScreenshotTest {
     @Test fun downloads_en_dark() = shoot("downloads_en_dark", false, true) { DownloadsScreen(vm, {}, pad, tvm) }
     @Test fun files_ar_light() = shoot("files_ar_light", true, false) { FilesScreen(vm, pad) }
     @Test fun more_ar_light() = shoot("more_ar_light", true, false) { MoreScreen(pad) {} }
+    @Test fun more_tools_ar_dark() = shoot("more_tools_ar_dark", true, true) { MoreScreen(pad, initialTab = 1) {} }
+    @Test fun more_about_ar_light() = shoot("more_about_ar_light", true, false) { MoreScreen(pad, about = { com.tadaffuq.app.ui.more.AboutScreen(pad, showHeader = false) {} }, initialTab = 2) {} }
     @Test fun settings_ar_light() = shoot("settings_ar_light", true, false) { SettingsScreen(vm, pad, {}) {} }
     @Test fun settings_en_dark() = shoot("settings_en_dark", false, true) { SettingsScreen(vm, pad, {}) {} }
     @Test fun set_download_ar_light() = shoot("set_download_ar_light", true, false) { SettingsScreen(vm, pad, {}, "DOWNLOAD") {} }

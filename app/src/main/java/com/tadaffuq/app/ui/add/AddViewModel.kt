@@ -49,6 +49,8 @@ data class AddRequest(
     val mimeType: String? = null,
     /** جاء من تطبيق آخر («فتح باستخدام» أو المشاركة). */
     val external: Boolean = false,
+    /** فُتح رابطاً (ACTION_VIEW)، كأن تدفّق المتصفح الافتراضي. */
+    val opened: Boolean = false,
     /** فُتحت من بلاطة النسخ. */
     val fromClipboard: Boolean = false,
     val clipboardEmpty: Boolean = false,
@@ -95,6 +97,10 @@ data class AddState(
     val duplicatePolicy: DuplicatePolicy = DuplicatePolicy.RENAME,
     val submitting: Boolean = false,
     val done: Boolean = false,
+    /** رابط واحد من تطبيق آخر تبيّن أنه صفحة ويب لا ملف. */
+    val webPage: String? = null,
+    /** تُفتح الصفحة في المتصفح المدمج فوراً (رابط مفتوح + الإعداد مفعّل). */
+    val autoOpenPage: Boolean = false,
 ) {
     val single get() = items.size == 1
     val rejectedHeaders get() = com.tadaffuq.engine.ExtraHeaders.rejectedLines(headers)
@@ -130,6 +136,8 @@ class AddViewModel @Inject constructor(
         parse(immediate = true)
     }
 
+    private fun isHtml(mime: String?) = mime?.substringBefore(';')?.trim()?.lowercase() in setOf("text/html", "application/xhtml+xml")
+
     fun setInput(text: String) { _state.update { it.copy(input = text) }; parse(immediate = false) }
 
     private fun parse(immediate: Boolean) {
@@ -138,7 +146,7 @@ class AddViewModel @Inject constructor(
             if (!immediate) delay(500)
             val text = _state.value.input
             val magnet = Regex("""magnet:\?[^\s<>"']+""", RegexOption.IGNORE_CASE).find(text)?.value
-            _state.update { it.copy(magnet = magnet) }
+            _state.update { it.copy(magnet = magnet, webPage = null, autoOpenPage = false) }
             val raw = LinkTools.extract(text).flatMap { if (LinkTools.hasSequence(it)) LinkTools.expandSequence(it) else listOf(it) }
                 .filter(com.tadaffuq.engine.Protocols::isSupported)
             // كلمة مرور داخل رابط FTP/SFTP تُنقل إلى المخزن المشفّر وتُحذف من الرابط
@@ -174,6 +182,8 @@ class AddViewModel @Inject constructor(
                             probe != null -> probe.fileName
                             else -> FileNames.resolve(null, item.url, null)
                         }
+                        val page = request?.external == true && s.single && probe != null && isHtml(probe.mimeType)
+                        if (page) _state.update { it.copy(webPage = probe!!.finalUrl, autoOpenPage = request?.opened == true && settings.openPagesInBrowser) }
                         val dir = StorageDirs.dirFor(FileNames.category(name), settings.sortByCategory).path
                         val dups = manager.duplicates(item.url, dir, name)
                         _state.update { st ->
@@ -225,7 +235,9 @@ class AddViewModel @Inject constructor(
     fun selectAll(v: Boolean) = _state.update { s -> s.copy(items = s.items.map { it.copy(selected = v) }) }
     fun update(f: (AddState) -> AddState) = _state.update(f)
 
-    fun submit() {
+    /** [start] = «بدء» الآن، وإلا «إضافة» إلى القائمة متوقفاً. */
+    fun submit(start: Boolean = true) {
+        _state.update { it.copy(startPaused = !start) }
         val s = _state.value
         if (s.submitting) return
         _state.update { it.copy(submitting = true) }

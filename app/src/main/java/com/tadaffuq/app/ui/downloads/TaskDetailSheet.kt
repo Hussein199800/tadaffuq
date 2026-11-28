@@ -98,11 +98,16 @@ fun TaskDetailContent(t: TaskEntity, live: Snapshot?, vm: MainViewModel, openDia
             Spacer(Modifier.height(12.dp))
 
             val total = live?.total ?: t.totalBytes
-            val segments = live?.segments
+            val saved by androidx.compose.runtime.produceState(emptyList<com.tadaffuq.engine.SegmentState>(), t.id, t.status) {
+                value = if (live == null && t.status != com.tadaffuq.data.TaskStatus.COMPLETED) vm.savedSegments(t.id) else emptyList()
+            }
+            val segments = live?.segments ?: saved.takeIf { it.isNotEmpty() }
             if (segments != null && total > 0) {
                 Text(sr(R.string.segments_title, segments.size), style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(6.dp))
-                SegmentMap(segments, total, T.extra.chartLine, com.tadaffuq.app.core.pr(R.plurals.segments_a11y, segments.size, segments.size))
+                SegmentMap(segments, total, T.extra.chartLine, com.tadaffuq.app.core.pr(R.plurals.segments_a11y, segments.size, segments.size), height = 28.dp)
+                Spacer(Modifier.height(10.dp))
+                com.tadaffuq.app.ui.components.SegmentList(segments, T.extra.chartLine)
                 Spacer(Modifier.height(12.dp))
             }
 
