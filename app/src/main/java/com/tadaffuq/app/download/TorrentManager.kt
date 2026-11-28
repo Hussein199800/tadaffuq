@@ -108,7 +108,8 @@ class TorrentManager @Inject constructor(
     /** من «إيقاف الكل» أو انتهاء مهلة الخدمة: يُحفظ PAUSED فلا يعود التورنت للعمل إلا باستئناف صريح. */
     suspend fun pauseAll() = withContext(Dispatchers.IO) {
         dao.all().filter { it.state == TorrentRunState.ACTIVE || (it.state == TorrentRunState.COMPLETED && it.seedAfter) }.forEach { t ->
-            if (engine.running) engine.pause(t.infoHash)
+            // المحرك لم يُشغَّل في هذه العملية (لا تورنت عامل): لا شيء يُوقف فيه، ويكفي حفظ الحالة
+            if (started && engine.running) engine.pause(t.infoHash)
             // المكتمل الذي يشارك يُحفظ متوقفاً أيضاً (كالإيقاف الفردي)، وإلا عاد الرفع بعد إعادة تشغيل التطبيق
             dao.setState(t.infoHash, TorrentRunState.PAUSED)
         }
