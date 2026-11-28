@@ -28,6 +28,10 @@ class RangeServer(
     @Volatile var statusOverride: Int? = null
     /** تأخير لكل 64KB لمحاكاة شبكة بطيئة. */
     @Volatile var throttleMsPer64k: Long = 0
+    /** اتصال سيئ واحد: أول [badConnections] طلبات يبدأ مداها عند [badFrom] أو بعده تُبث ببطء شديد (بايتات كل ثانية). */
+    @Volatile var badFrom: Long = -1
+    val badConnections = AtomicInteger(0)
+    @Volatile var badBytesPerSec: Long = 1024
 
     init { server.dispatcher = this; server.start() }
 
@@ -56,6 +60,10 @@ class RangeServer(
             if (start >= data.size) return base.setResponseCode(416).setHeader("Content-Range", "bytes */${data.size}")
             val end = minOf(endReq, data.size - 1L)
             val slice = data.copyOfRange(start.toInt(), end.toInt() + 1)
+            if (badFrom in 0..start && badConnections.getAndDecrement() > 0) {
+                return base.setResponseCode(206).setHeader("Accept-Ranges", "bytes").setHeader("Content-Range", "bytes $start-$end/${data.size}")
+                    .setBody(Buffer().write(slice)).throttleBody(badBytesPerSec, 1, java.util.concurrent.TimeUnit.SECONDS)
+            }
             return body(base.setResponseCode(206).setHeader("Accept-Ranges", "bytes")
                 .setHeader("Content-Range", "bytes $start-$end/${data.size}"), slice)
         }

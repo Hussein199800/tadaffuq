@@ -155,6 +155,7 @@ class HttpDownloader(
 
         fun launchFor(seg: Segment) {
             seg.active = true
+            health.launched(seg.index, seg.downloaded, System.nanoTime())
             runningWorkers.incrementAndGet()
             jobs[seg] = launch(Dispatchers.IO) {
                 try { runSegment(seg, probe, channel) } finally { runningWorkers.decrementAndGet() }
@@ -185,7 +186,10 @@ class HttpDownloader(
             if (jobs.isEmpty() || probe.resumable) {
                 while (jobs.size < target) {
                     val idle = segments.firstOrNull { !it.done && !it.active }
-                    val next = idle ?: if (probe.resumable) (if (config.dynamicSplit) SegmentPlanner.splitLargest(segments, config.minSplitBytes) else null) else null
+                    // نهاية التنزيل: الأجزاء الباقية أصغر من حد التقسيم، فيُقسم الأكبر بحد أدنى أصغر حتى لا ينتظر الملف اتصالاً واحداً
+                    val next = idle ?: if (probe.resumable && config.dynamicSplit)
+                        SegmentPlanner.splitLargest(segments, config.minSplitBytes) ?: SegmentPlanner.splitLargest(segments, TAIL_SPLIT_BYTES)
+                    else null
                     next ?: break
                     launchFor(next)
                 }
@@ -201,6 +205,16 @@ class HttpDownloader(
                 ema = if (ema == 0.0) speed.toDouble() else ema * 0.7 + speed * 0.3
                 maxBps = maxOf(maxBps, speed)
                 target = tune.next(target, speed, now, jobs.size)
+                // اتصال متجمد أو بطيء جداً مقارنة بغيره: يُقطع ويُعاد الجزء من موضعه باتصال جديد
+                // مع حد سرعة يدوي البطء مقصود فلا يُعدّ عطلاً
+                if (probe.resumable && taskLimiter.bytesPerSecond == 0L && globalLimiter.bytesPerSecond == 0L) {
+                    val active = jobs.keys.toList()
+                    health.sample(segments.toList(), active.toSet(), now)
+                    health.toRestart(active, now).forEach { seg ->
+                        jobs[seg]?.cancel()
+                        listener.onRetry(seg.index, 0, DownloadError.Network(NetFail.TIMEOUT), 0)
+                    }
+                }
                 // تغيير الحد أثناء التنزيل: الخفض فوري (تتخلى الاتصالات الزائدة عن أجزائها)،
                 // والرفع يعيد تشغيل الضبط التلقائي ليجرّب اتصالات أكثر إن أفادت
                 val cap = liveMaxConnections().coerceIn(1, DownloadConfig.MAX_CONNECTIONS)
@@ -232,6 +246,8 @@ class HttpDownloader(
             }
         }
     }
+
+    private val health = SegmentHealth()
 
     /** عدد الاتصالات التي عليها التخلي عن أجزائها بعد خفض الحد (يحدده المشرف). */
     private val toYield = java.util.concurrent.atomic.AtomicInteger()
@@ -387,6 +403,8 @@ class HttpDownloader(
             }.getOrNull()
         }
         private const val TICK_MS = 200L
+        /** أصغر جزء يُقسم في نهاية التنزيل. */
+        const val TAIL_SPLIT_BYTES = 64L * 1024
         const val MEANINGFUL_BYTES = 256L * 1024
     }
     private class Yield : Exception()
