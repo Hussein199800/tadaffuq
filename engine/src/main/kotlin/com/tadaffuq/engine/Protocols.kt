@@ -116,12 +116,14 @@ internal class SingleStreamDownload(
     suspend fun run(): ProbeResult = withContext(Dispatchers.IO) {
         val probe = opener.probe()
         val prev = saved?.segments?.singleOrNull()
-        val resume = prev != null && file.exists() && probe.resumable && saved.probe.totalBytes == probe.totalBytes &&
+        // الملف المحلي يجب أن يحوي كل ما يُستأنف بعده؛ أقصر منه = بايتات مفقودة، فيبدأ من جديد
+        val resume = prev != null && file.isFile && file.length() >= prev.downloaded && probe.resumable && saved.probe.totalBytes == probe.totalBytes &&
             saved.probe.lastModified != null && saved.probe.lastModified == probe.lastModified && prev.downloaded in 1 until probe.totalBytes
         var pos = if (resume) prev!!.downloaded else 0L
         listener.onStart(probe, restarted = prev != null && prev.downloaded > 0 && !resume)
         val end = if (probe.totalBytes > 0) probe.totalBytes - 1 else -1
-        val raf = RandomAccessFile(file, "rw").apply { if (!resume) setLength(0) }
+        // ما بعد الموضع المحفوظ لم يُثبَّت تقدمه: يُقص ويُعاد تنزيله
+        val raf = RandomAccessFile(file, "rw").apply { setLength(if (resume) pos else 0) }
         fun state() = ResumeState(probe, listOf(SegmentState(0, 0, end, pos)))
         val t0 = System.nanoTime()
         var lastTick = t0; var lastBytes = 0L; var session = 0L; var maxBps = 0L; var lastPersist = t0

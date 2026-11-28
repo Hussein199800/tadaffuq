@@ -317,18 +317,22 @@ class HttpDownloader(
 
     private suspend fun fetch(seg: Segment, probe: ProbeResult, channel: FileChannel) {
         val builder = spec.toRequest(probe.finalUrl).get()
+        // المدى المطلوب فعلاً يُلتقط مرة واحدة: اتصال آخر قد يقسم هذا الجزء أثناء انتظار الرد فتقصر نهايته،
+        // والرد يُفحص مقابل ما طُلب لا مقابل النهاية الجديدة (والكتابة تبقى محصورة في الجزء الحالي أدناه)
+        val (reqStart, reqEnd) = synchronized(seg) { seg.position to seg.end }
         if (probe.resumable) {
-            builder.header("Range", "bytes=${seg.position}-${seg.end}")
+            builder.header("Range", "bytes=$reqStart-$reqEnd")
             probe.ifRangeValidator?.let { builder.header("If-Range", it) }
         }
         client.withResponse(builder.build()) { r ->
             var limit = Long.MAX_VALUE // أقصى بايتات يُسمح بقراءتها من هذا الجسم
+            var whole = false // رد 200 بالملف كاملاً (بلا مدى)
             when (r.code) {
                 206 -> {
                     // RFC 9110 §14.4: البداية = الموضع المطلوب، والنهاية ضمن المطلوب، والإجمالي مطابق،
                     // وطول الجسم (إن أُعلن) يساوي طول المدى، وبلا ترميز ضغط.
                     val cr = parseContentRange(r.header("Content-Range"))
-                    if (cr == null || !cr.valid || cr.first != seg.position || cr.last > seg.end) throw DownloadException(DownloadError.RangeNotSupported)
+                    if (cr == null || !cr.valid || cr.first != reqStart || cr.last > reqEnd) throw DownloadException(DownloadError.RangeNotSupported)
                     if (cr.total != null && cr.total != probe.totalBytes) throw DownloadException(DownloadError.ChangedOnServer)
                     val len = r.body?.contentLength() ?: -1
                     if (len >= 0 && len != cr.last - cr.first + 1) throw DownloadException(DownloadError.RangeNotSupported)
@@ -341,7 +345,11 @@ class HttpDownloader(
                 200 -> {
                     // طلبنا جزءاً مع If-Range فأعاد الخادم الملف كاملاً: المحتوى تغيّر.
                     if (probe.resumable) throw DownloadException(DownloadError.ChangedOnServer)
+                    // الطول المعلن الآن يخالف ما أعلنه الفحص: الملف تغيّر، لا نكتب نسخة مقطوعة ونعلن نجاحها
+                    val len = r.body?.contentLength() ?: -1
+                    if (probe.totalBytes > 0 && len >= 0 && len != probe.totalBytes) throw DownloadException(DownloadError.ChangedOnServer)
                     synchronized(seg) { seg.downloaded = 0 } // بلا استئناف: نبدأ البث من أوله
+                    whole = true
                 }
                 401, 403, 410 -> throw DownloadException(DownloadError.LinkExpired(r.code))
                 404 -> throw DownloadException(DownloadError.NotFound)
@@ -354,7 +362,11 @@ class HttpDownloader(
             var read = 0L
             while (true) {
                 currentCoroutineContext().ensureActive()
-                if (seg.done) return
+                if (seg.done) {
+                    // رد كامل بلا طول معلن (مقسّم): بلغنا الحجم المعلن في الفحص، فإن بقي في الجسم شيء فالملف أطول
+                    if (whole && seg.end >= 0 && source.read(buf, 0, 1) > 0) throw DownloadException(DownloadError.ChangedOnServer)
+                    return
+                }
                 if (shouldYield()) throw Yield()
                 if (read >= limit) return
                 val n = source.read(buf, 0, minOf(buf.size.toLong(), limit - read).toInt())
@@ -370,6 +382,8 @@ class HttpDownloader(
                     }
                     allowed
                 }
+                // رد كامل (200) بحجم معلن: بايتات بعد النهاية تعني أن الملف أطول مما أعلنه الفحص
+                if (whole && seg.end >= 0 && written < n) throw DownloadException(DownloadError.ChangedOnServer)
                 if (written <= 0) return
                 sessionBytes.addAndGet(written)
                 listener.onBytes(written)

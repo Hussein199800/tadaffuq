@@ -32,6 +32,10 @@ class RangeServer(
     @Volatile var badFrom: Long = -1
     val badConnections = AtomicInteger(0)
     @Volatile var badBytesPerSec: Long = 1024
+    /** ترويسات متأخرة: أول [lateHeaders] طلبات يبدأ مداها عند [lateFrom] أو بعده يتأخر ردها [lateMs]. */
+    @Volatile var lateFrom: Long = -1
+    val lateHeaders = AtomicInteger(0)
+    @Volatile var lateMs: Long = 0
 
     init { server.dispatcher = this; server.start() }
 
@@ -60,6 +64,10 @@ class RangeServer(
             if (start >= data.size) return base.setResponseCode(416).setHeader("Content-Range", "bytes */${data.size}")
             val end = minOf(endReq, data.size - 1L)
             val slice = data.copyOfRange(start.toInt(), end.toInt() + 1)
+            if (lateFrom in 0..start && lateHeaders.getAndDecrement() > 0) {
+                return body(base.setResponseCode(206).setHeader("Accept-Ranges", "bytes").setHeader("Content-Range", "bytes $start-$end/${data.size}"), slice)
+                    .setHeadersDelay(lateMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+            }
             if (badFrom in 0..start && badConnections.getAndDecrement() > 0) {
                 return base.setResponseCode(206).setHeader("Accept-Ranges", "bytes").setHeader("Content-Range", "bytes $start-$end/${data.size}")
                     .setBody(Buffer().write(slice)).throttleBody(badBytesPerSec, 1, java.util.concurrent.TimeUnit.SECONDS)
